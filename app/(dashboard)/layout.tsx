@@ -19,6 +19,12 @@ import useSWR, { mutate } from 'swr';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+function formatRole(platformRole: string | null): string {
+  if (!platformRole) return 'User';
+  if (platformRole === 'school_admin') return 'School Admin';
+  return platformRole.charAt(0).toUpperCase() + platformRole.slice(1);
+}
+
 function UserMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { data: user } = useSWR<User>('/api/user', fetcher);
@@ -39,7 +45,7 @@ function UserMenu() {
         >
           Pricing
         </Link>
-        <Button asChild variant="gecko">
+        <Button asChild>
           <Link href="/sign-up">Sign Up</Link>
         </Button>
       </>
@@ -48,8 +54,8 @@ function UserMenu() {
 
   return (
     <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-      <DropdownMenuTrigger>
-        <Avatar className="cursor-pointer size-9">
+      <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
+        <Avatar className="cursor-pointer size-9 shrink-0">
           <AvatarImage alt={user.name || ''} />
           <AvatarFallback>
             {user.email
@@ -58,6 +64,14 @@ function UserMenu() {
               .join('')}
           </AvatarFallback>
         </Avatar>
+        <div className="hidden sm:flex flex-col text-left">
+          <span className="text-sm font-medium text-[#3d4236]">
+            {user.name || user.email}
+          </span>
+          <span className="text-[10px] uppercase tracking-wider text-[#5a5f57]">
+            {formatRole(user.platformRole)} Account
+          </span>
+        </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="flex flex-col gap-1">
         <DropdownMenuItem className="cursor-pointer">

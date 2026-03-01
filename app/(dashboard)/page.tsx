@@ -20,11 +20,11 @@ export default function HomePage() {
               </p>
 
               <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:justify-center lg:justify-start">
-                <Button asChild variant="primary">
+                <Button asChild>
                   <Link href="/trial">Book a Free Trial</Link>
                 </Button>
 
-                <Button asChild variant="secondary">
+                <Button asChild variant="outline">
                   <Link href="/pricing">View Pricing</Link>
                 </Button>
               </div>
@@ -87,7 +87,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-10">
-            <Button asChild variant="gecko">
+            <Button asChild>
               <Link href="/trial">Book a Free Trial</Link>
             </Button>
           </div>
@@ -124,7 +124,7 @@ export default function HomePage() {
             </div>
 
             <div className="mt-10">
-              <Button asChild variant="gecko">
+              <Button asChild>
                 <Link href="/trial">Book a Free Trial</Link>
               </Button>
             </div>

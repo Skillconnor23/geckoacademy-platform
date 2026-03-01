@@ -6,19 +6,39 @@ import {
   timestamp,
   integer,
   boolean,
+  index,
+  uuid,
+  uniqueIndex,
+  date,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 100 }),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
-  role: varchar('role', { length: 20 }).notNull().default('member'), // Gecko: admin | teacher | parent | student
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  deletedAt: timestamp('deleted_at'),
-});
+export const platformRoleEnum = [
+  'student',
+  'admin',
+  'teacher',
+  'school_admin',
+] as const;
+export type PlatformRole = (typeof platformRoleEnum)[number];
+
+export const users = pgTable(
+  'users',
+  {
+    id: serial('id').primaryKey(),
+    name: varchar('name', { length: 100 }),
+    email: varchar('email', { length: 255 }).notNull().unique(),
+    passwordHash: text('password_hash').notNull(),
+    role: varchar('role', { length: 20 }).notNull().default('member'), // Team/billing: owner | member (via teamMembers)
+    platformRole: varchar('platform_role', { length: 20 }), // Platform: student | admin | teacher | school_admin
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at'),
+    archivedAt: timestamp('archived_at'), // Archive (hide from default listings)
+    timezone: text('timezone'), // IANA e.g. America/New_York
+  },
+  (table) => [index('users_platform_role_idx').on(table.platformRole)]
+);
 
 export const teams = pgTable('teams', {
   id: serial('id').primaryKey(),
@@ -116,6 +136,138 @@ export const invitations = pgTable('invitations', {
   status: varchar('status', { length: 20 }).notNull().default('pending'),
 });
 
+// --- Education domain (MVP) ---
+
+export const geckoLevelEnum = ['G', 'E', 'C', 'K', 'O'] as const;
+export type GeckoLevel = (typeof geckoLevelEnum)[number];
+
+export const eduClasses = pgTable(
+  'edu_classes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    description: text('description'),
+    level: text('level'),
+    timezone: text('timezone').default('Asia/Ulaanbaatar'),
+    joinCode: text('join_code').unique(),
+    joinCodeEnabled: boolean('join_code_enabled').notNull().default(true),
+    // Recurring schedule: days e.g. ["sat","sun"], time "HH:mm", timezone IANA
+    geckoLevel: text('gecko_level'),
+    scheduleDays: jsonb('schedule_days').$type<string[]>(), // ["sat","sun"]
+    scheduleStartTime: text('schedule_start_time'), // "HH:mm"
+    scheduleTimezone: text('schedule_timezone').default('Asia/Ulaanbaatar'),
+    scheduleStartDate: date('schedule_start_date'),
+    scheduleEndDate: date('schedule_end_date'),
+    durationMinutes: integer('duration_minutes').notNull().default(50),
+    defaultMeetingUrl: text('default_meeting_url'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('edu_classes_join_code_idx').on(table.joinCode)]
+);
+
+export const eduClassTeachers = pgTable(
+  'edu_class_teachers',
+  {
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    teacherUserId: integer('teacher_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('edu_class_teachers_class_teacher_idx').on(
+      table.classId,
+      table.teacherUserId
+    ),
+    index('edu_class_teachers_teacher_idx').on(
+      table.teacherUserId,
+      table.classId
+    ),
+  ]
+);
+
+export const eduEnrollments = pgTable(
+  'edu_enrollments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    studentUserId: integer('student_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    status: text('status').notNull().default('active'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('edu_enrollments_class_student_idx').on(
+      table.classId,
+      table.studentUserId
+    ),
+    index('edu_enrollments_student_class_idx').on(
+      table.studentUserId,
+      table.classId
+    ),
+  ]
+);
+
+export const sessionKindEnum = ['extra', 'override', 'cancel'] as const;
+export type SessionKind = (typeof sessionKindEnum)[number];
+
+export const eduSessions = pgTable(
+  'edu_sessions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    startsAt: timestamp('starts_at').notNull(),
+    endsAt: timestamp('ends_at').notNull(),
+    meetingUrl: text('meeting_url'),
+    title: text('title'),
+    kind: text('kind'), // "extra" | "override" | "cancel" — null = legacy
+    originalStartsAt: timestamp('original_starts_at'), // for override/cancel: matches generated occurrence
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('edu_sessions_class_starts_idx').on(table.classId, table.startsAt)]
+);
+
+export const classroomPostTypeEnum = [
+  'homework',
+  'test',
+  'recording',
+  'announcement',
+  'document',
+] as const;
+export type ClassroomPostType = (typeof classroomPostTypeEnum)[number];
+
+export const classroomPosts = pgTable(
+  'classroom_posts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    authorUserId: integer('author_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    title: text('title'),
+    body: text('body'),
+    fileUrl: text('file_url'),
+    linkUrl: text('link_url'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('classroom_posts_class_created_idx').on(table.classId, table.createdAt),
+  ]
+);
+
 export const teamsRelations = relations(teams, ({ many }) => ({
   teamMembers: many(teamMembers),
   activityLogs: many(activityLogs),
@@ -187,6 +339,53 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+export const eduClassesRelations = relations(eduClasses, ({ many }) => ({
+  classTeachers: many(eduClassTeachers),
+  enrollments: many(eduEnrollments),
+  sessions: many(eduSessions),
+  classroomPosts: many(classroomPosts),
+}));
+
+export const eduClassTeachersRelations = relations(eduClassTeachers, ({ one }) => ({
+  class: one(eduClasses, {
+    fields: [eduClassTeachers.classId],
+    references: [eduClasses.id],
+  }),
+  teacher: one(users, {
+    fields: [eduClassTeachers.teacherUserId],
+    references: [users.id],
+  }),
+}));
+
+export const eduEnrollmentsRelations = relations(eduEnrollments, ({ one }) => ({
+  class: one(eduClasses, {
+    fields: [eduEnrollments.classId],
+    references: [eduClasses.id],
+  }),
+  student: one(users, {
+    fields: [eduEnrollments.studentUserId],
+    references: [users.id],
+  }),
+}));
+
+export const eduSessionsRelations = relations(eduSessions, ({ one }) => ({
+  class: one(eduClasses, {
+    fields: [eduSessions.classId],
+    references: [eduClasses.id],
+  }),
+}));
+
+export const classroomPostsRelations = relations(classroomPosts, ({ one }) => ({
+  class: one(eduClasses, {
+    fields: [classroomPosts.classId],
+    references: [eduClasses.id],
+  }),
+  author: one(users, {
+    fields: [classroomPosts.authorUserId],
+    references: [users.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Team = typeof teams.$inferSelect;
@@ -205,6 +404,16 @@ export type Enrollment = typeof enrollments.$inferSelect;
 export type NewEnrollment = typeof enrollments.$inferInsert;
 export type Assignment = typeof assignments.$inferSelect;
 export type NewAssignment = typeof assignments.$inferInsert;
+export type EduClass = typeof eduClasses.$inferSelect;
+export type NewEduClass = typeof eduClasses.$inferInsert;
+export type EduClassTeacher = typeof eduClassTeachers.$inferSelect;
+export type NewEduClassTeacher = typeof eduClassTeachers.$inferInsert;
+export type EduEnrollment = typeof eduEnrollments.$inferSelect;
+export type NewEduEnrollment = typeof eduEnrollments.$inferInsert;
+export type EduSession = typeof eduSessions.$inferSelect;
+export type NewEduSession = typeof eduSessions.$inferInsert;
+export type ClassroomPost = typeof classroomPosts.$inferSelect;
+export type NewClassroomPost = typeof classroomPosts.$inferInsert;
 
 export const USER_ROLES = ['admin', 'teacher', 'parent', 'student'] as const;
 export type TeamDataWithMembers = Team & {

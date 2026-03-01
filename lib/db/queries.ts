@@ -128,3 +128,17 @@ export async function getTeamForUser() {
 
   return result?.team || null;
 }
+
+export async function updateUserTimezone(userId: number, timezone: string) {
+  await db
+    .update(users)
+    .set({ timezone, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function updateUserName(userId: number, name: string | null) {
+  await db
+    .update(users)
+    .set({ name: name?.trim() || null, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
