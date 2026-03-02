@@ -16,18 +16,20 @@ export default async function TeacherSchedulePage() {
   const viewerTimezone = user.timezone ?? 'UTC';
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
+    <section className="flex h-full flex-col gap-4">
       {user.timezone === null && <SetTimezoneOnMount />}
-      <div className="mx-auto w-full max-w-3xl">
-        <h1 className="text-lg lg:text-2xl font-medium mb-6 flex items-center gap-2">
-          <CalendarDays className="h-6 w-6" />
-          Schedule
-        </h1>
-        <ScheduleView
-          classes={classes}
-          nextOccurrences={nextOccurrences}
-          viewerTimezone={viewerTimezone}
-        />
+      <div className="flex items-center gap-2 shrink-0">
+        <CalendarDays className="h-6 w-6" />
+        <h1 className="text-lg lg:text-2xl font-medium">Schedule</h1>
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+        <div className="mx-auto w-full max-w-3xl">
+          <ScheduleView
+            classes={classes}
+            nextOccurrences={nextOccurrences}
+            viewerTimezone={viewerTimezone}
+          />
+        </div>
       </div>
     </section>
   );

@@ -5,28 +5,27 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive rounded-full",
   {
     variants: {
       variant: {
         default:
-          "rounded-md bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+          "bg-[#7daf41] text-white hover:bg-[#6b9a39] hover:shadow-md",
         primary:
-          "min-h-[48px] px-[26px] py-3.5 rounded-[45px] border-[3px] border-[#7daf41] font-[550] text-[1.2em] transition-all duration-300 bg-[#7daf41] text-white hover:bg-white hover:text-[#7daf41] hover:text-[1.3em]",
+          "bg-[#7daf41] text-white hover:bg-transparent hover:border-[#7daf41] hover:text-[#7daf41]",
         secondary:
-          "min-h-[48px] px-[26px] py-3.5 rounded-[45px] border-[3px] border-[#7daf41] font-[550] text-[1.2em] transition-all duration-300 bg-white text-[#7daf41] hover:bg-[#7daf41] hover:text-white hover:text-[1.3em]",
-        gecko: "btn-cta",
-        "gecko-secondary":
-          "rounded-full border-2 border-[#7daf41] bg-transparent text-[#7daf41] hover:bg-[#7daf41]/5",
+          "bg-[#429ead] text-white hover:bg-[#388694] hover:shadow-md",
+        highlight:
+          "bg-[#ffaa00] text-[#1f2937] hover:bg-[#e09a00] hover:shadow-md",
         destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-[#b64b29] text-white hover:bg-[#9a3f23] hover:shadow-md",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "bg-muted text-muted-foreground border border-muted hover:bg-muted/80",
         muted:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "bg-muted text-muted-foreground border-muted hover:bg-muted/80",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline"
+          "bg-transparent border border-transparent hover:bg-muted hover:text-foreground",
+        link: "text-[#7daf41] underline-offset-4 hover:underline bg-transparent border border-transparent"
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

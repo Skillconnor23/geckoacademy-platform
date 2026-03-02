@@ -1,15 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Users,
   Settings,
   Shield,
   Activity,
-  Menu,
   GraduationCap,
   UserCog,
   Building2,
@@ -18,8 +18,10 @@ import {
   CalendarDays,
   User,
   MessageSquare,
+  X,
 } from 'lucide-react';
 import type { PlatformRole } from '@/lib/db/schema';
+import { useNavDrawer } from '@/app/(dashboard)/layout';
 
 type NavItem = { href: string; icon: React.ElementType; label: string };
 
@@ -118,16 +120,42 @@ type DashboardSidebarProps = {
   platformRole: PlatformRole;
   studentPrimaryClassId?: string | null;
   unreadMessageCount?: number;
+  userName?: string | null;
+  userEmail?: string | null;
 };
+
+function userInitials(name: string | null, email: string): string {
+  if (name?.trim()) {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase();
+    return `${parts[0]!.charAt(0)}${parts[parts.length - 1]!.charAt(0)}`.toUpperCase();
+  }
+  return email.slice(0, 2).toUpperCase();
+}
 
 export function DashboardSidebar({
   children,
   platformRole,
   studentPrimaryClassId,
   unreadMessageCount = 0,
+  userName,
+  userEmail,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { navOpen, setNavOpen } = useNavDrawer();
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setNavOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [navOpen, setNavOpen]);
 
   function resolveItemHref(item: NavItem): string {
     if (item.href === '__PRIMARY_CLASS__') {
@@ -144,77 +172,127 @@ export function DashboardSidebar({
   }
 
   const groups = navGroups[platformRole] ?? navGroups.student;
+  const isMessages = pathname === '/dashboard/messages';
+  const isSchedulePage =
+    pathname.startsWith('/dashboard/') && pathname.includes('/schedule');
+
+  function handleNavigate() {
+    setNavOpen(false);
+  }
+
+  const navContent = (
+    <>
+      <div className="flex-1 space-y-6 overflow-y-auto">
+        {groups.map((group) => (
+          <div key={group.label}>
+            <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-white/60">
+              {group.label}
+            </h3>
+            <div className="space-y-1">
+              {group.items.map((item) => {
+                const href = resolveItemHref(item);
+                const isActive = pathname === href;
+                const showMessageBadge =
+                  item.href === '/dashboard/messages' && unreadMessageCount > 0;
+                return (
+                  <Link
+                    key={`${group.label}-${item.href}`}
+                    href={href}
+                    onClick={handleNavigate}
+                  >
+                    <div
+                      className={`flex w-full items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 ${
+                        isActive ? 'bg-white/15 font-semibold' : ''
+                      }`}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      {item.label}
+                      {showMessageBadge && (
+                        <span
+                          className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#b64b29] px-1.5 text-[10px] font-medium text-white"
+                          aria-hidden
+                        >
+                          {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      {(userName || userEmail) && (
+        <Link
+          href="/dashboard/profile"
+          className="mt-auto block border-t border-white/20 pt-4 group"
+        >
+          <div className="flex items-center gap-3 rounded-full group-hover:bg-white/10 cursor-pointer">
+            <Avatar className="h-9 w-9 shrink-0 border-2 border-white/30">
+              <AvatarImage alt={userName ?? ''} />
+              <AvatarFallback className="bg-white/20 text-sm font-medium text-white">
+                {userInitials(userName, userEmail ?? '')}
+              </AvatarFallback>
+            </Avatar>
+            <span className="truncate text-sm font-medium text-white">
+              {userName?.trim() || userEmail}
+            </span>
+          </div>
+        </Link>
+      )}
+    </>
+  );
 
   return (
-    <div className="flex flex-col min-h-[calc(100dvh-68px)] max-w-7xl mx-auto w-full">
-      {/* Mobile header */}
-      <div className="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 p-4">
-        <div className="flex items-center">
-          <span className="font-medium">Settings</span>
-        </div>
-        <Button
-          className="-mr-3"
-          variant="ghost"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        >
-          <Menu className="h-6 w-6" />
-          <span className="sr-only">Toggle sidebar</span>
-        </Button>
-      </div>
+    <div className="flex h-full w-full min-w-0 overflow-hidden">
+      {/* Mobile: overlay + off-canvas drawer */}
+      {navOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setNavOpen(false)}
+          aria-hidden
+        />
+      )}
 
-      <div className="flex flex-1 overflow-hidden h-full">
-        {/* Sidebar */}
-        <aside
-          className={`w-64 bg-white lg:bg-gray-50 border-r border-gray-200 lg:block ${
-            isSidebarOpen ? 'block' : 'hidden'
-          } lg:relative absolute inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-        >
-          <nav className="h-full overflow-y-auto p-4 space-y-6">
-            {groups.map((group) => (
-              <div key={group.label}>
-                <h3 className="px-3 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {group.label}
-                </h3>
-                <div className="space-y-1">
-                  {group.items.map((item) => {
-                    const href = resolveItemHref(item);
-                    const isActive = pathname === href;
-                    const showMessageBadge =
-                      item.href === '/dashboard/messages' && unreadMessageCount > 0;
-                    return (
-                      <Link key={`${group.label}-${item.href}`} href={href}>
-                        <Button
-                          variant={isActive ? 'muted' : 'ghost'}
-                          className={`shadow-none w-full justify-start ${
-                            isActive ? 'bg-gray-100' : ''
-                          }`}
-                          onClick={() => setIsSidebarOpen(false)}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          {item.label}
-                          {showMessageBadge && (
-                            <span
-                              className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-medium text-destructive-foreground"
-                              aria-hidden
-                            >
-                              {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
-                            </span>
-                          )}
-                        </Button>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+      {/* Sidebar / drawer */}
+      <aside
+        className={`fixed top-0 left-0 z-50 h-dvh w-[85vw] max-w-[320px] transform bg-[#7daf41] transition-transform duration-200 ease-out md:relative md:left-auto md:top-auto md:z-auto md:h-full md:w-[260px] md:translate-x-0 md:transform-none ${
+          navOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
+        <div className="flex h-full flex-col p-5">
+          {/* Drawer header: X button (mobile only) */}
+          <div className="mb-4 flex shrink-0 items-center justify-between md:hidden">
+            <span className="font-medium text-white">Menu</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-mr-2 rounded-full text-white hover:bg-white/10"
+              onClick={() => setNavOpen(false)}
+              aria-label="Close menu"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            {navContent}
           </nav>
-        </aside>
+        </div>
+      </aside>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-0 lg:p-4">{children}</main>
-      </div>
+      {/* Main content: column that owns its own scrolling */}
+      <main className="min-w-0 flex-1 h-full overflow-hidden">
+        {isMessages || isSchedulePage ? (
+          <div className="flex h-full w-full flex-col overflow-hidden">
+            {children}
+          </div>
+        ) : (
+          <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-y-auto px-6 py-8 lg:px-8">
+            {children}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

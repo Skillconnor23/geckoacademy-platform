@@ -111,7 +111,7 @@ export function ScheduleView({ classes, nextOccurrences, viewerTimezone }: Props
               return (
                 <div
                   key={c.id}
-                  className="flex flex-wrap items-start justify-between gap-3 rounded-lg border bg-muted/20 p-4"
+                  className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
                 >
                   <div>
                     <div className="flex items-center gap-2 mb-1">

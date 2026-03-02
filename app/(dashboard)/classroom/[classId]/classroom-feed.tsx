@@ -13,6 +13,14 @@ const TYPE_LABELS: Record<string, string> = {
   document: 'Document',
 };
 
+const TYPE_BORDER_COLORS: Record<ClassroomPostType, string> = {
+  homework: '#ffaa00',
+  recording: '#429ead',
+  announcement: '#7daf41',
+  test: '#e2e8f0',
+  document: '#e2e8f0',
+};
+
 const POST_TYPES: ClassroomPostType[] = [
   'recording',
   'homework',
@@ -34,11 +42,9 @@ export function ClassroomFeed({
   initialPosts: Post[];
   canPost: boolean;
 }) {
-  const showThumbs = true;
-
   if (initialPosts.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-6 text-center">
+      <p className="text-sm text-muted-foreground py-8 text-center leading-relaxed">
         No posts yet.{canPost ? ' Add materials or a recording link above.' : ''}
       </p>
     );
@@ -48,71 +54,65 @@ export function ClassroomFeed({
     <ul className="space-y-4">
       {initialPosts.map((post) => {
         const postType = isClassroomPostType(post.type) ? post.type : 'document';
-        const content = (
-          <>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium capitalize">
-                {TYPE_LABELS[post.type] ?? post.type}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {new Date(post.createdAt).toLocaleString()}
-              </span>
-            </div>
-            {(post.title || post.body) && (
-              <div>
-                {post.title && (
-                  <p className="font-medium text-sm">{post.title}</p>
-                )}
-                {post.body && (
-                  <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                    {post.body}
-                  </p>
-                )}
-              </div>
-            )}
-            <div className="flex gap-2 pt-1">
-              {post.fileUrl && (
-                <Button variant="outline" size="sm" asChild>
-                  <a
-                    href={post.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    Download
-                  </a>
-                </Button>
-              )}
-              {post.linkUrl && (
-                <Button variant="outline" size="sm" asChild>
-                  <a
-                    href={post.linkUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Open
-                  </a>
-                </Button>
-              )}
-            </div>
-          </>
-        );
+        const pillColor = TYPE_BORDER_COLORS[postType];
+        const primaryAction = post.linkUrl
+          ? { href: post.linkUrl, label: 'Open', Icon: ExternalLink }
+          : post.fileUrl
+            ? { href: post.fileUrl, label: 'Download', Icon: Download }
+            : null;
 
         return (
           <li
             key={post.id}
-            className="border rounded-lg p-4 bg-muted/30 space-y-2"
+            className="flex items-center gap-5 rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
           >
-            {showThumbs ? (
-              <div className="flex gap-4">
-                <PostThumb type={postType} size="md" />
-                <div className="min-w-0 flex-1 space-y-2">{content}</div>
+            {/* Left: icon */}
+            <PostThumb type={postType} size="md" />
+
+            {/* Middle: content */}
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize"
+                  style={{
+                    backgroundColor: pillColor === '#e2e8f0' ? '#f1f5f9' : `${pillColor}20`,
+                    color: pillColor === '#e2e8f0' ? '#64748b' : pillColor,
+                  }}
+                >
+                  {TYPE_LABELS[post.type] ?? post.type}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(post.createdAt).toLocaleString()}
+                </span>
               </div>
-            ) : (
-              content
+              {post.title && (
+                <p className="font-medium text-sm text-[#1f2937]">{post.title}</p>
+              )}
+              {post.body && (
+                <p className="line-clamp-2 text-sm text-muted-foreground">
+                  {post.body}
+                </p>
+              )}
+            </div>
+
+            {/* Right: primary action */}
+            {primaryAction && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="shrink-0 rounded-full"
+                asChild
+              >
+                <a
+                  href={primaryAction.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5"
+                >
+                  <primaryAction.Icon className="h-3.5 w-3.5" />
+                  {primaryAction.label}
+                </a>
+              </Button>
             )}
           </li>
         );

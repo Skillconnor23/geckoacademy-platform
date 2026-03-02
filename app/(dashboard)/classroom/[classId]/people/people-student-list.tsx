@@ -80,7 +80,7 @@ export function PeopleStudentList({
       {students.map((r) => (
         <li
           key={r.studentId}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
         >
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
@@ -111,9 +111,9 @@ export function PeopleStudentList({
               <span
                 className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${
                   r.enrollment.status === 'active'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                    ? 'bg-[#7daf41]/10 text-[#7daf41]'
                     : r.enrollment.status === 'paused'
-                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                      ? 'bg-[#ffaa00]/15 text-[#b8860b]'
                       : 'bg-muted text-muted-foreground'
                 }`}
               >

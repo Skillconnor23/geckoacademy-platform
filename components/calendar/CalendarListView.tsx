@@ -70,7 +70,7 @@ export function CalendarListView({
               {items.map((o) => (
                 <li
                   key={`${o.classId}-${o.startsAt.toISOString()}`}
-                  className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/20 p-3"
+                  className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
                 >
                   <span className="text-sm font-medium tabular-nums">
                     {formatTime(o.startsAt, tz)}

@@ -17,15 +17,32 @@ export default async function ClassroomPage({ params }: Props) {
   const canPost = await canPostToClassroom(user, classId);
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
-      <div className="mx-auto w-full max-w-6xl px-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/dashboard" className="flex items-center gap-1 text-muted-foreground">
-              <ArrowLeft className="h-4 w-4" />
-              Back to dashboard
-            </Link>
-          </Button>
+    <section className="flex-1 p-6 lg:p-10">
+      <div className="mx-auto w-full max-w-6xl">
+        <Button variant="ghost" size="sm" asChild className="mb-6">
+          <Link href="/dashboard" className="flex items-center gap-1 text-muted-foreground">
+            <ArrowLeft className="h-4 w-4" />
+            Back to dashboard
+          </Link>
+        </Button>
+
+        {/* Header row: class name + level pill + timezone | People */}
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                {eduClass.name}
+              </h2>
+              {(eduClass.geckoLevel ?? eduClass.level) && (
+                <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  {eduClass.geckoLevel ?? eduClass.level}
+                </span>
+              )}
+            </div>
+            {eduClass.timezone && (
+              <p className="mt-1 text-sm text-muted-foreground">{eduClass.timezone}</p>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
               <Link href={`/classroom/${classId}/people`} className="flex items-center gap-1.5">
@@ -34,7 +51,7 @@ export default async function ClassroomPage({ params }: Props) {
               </Link>
             </Button>
             {canPost && (
-              <Button asChild size="sm">
+              <Button asChild variant="primary" size="sm">
                 <Link href={`/classroom/${classId}/new`} className="flex items-center gap-1.5">
                   <Plus className="h-4 w-4" />
                   New post
@@ -44,24 +61,13 @@ export default async function ClassroomPage({ params }: Props) {
           </div>
         </div>
 
-        <Card className="mb-6">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl">{eduClass.name}</CardTitle>
-          {(eduClass.level || eduClass.timezone) && (
-            <p className="text-sm text-muted-foreground">
-              {[eduClass.level, eduClass.timezone].filter(Boolean).join(' · ')}
-            </p>
-          )}
-        </CardHeader>
-      </Card>
-
         <Card>
-        <CardHeader>
-          <CardTitle>Classroom feed</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Materials, recordings, and announcements from your teacher.
-          </p>
-        </CardHeader>
+          <CardHeader>
+            <CardTitle>Classroom feed</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Materials, recordings, and announcements from your teacher.
+            </p>
+          </CardHeader>
         <CardContent>
           <ClassroomFeed
             classId={classId}

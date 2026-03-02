@@ -20,6 +20,8 @@ export default async function DashboardLayout({
       platformRole={user.platformRole}
       studentPrimaryClassId={studentPrimaryClassId}
       unreadMessageCount={unreadMessageCount}
+      userName={user.name}
+      userEmail={user.email}
     >
       {children}
     </DashboardSidebar>

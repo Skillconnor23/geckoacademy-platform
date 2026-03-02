@@ -25,11 +25,16 @@ export default async function StudentDashboardPage({
   const data = await getStudentDashboardData(user.id);
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
-      <h1 className="text-lg lg:text-2xl font-medium mb-6">Student Dashboard</h1>
+    <section className="flex-1">
+      <h1 className="text-xl lg:text-2xl font-medium text-[#1f2937] mb-2 tracking-tight">
+        Student Dashboard
+      </h1>
+      <p className="text-sm text-muted-foreground mb-8">
+        Your classes and upcoming sessions
+      </p>
 
       {params.joined === '1' && (
-        <div className="mb-6 rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
+        <div className="mb-8 rounded-xl bg-[#7daf41]/10 px-5 py-4 text-sm text-[#1f2937]">
           You joined the class successfully. Your upcoming sessions appear below.
         </div>
       )}
@@ -38,13 +43,12 @@ export default async function StudentDashboardPage({
         <Card>
           <CardHeader>
             <CardTitle>Your class</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Use a class code from your teacher to join, or contact support.
+            </p>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">
-              You&apos;re not enrolled in a class yet. Use a class code from your
-              teacher to join, or contact support.
-            </p>
-            <Button asChild>
+            <Button asChild variant="primary">
               <Link href="/dashboard/student/join">Join with class code</Link>
             </Button>
           </CardContent>
@@ -52,15 +56,15 @@ export default async function StudentDashboardPage({
       ) : (
         <>
           {/* Your Class card */}
-          <Card className="mb-6">
+          <Card className="mb-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
+                <BookOpen className="h-5 w-5 text-[#7daf41]" aria-hidden />
                 Your class
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="font-medium">{data.primaryClass.name}</p>
+            <CardContent className="space-y-3">
+              <p className="font-medium text-[#1f2937]">{data.primaryClass.name}</p>
               {(data.primaryClass.level || data.primaryClass.timezone) && (
                 <p className="text-sm text-muted-foreground">
                   {[data.primaryClass.level, data.primaryClass.timezone]
@@ -68,7 +72,7 @@ export default async function StudentDashboardPage({
                     .join(' · ')}
                 </p>
               )}
-              <Button asChild variant="outline" size="sm" className="mt-2">
+              <Button asChild variant="primary" size="sm" className="mt-2">
                 <Link href={`/classroom/${data.primaryClass.id}`}>Open classroom</Link>
               </Button>
             </CardContent>
@@ -77,16 +81,19 @@ export default async function StudentDashboardPage({
           {/* Next session */}
           {data.nextSessions.length > 0 && (
             <>
-              <Card className="mb-6">
+              <Card className="mb-8">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
+                    <Calendar className="h-5 w-5 text-[#429ead]" aria-hidden />
                     Next session
+                    <span className="ml-1 inline-flex rounded-full bg-[#429ead]/20 px-2.5 py-0.5 text-xs font-medium text-[#429ead]">
+                      Upcoming
+                    </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <p className="font-medium">
+                  <div className="space-y-3">
+                    <p className="font-medium text-[#1f2937]">
                       {data.nextSessions[0].session.title ??
                         data.nextSessions[0].className}
                     </p>
@@ -121,10 +128,13 @@ export default async function StudentDashboardPage({
                 </CardContent>
               </Card>
 
-              {/* Next 5 sessions */}
+              {/* Next 5 sessions — blue family to match Next session */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Upcoming sessions</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-[#429ead]" aria-hidden />
+                    Upcoming sessions
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Table>

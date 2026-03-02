@@ -27,20 +27,23 @@ export default async function TeacherDashboardPage() {
   ]);
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
-      <h1 className="text-lg lg:text-2xl font-medium mb-6">
+    <section className="flex-1">
+      <h1 className="text-xl lg:text-2xl font-medium text-[#1f2937] mb-2 tracking-tight">
         Teacher Dashboard
       </h1>
+      <p className="text-sm text-muted-foreground mb-8">
+        Your classes and upcoming sessions
+      </p>
 
       <TeacherMyClasses classes={classesWithDetails} />
 
-      <Card>
+      <Card className="mb-0">
         <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Next sessions
-        </CardTitle>
-      </CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-[#429ead]" aria-hidden />
+            Next sessions
+          </CardTitle>
+        </CardHeader>
       <CardContent>
               {sessions.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4">
@@ -71,7 +74,7 @@ export default async function TeacherDashboardPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     {session.meetingUrl ? (
-                      <Button variant="default" size="sm" asChild>
+                        <Button variant="secondary" size="sm" asChild>
                         <a
                           href={session.meetingUrl}
                           target="_blank"
@@ -81,7 +84,7 @@ export default async function TeacherDashboardPage() {
                         </a>
                       </Button>
                     ) : (
-                      <Button variant="default" size="sm" disabled>
+                      <Button variant="secondary" size="sm" disabled>
                         Join
                       </Button>
                     )}

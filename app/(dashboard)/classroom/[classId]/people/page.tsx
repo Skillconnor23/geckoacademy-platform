@@ -52,9 +52,9 @@ export default async function PeoplePage({ params }: Props) {
       : enrollmentsRows;
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
-      <div className="mx-auto w-full max-w-4xl px-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <section className="flex-1 p-6 lg:p-10">
+      <div className="mx-auto w-full max-w-4xl">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Button variant="ghost" size="sm" asChild>
             <Link
               href={`/classroom/${classId}`}
@@ -66,13 +66,13 @@ export default async function PeoplePage({ params }: Props) {
           </Button>
         </div>
 
-        <div className="mb-6">
-          <h1 className="text-lg font-medium">People</h1>
-          <p className="text-sm text-muted-foreground">{eduClass.name}</p>
+        <div className="mb-8">
+          <h1 className="text-xl font-medium text-foreground tracking-tight">People</h1>
+          <p className="text-sm text-muted-foreground mt-1">{eduClass.name}</p>
         </div>
 
         {/* Teachers */}
-        <Card className="mb-6">
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Users className="h-4 w-4" />
@@ -87,7 +87,7 @@ export default async function PeoplePage({ params }: Props) {
                 {teachersRows.map((r) => (
                   <li
                     key={r.teacherUserId}
-                    className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">

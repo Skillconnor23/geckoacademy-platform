@@ -15,6 +15,76 @@
       "when": 1772332871858,
       "tag": "0001_omniscient_ezekiel_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772351682644,
+      "tag": "0002_marvelous_callisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772353371812,
+      "tag": "0003_spooky_mysterio",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1772354225477,
+      "tag": "0004_living_santa_claus",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772357203370,
+      "tag": "0005_mute_leader",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1772359893948,
+      "tag": "0006_massive_raider",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1772360787318,
+      "tag": "0007_classy_overlord",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1772391990939,
+      "tag": "0008_charming_argent",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1772396204844,
+      "tag": "0009_shiny_korvac",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1772404095060,
+      "tag": "0010_fair_patch",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1772404508149,
+      "tag": "0011_opposite_frog_thor",
+      "breakpoints": true
     }
   ]
 }
