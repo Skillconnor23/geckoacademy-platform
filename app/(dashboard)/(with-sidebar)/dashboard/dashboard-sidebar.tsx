@@ -125,6 +125,7 @@ type DashboardSidebarProps = {
   unreadMessageCount?: number;
   userName?: string | null;
   userEmail?: string | null;
+  userAvatarUrl?: string | null;
 };
 
 function userInitials(name: string | null, email: string): string {
@@ -143,6 +144,7 @@ export function DashboardSidebar({
   unreadMessageCount = 0,
   userName,
   userEmail,
+  userAvatarUrl,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const { navOpen, setNavOpen } = useNavDrawer();
@@ -237,7 +239,7 @@ export function DashboardSidebar({
         >
           <div className="flex min-h-[48px] items-center gap-3 rounded-full py-2 group-hover:bg-white/10 group-active:bg-white/12 cursor-pointer md:py-0">
             <Avatar className="h-9 w-9 shrink-0 border-2 border-white/30">
-              <AvatarImage alt={userName ?? ''} />
+              {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName ?? ''} />}
               <AvatarFallback className="bg-white/20 text-sm font-medium text-white">
                 {userInitials(userName ?? null, userEmail ?? '')}
               </AvatarFallback>

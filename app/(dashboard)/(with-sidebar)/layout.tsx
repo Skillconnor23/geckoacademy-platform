@@ -22,6 +22,7 @@ export default async function WithSidebarLayout({
       unreadMessageCount={unreadMessageCount}
       userName={user.name}
       userEmail={user.email}
+      userAvatarUrl={user.avatarUrl ?? undefined}
     >
       {children}
     </DashboardSidebar>

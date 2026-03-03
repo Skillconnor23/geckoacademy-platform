@@ -142,3 +142,10 @@ export async function updateUserName(userId: number, name: string | null) {
     .set({ name: name?.trim() || null, updatedAt: new Date() })
     .where(eq(users.id, userId));
 }
+
+export async function updateAvatarUrl(userId: number, avatarUrl: string | null) {
+  await db
+    .update(users)
+    .set({ avatarUrl: avatarUrl?.trim() || null, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}

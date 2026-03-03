@@ -114,6 +114,7 @@ export async function getClassroomSidebarData(
         .select({
           teacherUserId: eduClassTeachers.teacherUserId,
           teacherName: users.name,
+          teacherAvatarUrl: users.avatarUrl,
         })
         .from(eduClassTeachers)
         .innerJoin(users, eq(eduClassTeachers.teacherUserId, users.id))
@@ -141,7 +142,7 @@ export async function getClassroomSidebarData(
     ? {
         id: teacherRow.teacherUserId,
         name: teacherRow.teacherName,
-        avatarUrl: null as string | null,
+        avatarUrl: teacherRow.teacherAvatarUrl ?? null,
         bio: null as string | null,
       }
     : null;

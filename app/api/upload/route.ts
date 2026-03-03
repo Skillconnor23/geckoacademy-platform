@@ -1,5 +1,5 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { r2 } from "@/lib/r2";
+import { getR2, getR2Bucket, getR2PublicBaseUrl } from "@/lib/r2";
 import { getUser } from "@/lib/db/queries";
 
 /** Allowed MIME types: images and PDFs only. */
@@ -50,17 +50,12 @@ export async function POST(req: Request) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const key = `uploads/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const publicUrl = `${process.env.R2_PUBLIC_BASE_URL}/${key}`;
+    const baseUrl = getR2PublicBaseUrl();
+    const publicUrl = `${baseUrl}/${key}`;
+    const bucket = getR2Bucket();
+    const client = getR2();
 
-    const bucket = process.env.R2_BUCKET_NAME;
-    if (!bucket) {
-      return new Response(
-        JSON.stringify({ error: "Storage not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    await r2.send(
+    await client.send(
       new PutObjectCommand({
         Bucket: bucket,
         Key: key,

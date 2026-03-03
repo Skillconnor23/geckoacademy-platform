@@ -28,6 +28,7 @@ export default async function ProfilePage() {
             id: user.id,
             name: user.name,
             email: user.email,
+            avatarUrl: user.avatarUrl ?? undefined,
           }}
           roleLabel={formatRole(user.platformRole)}
         />

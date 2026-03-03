@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getUser } from '@/lib/db/queries';
-import { r2 } from '@/lib/r2';
+import { getR2, getR2Bucket, getR2PublicBaseUrl } from '@/lib/r2';
 import { canPostToClassroom } from '@/lib/auth/classroom';
 import {
   createClassroomPost,
@@ -146,20 +146,14 @@ export async function uploadClassroomFileAction(
     };
   }
 
-  const bucket = process.env.R2_BUCKET_NAME;
-  if (!bucket) {
-    return { success: false, error: 'Storage not configured.' };
-  }
-
   try {
+    const bucket = getR2Bucket();
+    const baseUrl = getR2PublicBaseUrl();
+    const client = getR2();
     const buffer = Buffer.from(await file.arrayBuffer());
     const key = `uploads/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-    const baseUrl = process.env.R2_PUBLIC_BASE_URL;
-    if (!baseUrl) {
-      return { success: false, error: 'R2_PUBLIC_BASE_URL not configured.' };
-    }
 
-    await r2.send(
+    await client.send(
       new PutObjectCommand({
         Bucket: bucket,
         Key: key,
