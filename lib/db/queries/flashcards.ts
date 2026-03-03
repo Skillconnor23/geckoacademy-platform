@@ -4,9 +4,7 @@ import {
   count,
   desc,
   eq,
-  gte,
   inArray,
-  lt,
   or,
   sql,
 } from 'drizzle-orm';
@@ -719,8 +717,8 @@ export async function getStudentLearningOverview(
       .where(
         and(
           eq(eduQuizSubmissions.studentUserId, studentUserId),
-          gte(eduQuizSubmissions.submittedAt, start),
-          lt(eduQuizSubmissions.submittedAt, end)
+          sql`${eduQuizSubmissions.submittedAt} >= ${startIso}`,
+          sql`${eduQuizSubmissions.submittedAt} < ${endIso}`
         )
       )
       .then((rows) => rows[0]),
@@ -765,8 +763,8 @@ export async function getStudentLearningOverview(
         .where(
           and(
             eq(flashcardStudyEvents.studentUserId, studentUserId),
-            gte(flashcardStudyEvents.studiedAt, start),
-            lt(flashcardStudyEvents.studiedAt, end)
+            sql`${flashcardStudyEvents.studiedAt} >= ${startIso}`,
+            sql`${flashcardStudyEvents.studiedAt} < ${endIso}`
           )
         )
         .then((rows) => rows[0]),
