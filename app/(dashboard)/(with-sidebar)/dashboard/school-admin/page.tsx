@@ -22,7 +22,7 @@ export default async function SchoolAdminDashboardPage() {
   ]);
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
+    <section className="flex-1">
       <h1 className="text-xl lg:text-2xl font-medium text-[#1f2937] mb-2 tracking-tight">
         School Admin Dashboard
       </h1>
@@ -30,61 +30,45 @@ export default async function SchoolAdminDashboardPage() {
         How are classes doing right now?
       </p>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Active students
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold text-[#1f2937]">
-              {kpis.activeStudents}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <GraduationCap className="h-4 w-4" />
-              Active classes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold text-[#1f2937]">
-              {kpis.activeClasses}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Avg quiz score (7d / 30d)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold text-[#1f2937]">
-              {kpis.avgQuizScore7d != null ? `${kpis.avgQuizScore7d}%` : '—'}
-              {' / '}
-              {kpis.avgQuizScore30d != null ? `${kpis.avgQuizScore30d}%` : '—'}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <BookOpen className="h-4 w-4" />
-              Completion rate (30d)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold text-[#1f2937]">
-              {kpis.completionRate30d}%
-            </p>
-          </CardContent>
-        </Card>
+      {/* KPI cards - mobile: slim horizontal; desktop: full cards */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 mb-6 sm:mb-8">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground sm:mb-1">
+            <Users className="h-4 w-4 shrink-0" />
+            <span>Active students</span>
+          </div>
+          <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
+            {kpis.activeStudents}
+          </p>
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground sm:mb-1">
+            <GraduationCap className="h-4 w-4 shrink-0" />
+            <span>Active classes</span>
+          </div>
+          <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
+            {kpis.activeClasses}
+          </p>
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
+          <div className="text-sm font-medium text-muted-foreground sm:mb-1">
+            Avg quiz score (7d / 30d)
+          </div>
+          <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
+            {kpis.avgQuizScore7d != null ? `${kpis.avgQuizScore7d}%` : '—'}
+            {' / '}
+            {kpis.avgQuizScore30d != null ? `${kpis.avgQuizScore30d}%` : '—'}
+          </p>
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground sm:mb-1">
+            <BookOpen className="h-4 w-4 shrink-0" />
+            <span>Completion rate (30d)</span>
+          </div>
+          <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
+            {kpis.completionRate30d}%
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

@@ -111,7 +111,7 @@ function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden -ml-2 shrink-0 rounded-full text-[#1f2937] hover:bg-[#f3f4f6]"
+              className="md:hidden -ml-2 h-12 min-h-[48px] w-12 min-w-[48px] shrink-0 rounded-full text-[#1f2937] hover:bg-[#f3f4f6] active:bg-[#e5e7eb]"
               onClick={() => setNavOpen(true)}
               aria-label="Open menu"
             >
@@ -119,17 +119,19 @@ function Header() {
             </Button>
           )}
           <Link href="/" className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full">
-            <Image
-              src="/gecko-logo.svg"
-              alt=""
-              width={36}
-              height={36}
-              className="h-full w-full object-cover"
-            />
-          </div>
-          <span className="text-xl font-semibold leading-none text-[#3d4236]">Gecko Academy</span>
-        </Link>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
+              <Image
+                src="/gecko-logo.svg"
+                alt=""
+                width={80}
+                height={80}
+                sizes="40px"
+                className="h-10 w-10 object-contain"
+                unoptimized
+              />
+            </div>
+            <span className="text-lg font-semibold leading-none text-[#3d4236] sm:text-xl">Gecko Academy</span>
+          </Link>
         </div>
         <div className="ml-auto flex items-center gap-2 shrink-0">
           <NotificationsBell />

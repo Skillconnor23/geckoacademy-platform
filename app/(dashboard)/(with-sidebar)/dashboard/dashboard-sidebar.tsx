@@ -188,7 +188,7 @@ export function DashboardSidebar({
       <div className="flex-1 space-y-6 overflow-y-auto">
               {groups.map((group) => (
             <div key={group.label}>
-              <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-white/60">
+              <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-white/70 md:text-white/60">
                 {group.label}
               </h3>
             <div className="space-y-1">
@@ -205,17 +205,18 @@ export function DashboardSidebar({
                     key={`${group.label}-${item.href}`}
                     href={href}
                     onClick={handleNavigate}
+                    className="block min-h-[48px] active:opacity-90"
                   >
                     <div
-                      className={`flex w-full items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 ${
-                        isActive ? 'bg-white/15 font-semibold' : ''
+                      className={`flex h-12 min-h-[48px] w-full items-center gap-3 rounded-full px-4 py-3 text-base font-medium text-white transition-colors hover:bg-white/12 active:bg-white/14 md:text-sm md:gap-2 md:px-3 md:py-2 ${
+                        isActive ? 'bg-white/25 font-semibold shadow-sm md:bg-white/15' : ''
                       }`}
                     >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {item.label}
+                      <item.icon className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
+                      <span className="flex-1 text-left">{item.label}</span>
                       {showMessageBadge && (
                         <span
-                          className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#b64b29] px-1.5 text-[10px] font-medium text-white"
+                          className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#b64b29] px-1.5 text-[10px] font-medium text-white"
                           aria-hidden
                         >
                           {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
@@ -232,16 +233,16 @@ export function DashboardSidebar({
       {(userName || userEmail) && (
         <Link
           href="/dashboard/profile"
-          className="mt-auto block border-t border-white/20 pt-4 group"
+          className="mt-auto block min-h-[48px] border-t border-white/20 pt-4 group"
         >
-          <div className="flex items-center gap-3 rounded-full group-hover:bg-white/10 cursor-pointer">
+          <div className="flex min-h-[48px] items-center gap-3 rounded-full py-2 group-hover:bg-white/10 group-active:bg-white/12 cursor-pointer md:py-0">
             <Avatar className="h-9 w-9 shrink-0 border-2 border-white/30">
               <AvatarImage alt={userName ?? ''} />
               <AvatarFallback className="bg-white/20 text-sm font-medium text-white">
                 {userInitials(userName ?? null, userEmail ?? '')}
               </AvatarFallback>
             </Avatar>
-            <span className="truncate text-sm font-medium text-white">
+            <span className="truncate text-base font-medium text-white md:text-sm">
               {userName?.trim() || userEmail}
             </span>
           </div>
@@ -267,18 +268,18 @@ export function DashboardSidebar({
           navOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
-        <div className="flex h-full flex-col p-5">
+        <div className="flex h-full flex-col p-4 sm:p-5">
           {/* Drawer header: X button (mobile only) */}
-          <div className="mb-4 flex shrink-0 items-center justify-between md:hidden">
-            <span className="font-medium text-white">Menu</span>
+          <div className="mb-4 flex min-h-[48px] shrink-0 items-center justify-between md:hidden">
+            <span className="text-base font-medium text-white">Menu</span>
             <Button
               variant="ghost"
               size="icon"
-              className="-mr-2 rounded-full text-white hover:bg-white/10"
+              className="-mr-2 h-12 min-h-[48px] w-12 min-w-[48px] rounded-full text-white hover:bg-white/10 active:bg-white/14"
               onClick={() => setNavOpen(false)}
               aria-label="Close menu"
             >
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" />
             </Button>
           </div>
           <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -294,7 +295,7 @@ export function DashboardSidebar({
             {children}
           </div>
         ) : (
-          <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-y-auto px-6 py-8 lg:px-8">
+          <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-y-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
             {children}
           </div>
         )}

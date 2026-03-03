@@ -40,7 +40,7 @@ export default async function LearningPage() {
     quizzes.length > 0 ? Math.round((completedCount / quizzes.length) * 100) : 0;
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
+    <section className="flex-1">
       <h1 className="text-xl lg:text-2xl font-medium text-[#1f2937] mb-2 tracking-tight">
         Learning
       </h1>
@@ -98,25 +98,29 @@ export default async function LearningPage() {
             </CardContent>
           </Card>
 
-          {/* Performance summary row */}
-          <div className="flex flex-wrap gap-8 mb-6 rounded-xl border border-[#e5e7eb] bg-white px-5 py-3">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-[#9ca3af]" />
-              <span className="text-xs text-[#9ca3af]">Avg score (30d)</span>
+          {/* Performance summary row - mobile: stacked horizontal rows; desktop: inline */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-8 mb-6 rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 sm:px-5">
+            <div className="flex items-center justify-between gap-3 sm:justify-start sm:gap-2">
+              <span className="flex items-center gap-2 text-xs text-[#9ca3af]">
+                <TrendingUp className="h-4 w-4 shrink-0" />
+                Avg score (30d)
+              </span>
               <span className="text-sm font-bold text-[#1f2937]">
                 {stats.avgScore30d != null ? `${stats.avgScore30d}%` : '—'}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-[#9ca3af]" />
-              <span className="text-xs text-[#9ca3af]">Last quiz</span>
+            <div className="flex items-center justify-between gap-3 sm:justify-start sm:gap-2">
+              <span className="flex items-center gap-2 text-xs text-[#9ca3af]">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                Last quiz
+              </span>
               <span className="text-sm font-bold text-[#1f2937]">
                 {assessments.lastQuiz != null
                   ? `${assessments.lastQuiz.score}%`
                   : '—'}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-3 sm:justify-start sm:gap-2">
               <span className="text-xs text-[#9ca3af]">Completion</span>
               <span className="text-sm font-bold text-[#1f2937]">
                 {completionRate}%

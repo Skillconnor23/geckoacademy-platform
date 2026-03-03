@@ -93,21 +93,21 @@ export default async function TeacherDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* 3. Class Health strip */}
-      <div className="flex flex-wrap gap-6 mb-8 rounded-xl border border-[#e5e7eb] bg-white px-6 py-4">
-        <div>
+      {/* 3. Class Health strip - mobile: slim horizontal; desktop: full strip */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-6 mb-6 sm:mb-8 rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 sm:px-6 sm:py-4">
+        <div className="flex items-center justify-between gap-3 sm:block">
           <span className="text-xs text-muted-foreground">Avg quiz score (30d)</span>
-          <p className="text-lg font-semibold text-[#1f2937]">
+          <p className="text-lg font-semibold text-[#1f2937] sm:mt-0.5">
             {kpis.avgQuizScore30d != null ? `${kpis.avgQuizScore30d}%` : '—'}
           </p>
         </div>
-        <div>
+        <div className="flex items-center justify-between gap-3 sm:block">
           <span className="text-xs text-muted-foreground">Attempt rate (30d)</span>
-          <p className="text-lg font-semibold text-[#1f2937]">{kpis.attemptRate30d}%</p>
+          <p className="text-lg font-semibold text-[#1f2937] sm:mt-0.5">{kpis.attemptRate30d}%</p>
         </div>
-        <div>
+        <div className="flex items-center justify-between gap-3 sm:block">
           <span className="text-xs text-muted-foreground">Inactive students</span>
-          <p className="text-lg font-semibold text-[#1f2937]">{kpis.inactiveStudents}</p>
+          <p className="text-lg font-semibold text-[#1f2937] sm:mt-0.5">{kpis.inactiveStudents}</p>
         </div>
       </div>
 

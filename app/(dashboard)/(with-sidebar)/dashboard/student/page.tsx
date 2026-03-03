@@ -124,7 +124,7 @@ export default async function StudentDashboardPage({
   const attendanceRate30d = Math.round((stats.activeDays30d / 30) * 100);
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
+    <section className="flex-1">
       <h1 className="text-xl lg:text-2xl font-medium text-[#1f2937] mb-2 tracking-tight">
         {user.name ? `Welcome back, ${firstName}` : 'Welcome back'}
       </h1>
@@ -154,32 +154,32 @@ export default async function StudentDashboardPage({
         </Card>
       ) : (
         <>
-          {/* 1. Top Stats Row */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8">
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-                <TrendingUp className="h-4 w-4" />
-                Avg score (30d)
+          {/* 1. Top Stats Row - mobile: slim horizontal cards; desktop: full cards */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
+              <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground sm:mb-1">
+                <TrendingUp className="h-4 w-4 shrink-0 sm:h-4" />
+                <span>Avg score (30d)</span>
               </div>
-              <p className="text-2xl font-semibold text-[#1f2937]">
+              <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
                 {stats.avgScore30d != null ? `${stats.avgScore30d}%` : '—'}
               </p>
             </div>
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-                <Calendar className="h-4 w-4" />
-                Attendance rate (30d)
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
+              <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground sm:mb-1">
+                <Calendar className="h-4 w-4 shrink-0 sm:h-4" />
+                <span>Attendance rate (30d)</span>
               </div>
-              <p className="text-2xl font-semibold text-[#1f2937]">
+              <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
                 {attendanceRate30d}%
               </p>
             </div>
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-                <CheckCircle2 className="h-4 w-4" />
-                Quizzes completed
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
+              <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground sm:mb-1">
+                <CheckCircle2 className="h-4 w-4 shrink-0 sm:h-4" />
+                <span>Quizzes completed</span>
               </div>
-              <p className="text-2xl font-semibold text-[#1f2937]">
+              <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
                 {stats.quizzesCompleted}
               </p>
             </div>
