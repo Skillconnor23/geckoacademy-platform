@@ -27,8 +27,8 @@ export default async function ClassroomPage({ params }: Props) {
   return (
     <section className="flex flex-col p-6 lg:p-10 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col lg:min-h-0">
-        {/* Sticky header - Back link + class title + People (frozen at top on desktop) */}
-        <div className="sticky top-0 z-30 -mx-6 shrink-0 border-b border-[#e5e7eb] bg-white px-6 pb-4 lg:-mx-10 lg:px-10">
+        {/* Header - Back link + class title + People (no sticky to avoid ghost overlay) */}
+        <div className="shrink-0 border-b border-[#e5e7eb] bg-white pb-4">
           <Button variant="ghost" size="sm" asChild className="-ml-2 mb-4">
             <Link href="/dashboard" className="flex items-center gap-1 text-muted-foreground">
               <ArrowLeft className="h-4 w-4" />
@@ -91,7 +91,7 @@ export default async function ClassroomPage({ params }: Props) {
           </div>
 
           {/* Right sidebar - sticky on desktop */}
-          <div className="space-y-6 lg:col-span-4 lg:sticky lg:top-24 lg:self-start">
+          <div className="space-y-6 lg:col-span-4 lg:sticky lg:top-0 lg:self-start">
             <ClassScoreCard
               classAverage30d={sidebar.classAverage30d}
               attemptRate30d={sidebar.attemptRate30d}

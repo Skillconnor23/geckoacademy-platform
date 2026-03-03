@@ -35,13 +35,15 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
         {/* Brand lockup */}
         <div className="flex flex-col items-center text-center">
           <div className="flex items-center justify-center gap-2">
-            <div className="h-9 w-9 overflow-hidden rounded-full border border-[#e5e7eb] bg-white">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e5e7eb] bg-white">
               <Image
                 src="/gecko-logo.svg"
                 alt="Gecko Academy"
-                width={36}
-                height={36}
-                className="h-full w-full object-cover"
+                width={120}
+                height={120}
+                sizes="40px"
+                className="h-10 w-10 object-contain"
+                unoptimized
               />
             </div>
             <span className="text-base font-semibold text-[#1f2937]">
@@ -115,7 +117,6 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
           )}
 
           <div className="space-y-3">
-            {/* Primary action */}
             <Button
               type="submit"
               disabled={pending}
@@ -133,17 +134,29 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
               )}
             </Button>
 
-            {/* Secondary action */}
-            <Link
-              href={`${mode === 'signin' ? '/sign-up' : '/sign-in'}${
-                redirect ? `?redirect=${redirect}` : ''
-              }${priceId ? `&priceId=${priceId}` : ''}`}
-              className="inline-flex w-full items-center justify-center rounded-full border-2 border-transparent bg-[#429ead] px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:border-[#429ead] hover:bg-[#388694] hover:shadow-md"
-            >
-              {mode === 'signin'
-                ? 'Create a Gecko Academy account'
-                : 'Sign in to existing account'}
-            </Link>
+            <p className="text-center text-sm text-muted-foreground">
+              {mode === 'signin' ? (
+                <>
+                  Don&apos;t have an account?{' '}
+                  <Link
+                    href={`/sign-up${redirect ? `?redirect=${redirect}` : ''}${priceId ? `&priceId=${priceId}` : ''}`}
+                    className="font-medium text-[#429ead] hover:underline"
+                  >
+                    Sign up here
+                  </Link>
+                </>
+              ) : (
+                <>
+                  Already have an account?{' '}
+                  <Link
+                    href={`/sign-in${redirect ? `?redirect=${redirect}` : ''}${priceId ? `&priceId=${priceId}` : ''}`}
+                    className="font-medium text-[#429ead] hover:underline"
+                  >
+                    Sign in here
+                  </Link>
+                </>
+              )}
+            </p>
           </div>
         </form>
       </div>

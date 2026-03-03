@@ -52,13 +52,19 @@ function UserMenu() {
     return (
       <>
         <Link
+          href="/sign-in"
+          className="text-sm font-medium text-[#5a5f57] hover:text-[#3d4236]"
+        >
+          Log in
+        </Link>
+        <Link
           href="/pricing"
           className="text-sm font-medium text-[#5a5f57] hover:text-[#3d4236]"
         >
           Pricing
         </Link>
         <Button asChild>
-          <Link href="/sign-up">Sign Up</Link>
+          <Link href="/sign-up">Sign up</Link>
         </Button>
       </>
     );
@@ -123,11 +129,12 @@ function Header() {
               <Image
                 src="/gecko-logo.svg"
                 alt=""
-                width={80}
-                height={80}
-                sizes="40px"
+                width={120}
+                height={120}
+                sizes="(max-width: 768px) 40px, 40px"
                 className="h-10 w-10 object-contain"
                 unoptimized
+                priority
               />
             </div>
             <span className="text-lg font-semibold leading-none text-[#3d4236] sm:text-xl">Gecko Academy</span>
