@@ -169,37 +169,35 @@ function Flashcard({
         )}
       </div>
 
-      {revealed && (
-        <div className="flex justify-center gap-8 mt-8">
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAnswer(false);
-            }}
-            className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition hover:scale-110 disabled:opacity-60"
-            style={{ backgroundColor: '#b64b29' }}
-            aria-label="Wrong"
-          >
-            <X className="w-7 h-7 text-white" />
-          </button>
+      <div className="flex justify-center gap-8 mt-8">
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAnswer(false);
+          }}
+          className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition hover:scale-110 disabled:opacity-60"
+          style={{ backgroundColor: '#b64b29' }}
+          aria-label="Wrong"
+        >
+          <X className="w-7 h-7 text-white" />
+        </button>
 
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAnswer(true);
-            }}
-            className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition hover:scale-110 disabled:opacity-60"
-            style={{ backgroundColor: '#7daf41' }}
-            aria-label="Correct"
-          >
-            <Check className="w-7 h-7 text-white" />
-          </button>
-        </div>
-      )}
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAnswer(true);
+          }}
+          className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition hover:scale-110 disabled:opacity-60"
+          style={{ backgroundColor: '#7daf41' }}
+          aria-label="Correct"
+        >
+          <Check className="w-7 h-7 text-white" />
+        </button>
+      </div>
     </div>
   );
 }
