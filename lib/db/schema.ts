@@ -472,7 +472,7 @@ export const flashcardDecks = pgTable(
 );
 
 export const flashcardCards = pgTable(
-  'flashcard_cards',
+  'flashcards',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     deckId: uuid('deck_id')
@@ -485,7 +485,7 @@ export const flashcardCards = pgTable(
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
-    index('flashcard_cards_deck_sort_idx').on(table.deckId, table.sortOrder),
+    index('flashcards_deck_sort_idx').on(table.deckId, table.sortOrder),
   ]
 );
 

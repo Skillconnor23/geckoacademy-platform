@@ -96,157 +96,173 @@ export default async function StudentLearningPage({ searchParams }: Props) {
           <StudentQuizList studentUserId={user.id} showIntro={false} />
         ) : (
           <div className="space-y-5">
-            <Card className="rounded-2xl border border-[#e5e7eb]">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle className="text-base">
-                    {isThisMonth ? 'This month' : monthLabel(selectedMonthKey)}
-                  </CardTitle>
-                  <details>
-                    <summary className="cursor-pointer text-sm text-[#429ead]">
-                      Previous months
-                    </summary>
-                    <ul className="mt-2 space-y-1 text-sm">
-                      {previousMonthKeys(3).map((key) => (
-                        <li key={key}>
-                          <Link
-                            href={`/dashboard/student/learning?tab=flashcards&month=${key}`}
-                            className="text-[#429ead] hover:underline"
-                          >
-                            {monthLabel(key)}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-[#7daf41] px-4 py-3 text-white">
-                    <p className="text-xs">Studied</p>
-                    <p className="mt-1 text-2xl font-semibold">
-                      {overview?.flashcardsStudiedThisMonth ?? 0}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-[#429ead] px-4 py-3 text-white">
-                    <p className="text-xs">Accuracy</p>
-                    <p className="mt-1 text-2xl font-semibold">
-                      {overview?.flashcardAccuracyThisMonth != null
-                        ? `${overview.flashcardAccuracyThisMonth}%`
-                        : '—'}
-                    </p>
-                  </div>
-                  <div
-                    className="rounded-2xl px-4 py-3 text-white"
-                    style={{ backgroundColor: 'var(--accent-brown, #b64b29)' }}
-                  >
-                    <p className="text-xs">Saved Words</p>
-                    <p className="mt-1 text-2xl font-semibold">
-                      {overview?.savedWordsCount ?? 0}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-[#e5e7eb] p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-[#1f2937]">My Saved Words</p>
-                      <p className="text-xs text-muted-foreground">
-                        Review only the cards you bookmarked.
-                      </p>
+            {overview?.storageReady ? (
+              <>
+                <Card className="rounded-2xl border border-[#e5e7eb]">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <CardTitle className="text-base">
+                        {isThisMonth ? 'This month' : monthLabel(selectedMonthKey)}
+                      </CardTitle>
+                      <details>
+                        <summary className="cursor-pointer text-sm text-[#429ead]">
+                          Previous months
+                        </summary>
+                        <ul className="mt-2 space-y-1 text-sm">
+                          {previousMonthKeys(3).map((key) => (
+                            <li key={key}>
+                              <Link
+                                href={`/dashboard/student/learning?tab=flashcards&month=${key}`}
+                                className="text-[#429ead] hover:underline"
+                              >
+                                {monthLabel(key)}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
                     </div>
-                    <Button
-                      asChild
-                      size="sm"
-                      className="rounded-full bg-[#429ead] text-white hover:bg-[#36899a]"
-                    >
-                      <Link href="/dashboard/student/learning/flashcards/saved">
-                        <Bookmark className="mr-1 h-4 w-4" />
-                        Study
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-[#7daf41] px-4 py-3 text-white">
+                        <p className="text-xs">Studied</p>
+                        <p className="mt-1 text-2xl font-semibold">
+                          {overview.flashcardsStudiedThisMonth}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-[#429ead] px-4 py-3 text-white">
+                        <p className="text-xs">Accuracy</p>
+                        <p className="mt-1 text-2xl font-semibold">
+                          {overview.flashcardAccuracyThisMonth != null
+                            ? `${overview.flashcardAccuracyThisMonth}%`
+                            : '—'}
+                        </p>
+                      </div>
+                      <div
+                        className="rounded-2xl px-4 py-3 text-white"
+                        style={{ backgroundColor: 'var(--accent-brown, #b64b29)' }}
+                      >
+                        <p className="text-xs">Saved Words</p>
+                        <p className="mt-1 text-2xl font-semibold">{overview.savedWordsCount}</p>
+                      </div>
+                    </div>
 
-            <Card className="rounded-2xl border border-[#e5e7eb]">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Assigned decks</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {overview?.assignedDecks.length ? (
-                  overview.assignedDecks.map((deck) => (
-                    <div
-                      key={deck.id}
-                      className="rounded-xl border border-[#e5e7eb] bg-white p-4"
-                    >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="rounded-xl border border-[#e5e7eb] p-3">
+                      <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="font-medium text-[#1f2937]">{deck.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {deck.cardCount} cards
-                            {deck.lastStudiedAt
-                              ? ` · Last studied ${new Date(deck.lastStudiedAt).toLocaleDateString()}`
-                              : ' · Not started yet'}
-                            {deck.accuracyThisMonth != null
-                              ? ` · ${deck.accuracyThisMonth}% this month`
-                              : ''}
+                          <p className="font-medium text-[#1f2937]">My Saved Words</p>
+                          <p className="text-xs text-muted-foreground">
+                            Review only the cards you bookmarked.
                           </p>
                         </div>
                         <Button
                           asChild
                           size="sm"
-                          className="rounded-full bg-[#7daf41] text-white hover:bg-[#6b9a39]"
+                          className="rounded-full bg-[#429ead] text-white hover:bg-[#36899a]"
                         >
-                          <Link href={`/dashboard/student/learning/flashcards/${deck.id}`}>
+                          <Link href="/dashboard/student/learning/flashcards/saved">
+                            <Bookmark className="mr-1 h-4 w-4" />
                             Study
                           </Link>
                         </Button>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="rounded-xl border border-dashed border-[#e5e7eb] p-5 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      No flashcard decks are assigned to your classes yet.
+                  </CardContent>
+                </Card>
+
+                <Card className="rounded-2xl border border-[#e5e7eb]">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Assigned decks</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {overview.assignedDecks.length ? (
+                      overview.assignedDecks.map((deck) => (
+                        <div
+                          key={deck.id}
+                          className="rounded-xl border border-[#e5e7eb] bg-white p-4"
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p className="font-medium text-[#1f2937]">{deck.title}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {deck.cardCount} cards
+                                {deck.lastStudiedAt
+                                  ? ` · Last studied ${new Date(deck.lastStudiedAt).toLocaleDateString()}`
+                                  : ' · Not started yet'}
+                                {deck.accuracyThisMonth != null
+                                  ? ` · ${deck.accuracyThisMonth}% this month`
+                                  : ''}
+                              </p>
+                            </div>
+                            <Button
+                              asChild
+                              size="sm"
+                              className="rounded-full bg-[#7daf41] text-white hover:bg-[#6b9a39]"
+                            >
+                              <Link href={`/dashboard/student/learning/flashcards/${deck.id}`}>
+                                Study
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-[#e5e7eb] p-5 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          No flashcard decks are assigned to your classes yet.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card className="rounded-2xl border border-[#e5e7eb]">
+                <CardHeader>
+                  <CardTitle className="text-base">Flashcards are being set up</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Flashcard storage is not ready in this environment yet. Run database
+                    migrations and refresh this page shortly.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {overview?.storageReady && (
+              <Card className="rounded-2xl border border-[#e5e7eb]">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-[#429ead]" />
+                    Quiz snapshot
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border border-[#e5e7eb] p-3">
+                    <p className="text-xs text-muted-foreground">Assigned</p>
+                    <p className="text-xl font-semibold text-[#1f2937]">
+                      {overview.quizStats.assignedCount}
                     </p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-2xl border border-[#e5e7eb]">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-[#429ead]" />
-                  Quiz snapshot
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-[#e5e7eb] p-3">
-                  <p className="text-xs text-muted-foreground">Assigned</p>
-                  <p className="text-xl font-semibold text-[#1f2937]">
-                    {overview?.quizStats.assignedCount ?? 0}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[#e5e7eb] p-3">
-                  <p className="text-xs text-muted-foreground">Completion</p>
-                  <p className="text-xl font-semibold text-[#1f2937]">
-                    {overview?.quizStats.completionRate ?? 0}%
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[#e5e7eb] p-3">
-                  <p className="text-xs text-muted-foreground">Avg this month</p>
-                  <p className="text-xl font-semibold text-[#1f2937]">
-                    {overview?.quizStats.averageScoreThisMonth != null
-                      ? `${overview.quizStats.averageScoreThisMonth}%`
-                      : '—'}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="rounded-xl border border-[#e5e7eb] p-3">
+                    <p className="text-xs text-muted-foreground">Completion</p>
+                    <p className="text-xl font-semibold text-[#1f2937]">
+                      {overview.quizStats.completionRate}%
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-[#e5e7eb] p-3">
+                    <p className="text-xs text-muted-foreground">Avg this month</p>
+                    <p className="text-xl font-semibold text-[#1f2937]">
+                      {overview.quizStats.averageScoreThisMonth != null
+                        ? `${overview.quizStats.averageScoreThisMonth}%`
+                        : '—'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </div>

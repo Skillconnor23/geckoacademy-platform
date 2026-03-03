@@ -96,6 +96,7 @@ export type SavedFlashcardCard = {
 };
 
 export type StudentLearningOverview = {
+  storageReady: boolean;
   monthRange: MonthRange;
   quizStats: {
     assignedCount: number;
@@ -115,6 +116,14 @@ export type StudentLearningOverview = {
     accuracyThisMonth: number | null;
   }>;
 };
+
+function isMissingRelationError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const maybeCode = (error as { code?: string }).code;
+  if (maybeCode !== '42P01') return false;
+  const message = (error as { message?: string }).message ?? '';
+  return message.toLowerCase().includes('flashcard') || message.toLowerCase().includes('flashcards');
+}
 
 function toAccuracy(correct: number, total: number): number | null {
   if (total <= 0) return null;
@@ -241,61 +250,66 @@ export async function listFlashcardDecksForManager(
   userId: number,
   platformRole: PlatformRole
 ): Promise<ManagerFlashcardDeck[]> {
-  if (
-    platformRole !== 'teacher' &&
-    platformRole !== 'admin' &&
-    platformRole !== 'school_admin'
-  ) {
-    return [];
+  try {
+    if (
+      platformRole !== 'teacher' &&
+      platformRole !== 'admin' &&
+      platformRole !== 'school_admin'
+    ) {
+      return [];
+    }
+
+    const deckRows =
+      platformRole === 'teacher'
+        ? await db
+            .select({
+              deck: flashcardDecks,
+              className: eduClasses.name,
+            })
+            .from(flashcardDecks)
+            .leftJoin(eduClasses, eq(flashcardDecks.classId, eduClasses.id))
+            .where(eq(flashcardDecks.createdByUserId, userId))
+            .orderBy(desc(flashcardDecks.updatedAt))
+        : await db
+            .select({
+              deck: flashcardDecks,
+              className: eduClasses.name,
+            })
+            .from(flashcardDecks)
+            .leftJoin(eduClasses, eq(flashcardDecks.classId, eduClasses.id))
+            .orderBy(desc(flashcardDecks.updatedAt));
+
+    const deckIds = deckRows.map((row) => row.deck.id);
+    const cardCounts =
+      deckIds.length === 0
+        ? []
+        : await db
+            .select({
+              deckId: flashcardCards.deckId,
+              cardCount: sql<number>`count(*)::int`,
+            })
+            .from(flashcardCards)
+            .where(inArray(flashcardCards.deckId, deckIds))
+            .groupBy(flashcardCards.deckId);
+
+    const countByDeckId = new Map(cardCounts.map((row) => [row.deckId, row.cardCount]));
+    return deckRows.map((row) => ({
+      id: row.deck.id,
+      title: row.deck.title,
+      description: row.deck.description,
+      scope: row.deck.scope,
+      classId: row.deck.classId,
+      className: row.className ?? null,
+      isPublished: row.deck.isPublished,
+      createdByUserId: row.deck.createdByUserId,
+      createdAt: row.deck.createdAt,
+      updatedAt: row.deck.updatedAt,
+      cardCount: countByDeckId.get(row.deck.id) ?? 0,
+    }));
+  } catch (error) {
+    if (isMissingRelationError(error)) return [];
+    throw error;
   }
-
-  const deckRows =
-    platformRole === 'teacher'
-      ? await db
-          .select({
-            deck: flashcardDecks,
-            className: eduClasses.name,
-          })
-          .from(flashcardDecks)
-          .leftJoin(eduClasses, eq(flashcardDecks.classId, eduClasses.id))
-          .where(eq(flashcardDecks.createdByUserId, userId))
-          .orderBy(desc(flashcardDecks.updatedAt))
-      : await db
-          .select({
-            deck: flashcardDecks,
-            className: eduClasses.name,
-          })
-          .from(flashcardDecks)
-          .leftJoin(eduClasses, eq(flashcardDecks.classId, eduClasses.id))
-          .orderBy(desc(flashcardDecks.updatedAt));
-
-  const deckIds = deckRows.map((row) => row.deck.id);
-  const cardCounts =
-    deckIds.length === 0
-      ? []
-      : await db
-          .select({
-            deckId: flashcardCards.deckId,
-            cardCount: sql<number>`count(*)::int`,
-          })
-          .from(flashcardCards)
-          .where(inArray(flashcardCards.deckId, deckIds))
-          .groupBy(flashcardCards.deckId);
-
-  const countByDeckId = new Map(cardCounts.map((row) => [row.deckId, row.cardCount]));
-  return deckRows.map((row) => ({
-    id: row.deck.id,
-    title: row.deck.title,
-    description: row.deck.description,
-    scope: row.deck.scope,
-    classId: row.deck.classId,
-    className: row.className ?? null,
-    isPublished: row.deck.isPublished,
-    createdByUserId: row.deck.createdByUserId,
-    createdAt: row.deck.createdAt,
-    updatedAt: row.deck.updatedAt,
-    cardCount: countByDeckId.get(row.deck.id) ?? 0,
-  }));
 }
 
 export async function teacherCanManageFlashcardDeck(
@@ -409,110 +423,123 @@ export async function deleteFlashcardCard(cardId: string) {
 export async function getFlashcardDeckWithCards(
   deckId: string
 ): Promise<FlashcardDeckWithCards | null> {
-  const [deckRow] = await db
-    .select({
-      deck: flashcardDecks,
-      className: eduClasses.name,
-    })
-    .from(flashcardDecks)
-    .leftJoin(eduClasses, eq(flashcardDecks.classId, eduClasses.id))
-    .where(eq(flashcardDecks.id, deckId))
-    .limit(1);
+  try {
+    const [deckRow] = await db
+      .select({
+        deck: flashcardDecks,
+        className: eduClasses.name,
+      })
+      .from(flashcardDecks)
+      .leftJoin(eduClasses, eq(flashcardDecks.classId, eduClasses.id))
+      .where(eq(flashcardDecks.id, deckId))
+      .limit(1);
 
-  if (!deckRow) return null;
+    if (!deckRow) return null;
 
-  const cards = await db
-    .select({
-      id: flashcardCards.id,
-      deckId: flashcardCards.deckId,
-      front: flashcardCards.front,
-      back: flashcardCards.back,
-      example: flashcardCards.example,
-      sortOrder: flashcardCards.sortOrder,
-      createdAt: flashcardCards.createdAt,
-    })
-    .from(flashcardCards)
-    .where(eq(flashcardCards.deckId, deckId))
-    .orderBy(asc(flashcardCards.sortOrder), asc(flashcardCards.createdAt));
+    const cards = await db
+      .select({
+        id: flashcardCards.id,
+        deckId: flashcardCards.deckId,
+        front: flashcardCards.front,
+        back: flashcardCards.back,
+        example: flashcardCards.example,
+        sortOrder: flashcardCards.sortOrder,
+        createdAt: flashcardCards.createdAt,
+      })
+      .from(flashcardCards)
+      .where(eq(flashcardCards.deckId, deckId))
+      .orderBy(asc(flashcardCards.sortOrder), asc(flashcardCards.createdAt));
 
-  return {
-    deck: {
-      id: deckRow.deck.id,
-      title: deckRow.deck.title,
-      description: deckRow.deck.description,
-      scope: deckRow.deck.scope,
-      classId: deckRow.deck.classId,
-      className: deckRow.className ?? null,
-      isPublished: deckRow.deck.isPublished,
-      createdByUserId: deckRow.deck.createdByUserId,
-      createdAt: deckRow.deck.createdAt,
-      updatedAt: deckRow.deck.updatedAt,
-    },
-    cards,
-  };
+    return {
+      deck: {
+        id: deckRow.deck.id,
+        title: deckRow.deck.title,
+        description: deckRow.deck.description,
+        scope: deckRow.deck.scope,
+        classId: deckRow.deck.classId,
+        className: deckRow.className ?? null,
+        isPublished: deckRow.deck.isPublished,
+        createdByUserId: deckRow.deck.createdByUserId,
+        createdAt: deckRow.deck.createdAt,
+        updatedAt: deckRow.deck.updatedAt,
+      },
+      cards,
+    };
+  } catch (error) {
+    if (isMissingRelationError(error)) return null;
+    throw error;
+  }
 }
 
 export async function getAssignedFlashcardDecksForStudent(
   studentUserId: number,
   classId?: string | null
 ): Promise<StudentAssignedFlashcardDeck[]> {
-  const enrollmentWhere = [
-    eq(eduEnrollments.studentUserId, studentUserId),
-    eq(eduEnrollments.status, 'active'),
-  ];
-  if (classId) {
-    enrollmentWhere.push(eq(eduEnrollments.classId, classId));
+  try {
+    const enrollmentWhere = [
+      eq(eduEnrollments.studentUserId, studentUserId),
+      eq(eduEnrollments.status, 'active'),
+    ];
+    if (classId) {
+      enrollmentWhere.push(eq(eduEnrollments.classId, classId));
+    }
+
+    const enrollments = await db
+      .select({ classId: eduEnrollments.classId })
+      .from(eduEnrollments)
+      .where(and(...enrollmentWhere));
+
+    const classIds = enrollments.map((row) => row.classId);
+    const visibilityClause =
+      classIds.length > 0
+        ? or(
+            eq(flashcardDecks.scope, 'global'),
+            and(
+              eq(flashcardDecks.scope, 'class'),
+              inArray(flashcardDecks.classId, classIds)
+            )
+          )
+        : eq(flashcardDecks.scope, 'global');
+
+    const deckRows = await db
+      .select({
+        deck: flashcardDecks,
+        className: eduClasses.name,
+      })
+      .from(flashcardDecks)
+      .leftJoin(eduClasses, eq(flashcardDecks.classId, eduClasses.id))
+      .where(and(eq(flashcardDecks.isPublished, true), visibilityClause))
+      .orderBy(desc(flashcardDecks.updatedAt));
+
+    const deckIds = deckRows.map((row) => row.deck.id);
+    const cardCounts =
+      deckIds.length === 0
+        ? []
+        : await db
+            .select({
+              deckId: flashcardCards.deckId,
+              cardCount: sql<number>`count(*)::int`,
+            })
+            .from(flashcardCards)
+            .where(inArray(flashcardCards.deckId, deckIds))
+            .groupBy(flashcardCards.deckId);
+
+    const countByDeckId = new Map(cardCounts.map((row) => [row.deckId, row.cardCount]));
+    return deckRows.map((row) => ({
+      id: row.deck.id,
+      title: row.deck.title,
+      description: row.deck.description,
+      scope: row.deck.scope,
+      classId: row.deck.classId,
+      className: row.className ?? null,
+      cardCount: countByDeckId.get(row.deck.id) ?? 0,
+      isPublished: row.deck.isPublished,
+      updatedAt: row.deck.updatedAt,
+    }));
+  } catch (error) {
+    if (isMissingRelationError(error)) return [];
+    throw error;
   }
-
-  const enrollments = await db
-    .select({ classId: eduEnrollments.classId })
-    .from(eduEnrollments)
-    .where(and(...enrollmentWhere));
-
-  const classIds = enrollments.map((row) => row.classId);
-  const visibilityClause =
-    classIds.length > 0
-      ? or(
-          eq(flashcardDecks.scope, 'global'),
-          and(eq(flashcardDecks.scope, 'class'), inArray(flashcardDecks.classId, classIds))
-        )
-      : eq(flashcardDecks.scope, 'global');
-
-  const deckRows = await db
-    .select({
-      deck: flashcardDecks,
-      className: eduClasses.name,
-    })
-    .from(flashcardDecks)
-    .leftJoin(eduClasses, eq(flashcardDecks.classId, eduClasses.id))
-    .where(and(eq(flashcardDecks.isPublished, true), visibilityClause))
-    .orderBy(desc(flashcardDecks.updatedAt));
-
-  const deckIds = deckRows.map((row) => row.deck.id);
-  const cardCounts =
-    deckIds.length === 0
-      ? []
-      : await db
-          .select({
-            deckId: flashcardCards.deckId,
-            cardCount: sql<number>`count(*)::int`,
-          })
-          .from(flashcardCards)
-          .where(inArray(flashcardCards.deckId, deckIds))
-          .groupBy(flashcardCards.deckId);
-
-  const countByDeckId = new Map(cardCounts.map((row) => [row.deckId, row.cardCount]));
-  return deckRows.map((row) => ({
-    id: row.deck.id,
-    title: row.deck.title,
-    description: row.deck.description,
-    scope: row.deck.scope,
-    classId: row.deck.classId,
-    className: row.className ?? null,
-    cardCount: countByDeckId.get(row.deck.id) ?? 0,
-    isPublished: row.deck.isPublished,
-    updatedAt: row.deck.updatedAt,
-  }));
 }
 
 export async function isFlashcardDeckVisibleToStudent(
@@ -549,12 +576,17 @@ export async function isFlashcardDeckVisibleToStudent(
 }
 
 export async function getFlashcardCardById(cardId: string) {
-  const [row] = await db
-    .select()
-    .from(flashcardCards)
-    .where(eq(flashcardCards.id, cardId))
-    .limit(1);
-  return row ?? null;
+  try {
+    const [row] = await db
+      .select()
+      .from(flashcardCards)
+      .where(eq(flashcardCards.id, cardId))
+      .limit(1);
+    return row ?? null;
+  } catch (error) {
+    if (isMissingRelationError(error)) return null;
+    throw error;
+  }
 }
 
 export async function saveFlashcardForStudent(studentUserId: number, cardId: string) {
@@ -612,32 +644,42 @@ export async function isFlashcardSavedByStudent(studentUserId: number, cardId: s
 export async function listSavedFlashcardsForStudent(
   studentUserId: number
 ): Promise<SavedFlashcardCard[]> {
-  const rows = await db
-    .select({
-      saveId: flashcardSaves.id,
-      savedAt: flashcardSaves.createdAt,
-      cardId: flashcardCards.id,
-      deckId: flashcardDecks.id,
-      deckTitle: flashcardDecks.title,
-      front: flashcardCards.front,
-      back: flashcardCards.back,
-      example: flashcardCards.example,
-    })
-    .from(flashcardSaves)
-    .innerJoin(flashcardCards, eq(flashcardSaves.cardId, flashcardCards.id))
-    .innerJoin(flashcardDecks, eq(flashcardCards.deckId, flashcardDecks.id))
-    .where(eq(flashcardSaves.studentUserId, studentUserId))
-    .orderBy(desc(flashcardSaves.createdAt));
+  try {
+    const rows = await db
+      .select({
+        saveId: flashcardSaves.id,
+        savedAt: flashcardSaves.createdAt,
+        cardId: flashcardCards.id,
+        deckId: flashcardDecks.id,
+        deckTitle: flashcardDecks.title,
+        front: flashcardCards.front,
+        back: flashcardCards.back,
+        example: flashcardCards.example,
+      })
+      .from(flashcardSaves)
+      .innerJoin(flashcardCards, eq(flashcardSaves.cardId, flashcardCards.id))
+      .innerJoin(flashcardDecks, eq(flashcardCards.deckId, flashcardDecks.id))
+      .where(eq(flashcardSaves.studentUserId, studentUserId))
+      .orderBy(desc(flashcardSaves.createdAt));
 
-  return rows;
+    return rows;
+  } catch (error) {
+    if (isMissingRelationError(error)) return [];
+    throw error;
+  }
 }
 
 export async function getSavedWordCount(studentUserId: number): Promise<number> {
-  const [row] = await db
-    .select({ total: count(flashcardSaves.id) })
-    .from(flashcardSaves)
-    .where(eq(flashcardSaves.studentUserId, studentUserId));
-  return Number(row?.total ?? 0);
+  try {
+    const [row] = await db
+      .select({ total: count(flashcardSaves.id) })
+      .from(flashcardSaves)
+      .where(eq(flashcardSaves.studentUserId, studentUserId));
+    return Number(row?.total ?? 0);
+  } catch (error) {
+    if (isMissingRelationError(error)) return 0;
+    throw error;
+  }
 }
 
 export async function recordFlashcardStudyEvent(data: {
@@ -665,10 +707,53 @@ export async function getStudentLearningOverview(
   const monthRange = options?.monthRange ?? getThisMonthRange();
   const { start, end } = monthRange;
 
-  const [assignedDecks, quizzes, flashcardAggregate, savedWordsCount, quizAggregate, lastQuiz] =
-    await Promise.all([
-      getAssignedFlashcardDecksForStudent(studentUserId, options?.classId ?? null),
-      getQuizzesForStudentClasses(studentUserId),
+  const [quizzes, quizAggregate, lastQuiz] = await Promise.all([
+    getQuizzesForStudentClasses(studentUserId),
+    db
+      .select({
+        avgScore: sql<number | null>`avg(${eduQuizSubmissions.score})`,
+      })
+      .from(eduQuizSubmissions)
+      .where(
+        and(
+          eq(eduQuizSubmissions.studentUserId, studentUserId),
+          gte(eduQuizSubmissions.submittedAt, start),
+          lt(eduQuizSubmissions.submittedAt, end)
+        )
+      )
+      .then((rows) => rows[0]),
+    db
+      .select({ score: eduQuizSubmissions.score })
+      .from(eduQuizSubmissions)
+      .where(eq(eduQuizSubmissions.studentUserId, studentUserId))
+      .orderBy(desc(eduQuizSubmissions.submittedAt))
+      .limit(1)
+      .then((rows) => rows[0]),
+  ]);
+
+  const assignedCount = quizzes.length;
+  const completedCount = quizzes.filter((row) => !!row.submission).length;
+  const completionRate =
+    assignedCount > 0 ? Math.round((completedCount / assignedCount) * 100) : 0;
+
+  let storageReady = true;
+  let assignedDecks: StudentAssignedFlashcardDeck[] = [];
+  let savedWordsCount = 0;
+  let flashcardTotal = 0;
+  let flashcardCorrect = 0;
+  let deckEventMap = new Map<
+    string,
+    { lastStudiedAt: Date | null; monthTotal: number; monthCorrect: number }
+  >();
+
+  try {
+    await db.select({ id: flashcardDecks.id }).from(flashcardDecks).limit(1);
+    assignedDecks = await getAssignedFlashcardDecksForStudent(
+      studentUserId,
+      options?.classId ?? null
+    );
+
+    const [flashcardAggregate, savedWords, deckEventRows] = await Promise.all([
       db
         .select({
           total: count(flashcardStudyEvents.id),
@@ -684,68 +769,56 @@ export async function getStudentLearningOverview(
         )
         .then((rows) => rows[0]),
       getSavedWordCount(studentUserId),
-      db
-        .select({
-          avgScore: sql<number | null>`avg(${eduQuizSubmissions.score})`,
-        })
-        .from(eduQuizSubmissions)
-        .where(
-          and(
-            eq(eduQuizSubmissions.studentUserId, studentUserId),
-            gte(eduQuizSubmissions.submittedAt, start),
-            lt(eduQuizSubmissions.submittedAt, end)
-          )
-        )
-        .then((rows) => rows[0]),
-      db
-        .select({ score: eduQuizSubmissions.score })
-        .from(eduQuizSubmissions)
-        .where(eq(eduQuizSubmissions.studentUserId, studentUserId))
-        .orderBy(desc(eduQuizSubmissions.submittedAt))
-        .limit(1)
-        .then((rows) => rows[0]),
+      assignedDecks.length === 0
+        ? Promise.resolve([])
+        : db
+            .select({
+              deckId: flashcardStudyEvents.deckId,
+              lastStudiedAt: sql<Date | null>`max(${flashcardStudyEvents.studiedAt})`,
+              monthTotal: sql<number>`sum(case when ${flashcardStudyEvents.studiedAt} >= ${start} and ${flashcardStudyEvents.studiedAt} < ${end} then 1 else 0 end)::int`,
+              monthCorrect: sql<number>`sum(case when ${flashcardStudyEvents.studiedAt} >= ${start} and ${flashcardStudyEvents.studiedAt} < ${end} and ${flashcardStudyEvents.result} = 'correct' then 1 else 0 end)::int`,
+            })
+            .from(flashcardStudyEvents)
+            .where(
+              and(
+                eq(flashcardStudyEvents.studentUserId, studentUserId),
+                inArray(
+                  flashcardStudyEvents.deckId,
+                  assignedDecks.map((deck) => deck.id)
+                )
+              )
+            )
+            .groupBy(flashcardStudyEvents.deckId),
     ]);
 
-  const deckIds = assignedDecks.map((deck) => deck.id);
-  const deckEventRows =
-    deckIds.length === 0
-      ? []
-      : await db
-          .select({
-            deckId: flashcardStudyEvents.deckId,
-            lastStudiedAt: sql<Date | null>`max(${flashcardStudyEvents.studiedAt})`,
-            monthTotal: sql<number>`sum(case when ${flashcardStudyEvents.studiedAt} >= ${start} and ${flashcardStudyEvents.studiedAt} < ${end} then 1 else 0 end)::int`,
-            monthCorrect: sql<number>`sum(case when ${flashcardStudyEvents.studiedAt} >= ${start} and ${flashcardStudyEvents.studiedAt} < ${end} and ${flashcardStudyEvents.result} = 'correct' then 1 else 0 end)::int`,
-          })
-          .from(flashcardStudyEvents)
-          .where(
-            and(
-              eq(flashcardStudyEvents.studentUserId, studentUserId),
-              inArray(flashcardStudyEvents.deckId, deckIds)
-            )
-          )
-          .groupBy(flashcardStudyEvents.deckId);
-
-  const deckEventMap = new Map(
-    deckEventRows.map((row) => [
-      row.deckId,
-      {
-        lastStudiedAt: row.lastStudiedAt,
-        monthTotal: Number(row.monthTotal ?? 0),
-        monthCorrect: Number(row.monthCorrect ?? 0),
-      },
-    ])
-  );
-
-  const assignedCount = quizzes.length;
-  const completedCount = quizzes.filter((row) => !!row.submission).length;
-  const completionRate =
-    assignedCount > 0 ? Math.round((completedCount / assignedCount) * 100) : 0;
-
-  const flashcardTotal = Number(flashcardAggregate?.total ?? 0);
-  const flashcardCorrect = Number(flashcardAggregate?.correct ?? 0);
+    flashcardTotal = Number(flashcardAggregate?.total ?? 0);
+    flashcardCorrect = Number(flashcardAggregate?.correct ?? 0);
+    savedWordsCount = savedWords;
+    deckEventMap = new Map(
+      deckEventRows.map((row) => [
+        row.deckId,
+        {
+          lastStudiedAt: row.lastStudiedAt,
+          monthTotal: Number(row.monthTotal ?? 0),
+          monthCorrect: Number(row.monthCorrect ?? 0),
+        },
+      ])
+    );
+  } catch (error) {
+    if (isMissingRelationError(error)) {
+      storageReady = false;
+      assignedDecks = [];
+      savedWordsCount = 0;
+      flashcardTotal = 0;
+      flashcardCorrect = 0;
+      deckEventMap = new Map();
+    } else {
+      throw error;
+    }
+  }
 
   return {
+    storageReady,
     monthRange,
     quizStats: {
       assignedCount,
