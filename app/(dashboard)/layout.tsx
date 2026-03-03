@@ -95,13 +95,19 @@ function UserMenu() {
 function Header() {
   const pathname = usePathname();
   const { setNavOpen } = useNavDrawer();
-  const isDashboard = pathname?.startsWith('/dashboard') ?? false;
+  const showSidebar =
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/learning') ||
+    pathname?.startsWith('/teacher') ||
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/classroom') ||
+    pathname?.startsWith('/students');
 
   return (
     <header className="w-full border-b border-gray-200 bg-white shrink-0">
       <div className="flex h-16 w-full items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 flex-1 items-center gap-2 md:flex-initial">
-          {isDashboard && (
+          {showSidebar && (
             <Button
               variant="ghost"
               size="icon"
@@ -138,6 +144,24 @@ function Header() {
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
+  const pathname = usePathname();
+  const isLandingPage = pathname === "/";
+
+  // Landing page: scrollable, min-h-screen, no overflow-hidden
+  if (isLandingPage) {
+    return (
+      <NavDrawerContext.Provider value={{ navOpen, setNavOpen }}>
+        <div className="min-h-screen flex flex-col bg-white">
+          <header className="sticky top-0 z-50 shrink-0 border-b border-gray-200 bg-white/90 backdrop-blur-sm">
+            <Header />
+          </header>
+          <main className="w-full flex-1">{children}</main>
+        </div>
+      </NavDrawerContext.Provider>
+    );
+  }
+
+  // Dashboard / app routes: fixed viewport, inner scroll
   return (
     <NavDrawerContext.Provider value={{ navOpen, setNavOpen }}>
       <div className="flex h-dvh w-full flex-col overflow-hidden bg-background">
