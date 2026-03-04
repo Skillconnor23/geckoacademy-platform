@@ -9,7 +9,7 @@
 import 'dotenv/config';
 import { hash } from 'bcryptjs';
 import { db } from '../lib/db/drizzle';
-import { like, inArray } from 'drizzle-orm';
+import { like, inArray, eq } from 'drizzle-orm';
 import {
   users,
   eduClasses,
@@ -25,6 +25,10 @@ import {
   flashcardStudyEvents,
   homework,
   homeworkSubmissions,
+  eduQuizzes,
+  eduQuizClasses,
+  eduQuizQuestions,
+  eduQuizSubmissions,
 } from '../lib/db/schema';
 
 // Must match lib/auth/session.ts: SALT_ROUNDS = 10 and bcrypt.compare for login
@@ -51,7 +55,7 @@ function assertSafeToSeed() {
 }
 
 // Deterministic join codes
-const JOIN_CODES = ['BEGIN-A1', 'BEGIN-B2', 'INT-A3', 'INT-B4'] as const;
+const JOIN_CODES = ['BEGIN-A1', 'BEGIN-B2', 'INT-A3', 'INT-B4', 'BEGIN-C5'] as const;
 const SCHOOL_UBIS = 'demo-school-ubis';
 const SCHOOL_ERDENET = 'demo-school-erdenet';
 
@@ -238,6 +242,7 @@ async function main() {
     't.bolormaa@demo.com',
     't.andy@demo.com',
     't.sarah@demo.com',
+    't.connor@demo.com',
     ...Array.from({ length: 24 }, (_, i) => `student${String(i + 1).padStart(2, '0')}@demo.com`),
   ];
 
@@ -259,13 +264,13 @@ async function main() {
           name = 'Erdenet School Admin';
           platformRole = 'school_admin';
           schoolId = SCHOOL_ERDENET;
-        } else if (i >= 3 && i <= 6) {
-          name = ['Azzaya B.', 'Bolormaa D.', 'Andy K.', 'Sarah L.'][i - 3];
+        } else if (i >= 3 && i <= 7) {
+          name = ['Azzaya B.', 'Bolormaa D.', 'Andy K.', 'Sarah L.', 'Connor'][i - 3];
           platformRole = 'teacher';
         } else {
-          name = STUDENT_NAMES[i - 7];
+          name = STUDENT_NAMES[i - 8];
           platformRole = 'student';
-          schoolId = i - 7 < 12 ? SCHOOL_UBIS : SCHOOL_ERDENET;
+          schoolId = i - 8 < 12 ? SCHOOL_UBIS : SCHOOL_ERDENET;
         }
         return {
           email,
@@ -288,8 +293,10 @@ async function main() {
     userByEmail.get('t.bolormaa@demo.com')!,
     userByEmail.get('t.andy@demo.com')!,
     userByEmail.get('t.sarah@demo.com')!,
+    userByEmail.get('t.connor@demo.com')!,
   ];
   const studentUsers = insertedUsers.filter((u) => u.platformRole === 'student');
+  const student01 = studentUsers[0]!;
 
   console.log('Creating demo classes...');
   const classSpecs = [
@@ -297,6 +304,7 @@ async function main() {
     { name: 'Beginner B (Sun)', level: 'Beginner', scheduleDays: ['sun'], joinCode: JOIN_CODES[1], teacherIdx: 1 },
     { name: 'Intermediate A (Sat)', level: 'Intermediate', scheduleDays: ['sat'], joinCode: JOIN_CODES[2], teacherIdx: 2 },
     { name: 'Intermediate B (Sun)', level: 'Intermediate', scheduleDays: ['sun'], joinCode: JOIN_CODES[3], teacherIdx: 3 },
+    { name: 'Beginner Class B', level: 'Beginner', scheduleDays: ['sun'], joinCode: JOIN_CODES[4], teacherIdx: 4 },
   ];
 
   const insertedClasses = await db
@@ -325,10 +333,11 @@ async function main() {
     });
   }
 
-  // Enroll 6 students per class (students 0-5 → class 0, 6-11 → class 1, etc.)
+  // Enroll 6 students per class (class 0: students 1-5 only; class 4: student01 only for demo dashboard)
   for (let c = 0; c < 4; c++) {
     const start = c * 6;
     for (let s = 0; s < 6; s++) {
+      if (c === 0 && s === 0) continue; // student01 only in Beginner Class B
       await db.insert(eduEnrollments).values({
         classId: insertedClasses[c].id,
         studentUserId: studentUsers[start + s].id,
@@ -336,11 +345,16 @@ async function main() {
       });
     }
   }
+  await db.insert(eduEnrollments).values({
+    classId: insertedClasses[4].id,
+    studentUserId: student01.id,
+    status: 'active',
+  });
 
   console.log('Creating flashcards (modules + cards + study events)...');
   for (let c = 0; c < 4; c++) {
     const teacher = teachers[classSpecs[c].teacherIdx];
-    const classStudents = studentUsers.slice(c * 6, c * 6 + 6);
+    const classStudents = c === 0 ? studentUsers.slice(1, 6) : studentUsers.slice(c * 6, c * 6 + 6);
     for (const mod of MODULE_VOCABS) {
       const [deck] = await db
         .insert(flashcardDecks)
@@ -403,7 +417,7 @@ async function main() {
 
   for (let c = 0; c < 4; c++) {
     const teacher = teachers[classSpecs[c].teacherIdx];
-    const classStudents = studentUsers.slice(c * 6, c * 6 + 6);
+    const classStudents = c === 0 ? studentUsers.slice(1, 6) : studentUsers.slice(c * 6, c * 6 + 6);
     for (let h = 0; h < 4; h++) {
       const [hw] = await db
         .insert(homework)
@@ -462,7 +476,7 @@ async function main() {
         .returning();
 
       // Mark attendance for some students
-      const classStudents = studentUsers.slice(c * 6, c * 6 + 6);
+      const classStudents = c === 0 ? studentUsers.slice(1, 6) : studentUsers.slice(c * 6, c * 6 + 6);
       for (let i = 0; i < classStudents.length; i++) {
         const status = i === 0 && s % 5 === 0 ? 'late' : i < 2 && s % 7 === 0 ? 'absent' : 'present';
         await db.insert(attendanceRecords).values({
@@ -475,14 +489,166 @@ async function main() {
     }
   }
 
+  // --- student01@demo.com: realistic dashboard (quiz results, attendance, upcoming class, homework) ---
+  const beginnerClassB = insertedClasses[4]!;
+  const connor = teachers[4]!;
+
+  // Clear any existing student01 demo data so re-runs stay consistent
+  await db.delete(attendanceRecords).where(eq(attendanceRecords.studentUserId, student01.id));
+  await db.delete(eduQuizSubmissions).where(eq(eduQuizSubmissions.studentUserId, student01.id));
+  await db.delete(homeworkSubmissions).where(eq(homeworkSubmissions.studentUserId, student01.id));
+  await db.delete(homework).where(eq(homework.classId, beginnerClassB.id));
+  await db.delete(classSessions).where(eq(classSessions.classId, beginnerClassB.id));
+  await db.delete(eduSessions).where(eq(eduSessions.classId, beginnerClassB.id));
+  // Quizzes for Beginner Class B (quiz_classes + submissions already cleared above)
+  const quizIdsForClass = await db
+    .select({ quizId: eduQuizClasses.quizId })
+    .from(eduQuizClasses)
+    .where(eq(eduQuizClasses.classId, beginnerClassB.id));
+  for (const row of quizIdsForClass) {
+    await db.delete(eduQuizSubmissions).where(eq(eduQuizSubmissions.quizId, row.quizId));
+    await db.delete(eduQuizQuestions).where(eq(eduQuizQuestions.quizId, row.quizId));
+    await db.delete(eduQuizClasses).where(eq(eduQuizClasses.quizId, row.quizId));
+    await db.delete(eduQuizzes).where(eq(eduQuizzes.id, row.quizId));
+  }
+
+  // 8 class attendance records (last 30 days): 6 present, 1 late, 1 absent
+  const quizScores = [78, 82, 85, 90, 88, 91, 84, 87, 92, 89, 86, 93];
+  const attendanceStatuses: Array<'present' | 'late' | 'absent'> = ['present', 'present', 'present', 'present', 'present', 'present', 'late', 'absent'];
+
+  for (let i = 0; i < 8; i++) {
+    const daysAgo = 3 + i * 4; // spread over last ~30 days
+    const start = makeDate(-daysAgo, 10, 0);
+    const end = makeDate(-daysAgo, 10, 50);
+    await db.insert(eduSessions).values({
+      classId: beginnerClassB.id,
+      startsAt: start,
+      endsAt: end,
+      title: `Session ${i + 1}`,
+    });
+    const [csession] = await db
+      .insert(classSessions)
+      .values({ classId: beginnerClassB.id, startsAt: start })
+      .returning();
+    if (csession) {
+      await db.insert(attendanceRecords).values({
+        sessionId: csession.id,
+        studentUserId: student01.id,
+        status: attendanceStatuses[i],
+        participationScore: attendanceStatuses[i] === 'present' ? 2 : null,
+      });
+    }
+  }
+
+  // Attendance — This month: exactly 8 sessions → Present 6, Late 1, Absent 1 (clean UI numbers)
+  const thisMonthStatuses: Array<'present' | 'late' | 'absent'> = ['present', 'present', 'present', 'present', 'present', 'present', 'late', 'absent'];
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth();
+  for (let i = 0; i < 8; i++) {
+    const dayOfMonth = 1 + i;
+    const start = new Date(Date.UTC(y, m, dayOfMonth, 10, 0, 0));
+    const end = new Date(start.getTime() + 50 * 60 * 1000);
+    if (start > now) continue; // only include sessions that have "happened" so monthly query counts them
+    await db.insert(eduSessions).values({
+      classId: beginnerClassB.id,
+      startsAt: start,
+      endsAt: end,
+      title: `This month session ${dayOfMonth}`,
+    });
+    const [csession] = await db
+      .insert(classSessions)
+      .values({ classId: beginnerClassB.id, startsAt: start })
+      .returning();
+    if (csession) {
+      await db.insert(attendanceRecords).values({
+        sessionId: csession.id,
+        studentUserId: student01.id,
+        status: thisMonthStatuses[i]!,
+        participationScore: thisMonthStatuses[i] === 'present' ? 2 : null,
+      });
+    }
+  }
+
+  // 1 upcoming session 2 days from now: Beginner Class B, 50 min, Teacher Connor
+  const inTwoDays = makeDate(2, 10, 0);
+  const inTwoDaysEnd = makeDate(2, 10, 50);
+  await db.insert(eduSessions).values({
+    classId: beginnerClassB.id,
+    startsAt: inTwoDays,
+    endsAt: inTwoDaysEnd,
+    title: 'Beginner Class B',
+    meetingUrl: 'https://meet.example.com/beginner-b',
+  });
+
+  // 12 quiz results over last 30 days (scores 78–93)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  for (let q = 0; q < 12; q++) {
+    const [quiz] = await db
+      .insert(eduQuizzes)
+      .values({
+        title: `Unit ${q + 1} Quiz`,
+        description: 'Demo quiz',
+        createdByUserId: connor.id,
+        status: 'PUBLISHED',
+        publishedAt: thirtyDaysAgo,
+      })
+      .returning();
+    if (!quiz) continue;
+    await db.insert(eduQuizClasses).values({ quizId: quiz.id, classId: beginnerClassB.id });
+    await db.insert(eduQuizQuestions).values({
+      quizId: quiz.id,
+      type: 'MCQ',
+      prompt: 'Sample question',
+      correctAnswer: ['A'],
+      order: 0,
+    });
+    const submittedAt = new Date(thirtyDaysAgo.getTime() + (q * 2.2) * 24 * 60 * 60 * 1000);
+    await db.insert(eduQuizSubmissions).values({
+      quizId: quiz.id,
+      studentUserId: student01.id,
+      score: quizScores[q]!,
+      submittedAt,
+      answers: [{ questionIndex: 0, answer: 'A' }],
+    });
+  }
+
+  // 10 homework: 8 completed, 2 incomplete
+  const hwTitles = [
+    'Vocabulary Unit 1', 'Reading Practice', 'Grammar Exercise', 'Writing Task 1',
+    'Listening Practice', 'Vocabulary Unit 2', 'Speaking Prep', 'Writing Task 2',
+    'Review Homework', 'Extra Practice',
+  ];
+  for (let h = 0; h < 10; h++) {
+    const [hw] = await db
+      .insert(homework)
+      .values({
+        classId: beginnerClassB.id,
+        title: hwTitles[h] ?? `Homework ${h + 1}`,
+        instructions: 'Complete and submit.',
+        dueDate: makeDate(7 + h, 23, 59),
+        createdByUserId: connor.id,
+      })
+      .returning();
+    if (hw && h < 8) {
+      await db.insert(homeworkSubmissions).values({
+        homeworkId: hw.id,
+        studentUserId: student01.id,
+        textNote: 'Submitted.',
+        submittedAt: makeDate(-(8 - h), 14, 30),
+      });
+    }
+  }
+
   console.log('\n--- Demo seed complete ---');
   console.log('Login with any demo account using password: DemoPass123!');
   console.log('\nDemo accounts:');
   console.log('  Gecko Admin:     geckoadmin@demo.com');
   console.log('  School Admins:   admin.ubis@demo.com, admin.erdenet@demo.com');
-  console.log('  Teachers:        t.azzaya@demo.com, t.bolormaa@demo.com, t.andy@demo.com, t.sarah@demo.com');
+  console.log('  Teachers:        t.azzaya@demo.com, t.bolormaa@demo.com, t.andy@demo.com, t.sarah@demo.com, t.connor@demo.com');
   console.log('  Students:        student01@demo.com ... student24@demo.com');
-  console.log('\nClass join codes: BEGIN-A1, BEGIN-B2, INT-A3, INT-B4');
+  console.log('  Student dashboard (realistic): student01@demo.com (12 quizzes, 8 attendance, 1 upcoming, 10 homework)');
+  console.log('\nClass join codes: BEGIN-A1, BEGIN-B2, INT-A3, INT-B4, BEGIN-C5');
 }
 
 main()
