@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { STUDENT_TRIAL_HREF } from "@/lib/routes";
 import { MarketingSection } from "@/components/marketing/MarketingSection";
 import { FeatureCard } from "@/components/marketing/FeatureCard";
 import { TeacherCard } from "@/components/marketing/TeacherCard";
@@ -36,7 +37,7 @@ export default function AcademyPage() {
                 size="lg"
                 className="bg-[#7daf41] hover:bg-[#6b9a39] text-white"
               >
-                <Link href="/contact">Start Free Trial</Link>
+                <Link href={STUDENT_TRIAL_HREF}>Start Free Trial</Link>
               </Button>
               <Button
                 asChild
@@ -110,7 +111,7 @@ export default function AcademyPage() {
             size="lg"
             className="bg-[#7daf41] hover:bg-[#6b9a39] text-white"
           >
-            <Link href="/contact">Start Free Trial</Link>
+            <Link href={STUDENT_TRIAL_HREF}>Start Free Trial</Link>
           </Button>
         </div>
       </MarketingSection>
@@ -213,7 +214,7 @@ export default function AcademyPage() {
               size="lg"
               className="mt-8 bg-[#7daf41] hover:bg-[#6b9a39] text-white"
             >
-              <Link href="/contact">Start Free Trial</Link>
+              <Link href={STUDENT_TRIAL_HREF}>Start Free Trial</Link>
             </Button>
             <p className="mt-6">
               <Link

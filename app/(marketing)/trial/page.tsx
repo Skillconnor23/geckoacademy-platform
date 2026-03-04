@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from "react";
-import Script from "next/script";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 
@@ -25,31 +24,85 @@ declare global {
 
 export default function TrialPage() {
   const [level, setLevel] = useState<Level>('beginner');
-  const [scriptReady, setScriptReady] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
   const calendlyRef = useRef<HTMLDivElement>(null);
 
   const calendlyUrl = level === 'beginner' ? BEGINNER_CALENDLY_URL : INTERMEDIATE_CALENDLY_URL;
 
-  // Render only the active Calendly widget; re-init when level or script changes.
+  // Debug: log level + URL + ref.
   useEffect(() => {
-    if (!scriptReady || !calendlyRef.current) return;
-    const parent = calendlyRef.current;
-    parent.innerHTML = '';
-    window.Calendly?.initInlineWidget({
-      url: calendlyUrl,
-      parentElement: parent,
-      resize: true,
-      inlineStyles: true,
+    console.log("[Calendly] level:", level);
+    console.log("[Calendly] calendlyUrl:", calendlyUrl);
+    console.log("[Calendly] ref?", !!calendlyRef.current);
+  }, [level, calendlyUrl]);
+
+  // Load Calendly script once on the client.
+  useEffect(() => {
+    const src = "https://assets.calendly.com/assets/external/widget.js";
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+
+    if (existing) {
+      console.log("[Calendly] script tag already exists");
+      if (window.Calendly?.initInlineWidget) {
+        console.log("[Calendly] Calendly.initInlineWidget already available");
+        setScriptLoaded(true);
+      } else {
+        existing.addEventListener(
+          "load",
+          () => {
+            console.log("[Calendly] existing script onload");
+            setScriptLoaded(true);
+          },
+          { once: true }
+        );
+        existing.addEventListener("error", () => {
+          console.error("[Calendly] existing script onerror");
+        });
+      }
+      return;
+    }
+
+    console.log("[Calendly] appending script");
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => {
+      console.log("[Calendly] script onload");
+      setScriptLoaded(true);
+    };
+    script.onerror = () => {
+      console.error("[Calendly] script onerror");
+    };
+    document.body.appendChild(script);
+  }, []);
+
+  // Debug + init: log why we bail and try initInlineWidget.
+  useEffect(() => {
+    console.log("[Calendly] init check", {
+      scriptLoaded,
+      hasRef: !!calendlyRef.current,
+      hasCalendly: !!window.Calendly,
+      hasInit: !!window.Calendly?.initInlineWidget,
+      calendlyUrl,
     });
-  }, [scriptReady, level, calendlyUrl]);
+
+    if (!scriptLoaded || !calendlyRef.current || !window.Calendly?.initInlineWidget) return;
+    const parent = calendlyRef.current;
+    parent.innerHTML = "";
+
+    try {
+      window.Calendly.initInlineWidget({
+        url: calendlyUrl,
+        parentElement: parent,
+      });
+      console.log("[Calendly] initInlineWidget called");
+    } catch (e) {
+      console.error("[Calendly] initInlineWidget threw", e);
+    }
+  }, [scriptLoaded, calendlyUrl]);
 
   return (
     <div className="min-h-screen bg-white">
-      <Script
-        src="https://assets.calendly.com/assets/external/widget.js"
-        strategy="lazyOnload"
-        onLoad={() => setScriptReady(true)}
-      />
 
       {/* Hero */}
       <section className="mx-auto max-w-3xl px-6 py-16 text-center">
@@ -134,8 +187,7 @@ export default function TrialPage() {
           <div className="mt-10 w-full">
             <div
               ref={calendlyRef}
-              className="calendly-inline-widget w-full"
-              style={{ minWidth: 320, height: 1000 }}
+              style={{ minWidth: 320, height: 1400 }}
             />
           </div>
         </div>

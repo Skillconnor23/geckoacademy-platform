@@ -16,6 +16,7 @@ import { signOut } from '@/app/(login)/actions';
 import { useRouter } from 'next/navigation';
 import { User } from '@/lib/db/schema';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
+import { STUDENT_TRIAL_HREF } from '@/lib/routes';
 import useSWR, { mutate } from 'swr';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -86,7 +87,7 @@ function UserMenu() {
           </NavLink>
         </nav>
         <Button asChild>
-          <Link href="/sign-up">Sign up</Link>
+          <Link href={STUDENT_TRIAL_HREF}>Start a Free Trial</Link>
         </Button>
       </>
     );

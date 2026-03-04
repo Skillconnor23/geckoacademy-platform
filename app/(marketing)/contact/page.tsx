@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Section } from "@/components/landing/Section";
+import { STUDENT_TRIAL_HREF } from "@/lib/routes";
 
 export default function ContactPage() {
   return (
@@ -18,7 +19,7 @@ export default function ContactPage() {
               <Link href="/trial">Book a Demo</Link>
             </Button>
             <Button asChild size="lg" variant="secondary" className="bg-[#429ead] hover:bg-[#388694] text-white">
-              <Link href="/academy">Start Free Trial</Link>
+              <Link href={STUDENT_TRIAL_HREF}>Start Free Trial</Link>
             </Button>
           </div>
         </div>
