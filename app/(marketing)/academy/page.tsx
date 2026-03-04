@@ -175,7 +175,7 @@ export default function AcademyPage() {
         <div className="mt-12 grid gap-6 sm:grid-cols-3">
           {[
             { icon: MessageCircle, title: "Speak more confidently", desc: "Real conversation practice in every class" },
-            { icon: BookMarked, title: "Build real vocabulary", desc: "Words you’ll use, not just memorize" },
+            { icon: BookMarked, title: "Build real vocabulary", desc: "Words you'll use, not just memorize" },
             { icon: Calendar, title: "Clear weekly structure", desc: "Classes, homework, and progress you can count on" },
           ].map((item) => (
             <div

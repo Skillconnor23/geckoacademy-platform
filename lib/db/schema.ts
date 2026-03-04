@@ -39,6 +39,7 @@ export const users = pgTable(
     timezone: text('timezone'), // IANA e.g. America/New_York
     schoolId: text('school_id'), // School affiliation for school_admin/student scoping
     avatarUrl: text('avatar_url'), // R2 public URL for profile picture
+    emailVerified: timestamp('email_verified'), // When the user verified their email (required for login if enforced)
   },
   (table) => [
     index('users_platform_role_idx').on(table.platformRole),

@@ -4,10 +4,17 @@ import { signToken, verifyToken } from '@/lib/auth/session';
 
 const protectedRoutePrefixes = ['/dashboard', '/onboarding', '/classroom'];
 
+const legacyMarketingPaths = ['/home', '/landing', '/marketing', '/site'];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session');
   const isProtectedRoute = protectedRoutePrefixes.some((p) => pathname.startsWith(p));
+
+  // Redirect old starter landing routes to the single homepage
+  if (legacyMarketingPaths.includes(pathname)) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
 
   if (isProtectedRoute && !sessionCookie) {
     return NextResponse.redirect(new URL('/sign-in', request.url));

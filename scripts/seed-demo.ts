@@ -274,6 +274,7 @@ async function main() {
           platformRole,
           schoolId,
           deletedAt: null,
+          emailVerified: new Date(), // Demo users: treat as verified so login works
         };
       })
     )
