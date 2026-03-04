@@ -82,14 +82,14 @@ export default function SchoolsPage() {
       {/* 3. PROBLEM / SOLUTION */}
       <MarketingSection>
         <div className="grid gap-8 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md sm:p-8">
-            <h2 className="text-2xl font-semibold text-[#3d4236] md:text-3xl">
+          <div className="rounded-2xl border border-slate-200 bg-[#429ead] p-6 shadow-md sm:p-8">
+            <h2 className="text-2xl font-semibold text-white md:text-3xl">
               Problem
             </h2>
-            <p className="mt-4 text-[#5a5f57]">
+            <p className="mt-4 text-white">
               Many schools struggle with English education:
             </p>
-            <ul className="mt-6 space-y-3 text-[#5a5f57]">
+            <ul className="mt-6 space-y-3 text-white">
               {[
                 "Limited speaking practice",
                 "Inconsistent curriculum",
@@ -97,18 +97,18 @@ export default function SchoolsPage() {
                 "No digital learning tools",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2">
-                  <span className="text-[#7daf41]">•</span>
+                  <span className="text-white">•</span>
                   {item}
                 </li>
               ))}
             </ul>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md sm:p-8">
-            <h2 className="text-2xl font-semibold text-[#3d4236] md:text-3xl">
+          <div className="rounded-2xl border border-slate-200 bg-[#7daf41] p-6 shadow-md sm:p-8">
+            <h2 className="text-2xl font-semibold text-white md:text-3xl">
               Solution
             </h2>
-            <p className="mt-4 text-[#5a5f57]">Gecko provides:</p>
-            <ul className="mt-6 space-y-3 text-[#5a5f57]">
+            <p className="mt-4 text-white">Gecko provides:</p>
+            <ul className="mt-6 space-y-3 text-white">
               {[
                 "English learning platform",
                 "Structured curriculum",
@@ -116,7 +116,7 @@ export default function SchoolsPage() {
                 "Certified teachers who speak the local language",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2">
-                  <span className="text-[#429ead]">•</span>
+                  <span className="text-white">•</span>
                   {item}
                 </li>
               ))}
@@ -183,8 +183,8 @@ export default function SchoolsPage() {
           </div>
           <div className="w-full shrink-0 lg:w-[420px]">
             <Image
-              src="/platform-dashboard-cta.svg"
-              alt="Gecko Academy platform"
+              src="/schools-features.svg"
+              alt="Gecko school dashboard cards"
               width={1500}
               height={1500}
               className="w-full h-auto"

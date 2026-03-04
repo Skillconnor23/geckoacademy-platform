@@ -24,6 +24,9 @@ export default async function SchoolAdminDashboardPage() {
     getSchoolMonthSummary(),
   ]);
 
+  const completionRate = Math.max(0, Math.min(100, kpis.completionRate30d ?? 0));
+  const completionDegrees = completionRate * 3.6;
+
   return (
     <section className="flex-1">
       <h1 className="text-xl lg:text-2xl font-medium text-[#1f2937] mb-2 tracking-tight">
@@ -45,42 +48,55 @@ export default async function SchoolAdminDashboardPage() {
 
       {/* KPI cards - mobile: slim horizontal; desktop: full cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 mb-6 sm:mb-8">
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
-          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground sm:mb-1">
-            <Users className="h-4 w-4 shrink-0" />
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-[#429ead] px-4 py-3 shadow-[0_10px_25px_rgba(0,0,0,0.10)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-1">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#ffffff] sm:mb-1">
+            <Users className="h-4 w-4 shrink-0 text-[#ffffff]" />
             <span>Active students</span>
           </div>
-          <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
+          <p className="text-xl font-semibold text-[#ffffff] shrink-0 sm:text-2xl">
             {kpis.activeStudents}
           </p>
         </div>
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
-          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground sm:mb-1">
-            <GraduationCap className="h-4 w-4 shrink-0" />
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-[#7daf41] px-4 py-3 shadow-[0_10px_25px_rgba(0,0,0,0.10)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-1">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#ffffff] sm:mb-1">
+            <GraduationCap className="h-4 w-4 shrink-0 text-[#ffffff]" />
             <span>Active classes</span>
           </div>
-          <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
+          <p className="text-xl font-semibold text-[#ffffff] shrink-0 sm:text-2xl">
             {kpis.activeClasses}
           </p>
         </div>
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
-          <div className="text-sm font-medium text-muted-foreground sm:mb-1">
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-[#b64b29] px-4 py-3 shadow-[0_10px_25px_rgba(0,0,0,0.10)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-1">
+          <div className="text-sm font-medium text-[#ffffff] sm:mb-1">
             Avg quiz score (7d / 30d)
           </div>
-          <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
+          <p className="text-xl font-semibold text-[#ffffff] shrink-0 sm:text-2xl">
             {kpis.avgQuizScore7d != null ? `${kpis.avgQuizScore7d}%` : '—'}
             {' / '}
             {kpis.avgQuizScore30d != null ? `${kpis.avgQuizScore30d}%` : '—'}
           </p>
         </div>
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-0">
-          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted-foreground sm:mb-1">
-            <BookOpen className="h-4 w-4 shrink-0" />
+        <div className="flex items-center justify-between gap-4 rounded-xl bg-[#ffaa00] px-4 py-3 shadow-[0_10px_25px_rgba(0,0,0,0.10)] sm:flex-col sm:items-stretch sm:justify-normal sm:p-5 sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-[#ffffff] sm:mb-1">
+            <BookOpen className="h-4 w-4 shrink-0 text-[#ffffff]" />
             <span>Completion rate (30d)</span>
           </div>
-          <p className="text-xl font-semibold text-[#1f2937] shrink-0 sm:text-2xl">
-            {kpis.completionRate30d}%
-          </p>
+          <div className="flex items-center gap-3 sm:justify-between">
+            <p className="text-xl font-semibold text-[#ffffff] shrink-0 sm:text-2xl">
+              {completionRate}%
+            </p>
+            <div
+              className="relative h-12 w-12 shrink-0 rounded-full"
+              style={{
+                background: `conic-gradient(#ffffff ${completionDegrees}deg, rgba(255,255,255,0.25) 0deg)`,
+              }}
+            >
+              <div className="absolute inset-[3px] rounded-full bg-[#ffaa00]" />
+              <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-[#ffffff]">
+                {completionRate}%
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
