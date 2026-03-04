@@ -60,6 +60,30 @@ This will create the following user and team:
 
 You can also create new users through the `/sign-up` route.
 
+### Demo seed (marketing/demo)
+
+To populate realistic demo data for all roles (Gecko Admin, School Admin, Teacher, Student):
+
+```bash
+DEMO_SEED=true pnpm run seed:demo
+```
+
+This creates:
+- 2 schools: Ulaanbaatar International School, Erdenet Secondary School
+- Users: geckoadmin@demo.com, school admins, 4 teachers, 24 students
+- 4 classes with join codes (BEGIN-A1, BEGIN-B2, INT-A3, INT-B4)
+- Modules, flashcards, homework, submissions, and sessions
+
+**Login**: All demo accounts use password `DemoPass123!`
+
+To wipe demo data:
+
+```bash
+pnpm run clear:demo
+```
+
+The seed is idempotent (running it again clears and re-seeds). Both scripts are blocked in production unless `DEMO_SEED=true` is set.
+
 Finally, run the Next.js development server:
 
 ```bash
