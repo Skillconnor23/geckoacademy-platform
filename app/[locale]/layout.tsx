@@ -7,14 +7,13 @@ import { SWRConfig } from 'swr';
 import { getUser, getTeamForUser } from '@/lib/db/queries';
 import '../globals.css';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const nunito = Nunito({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700']
 });
-
-export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
-}
 
 type Props = {
   children: ReactNode;

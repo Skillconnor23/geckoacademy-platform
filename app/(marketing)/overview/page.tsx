@@ -8,6 +8,9 @@ import {
   BookOpen,
 } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function OverviewPage() {
   return (
     <div className="min-h-screen bg-white">

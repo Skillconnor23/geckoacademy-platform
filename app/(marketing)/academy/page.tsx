@@ -19,6 +19,9 @@ import {
   Calendar,
 } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function AcademyPage() {
   const t = await getTranslations("marketing.home");
 

@@ -1,15 +1,9 @@
-'use client';
+import { MarketingLayoutClient } from '@/components/layout/MarketingLayoutClient';
 
-import { MarketingHeader } from '@/components/layout/MarketingHeader';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-/** Single marketing layout: header (logo → /, nav, user menu) + scrollable main. */
+/** Single marketing layout: header + scrollable main. All marketing routes are dynamic so next-intl resolves per-request. */
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur-sm">
-        <MarketingHeader />
-      </header>
-      <main className="w-full">{children}</main>
-    </div>
-  );
+  return <MarketingLayoutClient>{children}</MarketingLayoutClient>;
 }

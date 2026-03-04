@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Section } from "@/components/landing/Section";
 import { STUDENT_TRIAL_HREF } from "@/lib/routes";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-white">

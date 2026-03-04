@@ -3,6 +3,9 @@ import { getPrimaryClassForStudent } from '@/lib/db/queries/education';
 import { getUnseenMessageNotificationCount } from '@/lib/db/queries/notifications';
 import { DashboardSidebar } from './dashboard/dashboard-sidebar';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function WithSidebarLayout({
   children
 }: {
