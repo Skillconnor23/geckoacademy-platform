@@ -96,6 +96,14 @@ export async function updateQuiz(
   return updated;
 }
 
+export async function deleteQuiz(quizId: string): Promise<boolean> {
+  const result = await db
+    .delete(eduQuizzes)
+    .where(eq(eduQuizzes.id, quizId))
+    .returning({ id: eduQuizzes.id });
+  return result.length > 0;
+}
+
 export async function getQuizById(quizId: string): Promise<EduQuiz | null> {
   const [row] = await db
     .select()

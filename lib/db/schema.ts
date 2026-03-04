@@ -537,6 +537,52 @@ export const flashcardStudyEvents = pgTable(
   ]
 );
 
+// --- Student Reading (MVP) ---
+
+export const eduReadings = pgTable(
+  'edu_readings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    content: text('content').notNull(),
+    weekOf: date('week_of'), // optional: used for "this week" grouping
+    vocab: jsonb('vocab').$type<string[]>().default([]),
+    questions: jsonb('questions').$type<string[]>().default([]),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('edu_readings_class_id_idx').on(table.classId),
+    index('edu_readings_week_of_idx').on(table.weekOf),
+  ]
+);
+
+export const eduReadingCompletions = pgTable(
+  'edu_reading_completions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    readingId: uuid('reading_id')
+      .notNull()
+      .references(() => eduReadings.id, { onDelete: 'cascade' }),
+    studentUserId: integer('student_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    completedAt: timestamp('completed_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('edu_reading_completions_reading_student_idx').on(
+      table.readingId,
+      table.studentUserId
+    ),
+    index('edu_reading_completions_reading_idx').on(table.readingId),
+    index('edu_reading_completions_student_idx').on(table.studentUserId),
+  ]
+);
+
 export const teamsRelations = relations(teams, ({ many }) => ({
   teamMembers: many(teamMembers),
   activityLogs: many(activityLogs),
@@ -623,6 +669,7 @@ export const eduClassesRelations = relations(eduClasses, ({ many }) => ({
   quizClasses: many(eduQuizClasses),
   flashcardDecks: many(flashcardDecks),
   homework: many(homework),
+  readings: many(eduReadings),
 }));
 
 export const eduClassTeachersRelations = relations(eduClassTeachers, ({ one }) => ({
@@ -763,6 +810,28 @@ export const flashcardStudyEventsRelations = relations(
     card: one(flashcardCards, {
       fields: [flashcardStudyEvents.cardId],
       references: [flashcardCards.id],
+    }),
+  })
+);
+
+export const eduReadingsRelations = relations(eduReadings, ({ one, many }) => ({
+  class: one(eduClasses, {
+    fields: [eduReadings.classId],
+    references: [eduClasses.id],
+  }),
+  completions: many(eduReadingCompletions),
+}));
+
+export const eduReadingCompletionsRelations = relations(
+  eduReadingCompletions,
+  ({ one }) => ({
+    reading: one(eduReadings, {
+      fields: [eduReadingCompletions.readingId],
+      references: [eduReadings.id],
+    }),
+    student: one(users, {
+      fields: [eduReadingCompletions.studentUserId],
+      references: [users.id],
     }),
   })
 );
@@ -1007,6 +1076,10 @@ export type FlashcardSave = typeof flashcardSaves.$inferSelect;
 export type NewFlashcardSave = typeof flashcardSaves.$inferInsert;
 export type FlashcardStudyEvent = typeof flashcardStudyEvents.$inferSelect;
 export type NewFlashcardStudyEvent = typeof flashcardStudyEvents.$inferInsert;
+export type EduReading = typeof eduReadings.$inferSelect;
+export type NewEduReading = typeof eduReadings.$inferInsert;
+export type EduReadingCompletion = typeof eduReadingCompletions.$inferSelect;
+export type NewEduReadingCompletion = typeof eduReadingCompletions.$inferInsert;
 export type Conversation = typeof conversations.$inferSelect;
 export type NewConversation = typeof conversations.$inferInsert;
 export type ConversationMember = typeof conversationMembers.$inferSelect;

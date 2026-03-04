@@ -369,7 +369,16 @@
     "studyAgain": "Study again",
     "done": "Done",
     "wrongAria": "Wrong",
-    "correctAria": "Correct"
+    "correctAria": "Correct",
+    "reading": "Reading",
+    "allReadings": "All readings",
+    "read": "Read",
+    "noReadingsYet": "No readings assigned yet.",
+    "backToReading": "Back to Reading",
+    "vocabulary": "Vocabulary",
+    "questions": "Questions",
+    "markComplete": "Mark as complete",
+    "completed": "Completed"
   },
   "quizzes": {
     "addQuestion": {
@@ -461,7 +470,10 @@
         "messages": "Messages",
         "team": "Team",
         "general": "General",
-        "security": "Security"
+        "security": "Security",
+        "profile": "Profile",
+        "activity": "Activity",
+        "learningTools": "Learning tools"
       },
       "schoolAdmin": {
         "main": "Main",
@@ -471,7 +483,12 @@
         "schedule": "Schedule",
         "classes": "Classes",
         "homework": "Homework",
-        "messages": "Messages"
+        "messages": "Messages",
+        "profile": "Profile",
+        "team": "Team",
+        "general": "General",
+        "activity": "Activity",
+        "security": "Security"
       },
       "admin": {
         "main": "Main",
@@ -480,7 +497,12 @@
         "users": "Users",
         "classes": "Classes",
         "homework": "Homework",
-        "messages": "Messages"
+        "messages": "Messages",
+        "profile": "Profile",
+        "team": "Team",
+        "general": "General",
+        "activity": "Activity",
+        "security": "Security"
       }
     },
     "student": {
@@ -614,6 +636,23 @@
       "atRiskStudents": "At-risk students"
     }
   },
+  "learningTools": {
+    "title": "Learning tools",
+    "subtitle": "Quizzes, flashcards, and readings in one place.",
+    "create": "Create",
+    "type": "Type",
+    "titleCol": "Title",
+    "class": "Class",
+    "updated": "Updated",
+    "actions": "Actions",
+    "edit": "Edit",
+    "preview": "Preview",
+    "delete": "Delete",
+    "quiz": "Quiz",
+    "flashcards": "Flashcards",
+    "reading": "Reading",
+    "noItems": "No content yet. Use Create to add a quiz, flashcard deck, or reading."
+  },
   "teacher": {
     "dashboard": {
       "title": "Teacher Dashboard",
@@ -738,6 +777,22 @@
       "quiz_other": "{count} quizzes",
       "homework": "{count} homework",
       "noClassesMatchFilter": "No classes match this filter."
+    },
+    "readings": {
+      "newTitle": "New reading",
+      "editTitle": "Edit reading",
+      "titleLabel": "Title",
+      "readingTextLabel": "Reading text",
+      "vocabularyLabel": "Vocabulary (optional)",
+      "vocabularyPlaceholder": "One word or phrase per line",
+      "questionsLabel": "Questions (optional)",
+      "questionsPlaceholder": "One question per line",
+      "save": "Save",
+      "cancel": "Cancel",
+      "classLabel": "Class",
+      "selectClass": "Select class",
+      "backToLearningTools": "Back to Learning tools",
+      "noClassesYet": "You are not assigned to any classes yet. Assign a class first to create readings."
     },
     "quizzes": {
       "title": "Quizzes",

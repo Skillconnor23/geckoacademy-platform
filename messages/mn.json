@@ -343,7 +343,16 @@
     "studyAgain": "Дахин сурах",
     "done": "Дуусгах",
     "wrongAria": "Буруу",
-    "correctAria": "Зөв"
+    "correctAria": "Зөв",
+    "reading": "Уншлага",
+    "allReadings": "Бүх уншлага",
+    "read": "Унших",
+    "noReadingsYet": "Одоогоор уншлага оноогоогүй байна.",
+    "backToReading": "Уншлага руу буцах",
+    "vocabulary": "Үгсийн сан",
+    "questions": "Асуултууд",
+    "markComplete": "Дууссан гэж тэмдэглэх",
+    "completed": "Дууссан"
   },
   "quizzes": {
     "addQuestion": {
@@ -435,7 +444,10 @@
         "messages": "Мессеж",
         "team": "Баги",
         "general": "Ерөнхий",
-        "security": "Аюулгүй байдал"
+        "security": "Аюулгүй байдал",
+        "profile": "Профайл",
+        "activity": "Идэвх",
+        "learningTools": "Сургалтын хэрэгсэл"
       },
       "schoolAdmin": {
         "main": "Үндсэн",
@@ -598,6 +610,23 @@
       "atRiskStudents": "Эрсдэлтэй сурагчид"
     }
   },
+  "learningTools": {
+    "title": "Сургалтын хэрэгсэл",
+    "subtitle": "Шалгалт, флашкарт, уншлага нэг дороос.",
+    "create": "Үүсгэх",
+    "type": "Төрөл",
+    "titleCol": "Гарчиг",
+    "class": "Анги",
+    "updated": "Шинэчилсэн",
+    "actions": "Үйлдэл",
+    "edit": "Засах",
+    "preview": "Урьдчилж харах",
+    "delete": "Устгах",
+    "quiz": "Шалгалт",
+    "flashcards": "Флашкарт",
+    "reading": "Уншлага",
+    "noItems": "Одоогоор контент байхгүй. Үүсгэхээр шалгалт, флашкарт эсвэл уншлага нэмнэ үү."
+  },
   "teacher": {
     "dashboard": {
       "title": "Багшийн самбар",
@@ -722,6 +751,22 @@
       "quiz_other": "{count} шалгалт",
       "homework": "{count} даалгавар",
       "noClassesMatchFilter": "Энэ шүүлтэнд тохирох анги байхгүй."
+    },
+    "readings": {
+      "newTitle": "Шинэ уншлага",
+      "editTitle": "Уншлага засах",
+      "titleLabel": "Гарчиг",
+      "readingTextLabel": "Уншлагын текст",
+      "vocabularyLabel": "Үгсийн сан (заавал биш)",
+      "vocabularyPlaceholder": "Нэг мөрөнд нэг үг эсвэл хэллэг",
+      "questionsLabel": "Асуултууд (заавал биш)",
+      "questionsPlaceholder": "Нэг мөрөнд нэг асуулт",
+      "save": "Хадгалах",
+      "cancel": "Болих",
+      "classLabel": "Анги",
+      "selectClass": "Анги сонгох",
+      "backToLearningTools": "Сургалтын хэрэгсэл руу буцах",
+      "noClassesYet": "Одоогоор танд анги оноогдоогүй байна. Уншлага нэмэхийн тулд эхлээд анги оноогдоно уу."
     },
     "quizzes": {
       "title": "Шалгалтууд",

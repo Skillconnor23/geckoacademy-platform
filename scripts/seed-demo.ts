@@ -29,6 +29,8 @@ import {
   eduQuizClasses,
   eduQuizQuestions,
   eduQuizSubmissions,
+  eduReadings,
+  eduReadingCompletions,
 } from '../lib/db/schema';
 
 // Must match lib/auth/session.ts: SALT_ROUNDS = 10 and bcrypt.compare for login
@@ -216,6 +218,11 @@ async function clearExistingDemo() {
       await db.delete(flashcardCards).where(inArray(flashcardCards.deckId, userDeckIds));
       await db.delete(flashcardDecks).where(inArray(flashcardDecks.id, userDeckIds));
     }
+    const demoReadings = await db.select({ id: eduReadings.id }).from(eduReadings).where(inArray(eduReadings.classId, demoClassIds));
+    const demoReadingIds = demoReadings.map((r) => r.id);
+    if (demoReadingIds.length > 0) await db.delete(eduReadingCompletions).where(inArray(eduReadingCompletions.readingId, demoReadingIds));
+    await db.delete(eduReadings).where(inArray(eduReadings.classId, demoClassIds));
+
     await db.delete(homeworkSubmissions).where(inArray(homeworkSubmissions.studentUserId, demoUserIds));
     await db.delete(flashcardStudyEvents).where(inArray(flashcardStudyEvents.studentUserId, demoUserIds));
     await db.delete(flashcardSaves).where(inArray(flashcardSaves.studentUserId, demoUserIds));
@@ -350,6 +357,65 @@ async function main() {
     studentUserId: student01.id,
     status: 'active',
   });
+
+  // This week's Monday (ISO) for "This week" readings
+  const today = new Date();
+  const day = today.getDay();
+  const mondayOffset = today.getDate() - day + (day === 0 ? -6 : 1);
+  const thisWeekMonday = new Date(today);
+  thisWeekMonday.setDate(mondayOffset);
+  const weekOfStr = thisWeekMonday.toISOString().slice(0, 10);
+
+  console.log('Creating demo readings...');
+  const firstClassId = insertedClasses[0].id;
+  const beginnerClassBId = insertedClasses[4].id;
+  await db.insert(eduReadings).values([
+    {
+      classId: firstClassId,
+      title: 'Emergency Vocabulary Practice',
+      description: 'Short reading to practice emergency-related words.',
+      content: `When you travel or live in a new place, it is important to know some emergency words.
+
+If you need help, say "Help!" or "Emergency!"
+
+You can call the police or an ambulance. If there is a fire, find the exit and leave the building.
+
+If you feel pain or are injured, go to the hospital or see a doctor. Tell them if you have an allergy.
+
+Stay safe.`,
+      weekOf: weekOfStr,
+      vocab: ['emergency', 'ambulance', 'hospital', 'exit', 'allergy'],
+      questions: ['What should you say if you need help?', 'Where do you go if you are injured?'],
+    },
+    {
+      classId: firstClassId,
+      title: 'Daily Greetings',
+      description: 'Practice saying hello and thank you.',
+      content: `Hello! How are you?
+
+In English we say "Thank you" when someone helps us. We say "Please" when we ask for something.
+
+If we are late, we say "Sorry."
+
+Can I have some water? Where is the bathroom?`,
+      weekOf: weekOfStr,
+      vocab: ['Hello', 'Thank you', 'Please', 'Sorry', 'Bathroom'],
+      questions: [],
+    },
+    {
+      classId: beginnerClassBId,
+      title: 'Welcome to Beginner Class B',
+      description: 'Your first reading assignment.',
+      content: `Welcome to the class!
+
+This is your first reading. Read it carefully.
+
+Practice the vocabulary words at the end. You can mark this as complete when you finish.`,
+      weekOf: weekOfStr,
+      vocab: ['welcome', 'reading', 'vocabulary', 'practice'],
+      questions: ['What is this reading about?'],
+    },
+  ]);
 
   console.log('Creating flashcards (modules + cards + study events)...');
   for (let c = 0; c < 4; c++) {

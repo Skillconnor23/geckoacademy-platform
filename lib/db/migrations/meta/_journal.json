@@ -148,6 +148,13 @@
       "when": 1772583100000,
       "tag": "0020_add_users_email_verified",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1772583200000,
+      "tag": "0021_student_readings",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { requireRole } from '@/lib/auth/user';
 import { StudentQuizList } from '@/components/learning/StudentQuizList';
+import { StudentReadingList } from '@/components/learning/StudentReadingList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -11,7 +12,7 @@ import {
   getStudentLearningOverview,
   getThisMonthRange,
 } from '@/lib/db/queries/flashcards';
-import { BookMarked, BookOpen, Bookmark, TrendingUp } from 'lucide-react';
+import { BookMarked, BookOpen, BookText, Bookmark, TrendingUp } from 'lucide-react';
 
 function monthKeyFromDate(date: Date): string {
   const year = date.getFullYear();
@@ -45,7 +46,12 @@ export default async function StudentLearningPage({ searchParams }: Props) {
   const t = await getTranslations('learning');
   const user = await requireRole(['student']);
   const { tab: tabQuery, month: monthQuery } = await searchParams;
-  const tab = tabQuery === 'flashcards' ? 'flashcards' : 'quizzes';
+  const tab =
+    tabQuery === 'flashcards'
+      ? 'flashcards'
+      : tabQuery === 'reading'
+        ? 'reading'
+        : 'quizzes';
 
   const fallbackRange = getThisMonthRange();
   const monthRange = monthQuery ? getMonthRangeFromKey(monthQuery) ?? fallbackRange : fallbackRange;
@@ -69,10 +75,10 @@ export default async function StudentLearningPage({ searchParams }: Props) {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 rounded-2xl border border-[#e5e7eb] bg-white p-2">
+        <div className="flex flex-nowrap gap-2 overflow-x-auto rounded-2xl border border-[#e5e7eb] bg-white p-2 [&::-webkit-scrollbar]:hidden">
           <Link
             href="/dashboard/student/learning?tab=quizzes"
-            className={`inline-flex min-h-10 items-center rounded-full px-4 text-sm font-medium ${
+            className={`inline-flex min-h-10 shrink-0 items-center rounded-full px-4 text-sm font-medium ${
               tab === 'quizzes'
                 ? 'bg-[#429ead] text-white'
                 : 'text-[#1f2937] hover:bg-[#f3f4f6]'
@@ -83,7 +89,7 @@ export default async function StudentLearningPage({ searchParams }: Props) {
           </Link>
           <Link
             href={`/dashboard/student/learning?tab=flashcards&month=${selectedMonthKey}`}
-            className={`inline-flex min-h-10 items-center rounded-full px-4 text-sm font-medium ${
+            className={`inline-flex min-h-10 shrink-0 items-center rounded-full px-4 text-sm font-medium ${
               tab === 'flashcards'
                 ? 'bg-[#7daf41] text-white'
                 : 'text-[#1f2937] hover:bg-[#f3f4f6]'
@@ -92,10 +98,23 @@ export default async function StudentLearningPage({ searchParams }: Props) {
             <BookMarked className="mr-2 h-4 w-4" />
             {t('flashcards')}
           </Link>
+          <Link
+            href="/dashboard/student/learning?tab=reading"
+            className={`inline-flex min-h-10 shrink-0 items-center rounded-full px-4 text-sm font-medium ${
+              tab === 'reading'
+                ? 'bg-[#b64b29] text-white'
+                : 'text-[#1f2937] hover:bg-[#f3f4f6]'
+            }`}
+          >
+            <BookText className="mr-2 h-4 w-4" />
+            {t('reading')}
+          </Link>
         </div>
 
         {tab === 'quizzes' ? (
           <StudentQuizList studentUserId={user.id} showIntro={false} />
+        ) : tab === 'reading' ? (
+          <StudentReadingList studentUserId={user.id} />
         ) : (
           <div className="space-y-5">
             {overview?.storageReady ? (

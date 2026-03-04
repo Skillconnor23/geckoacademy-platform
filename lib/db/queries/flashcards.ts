@@ -235,6 +235,14 @@ export async function setFlashcardDeckPublished(deckId: string, isPublished: boo
   return updated ?? null;
 }
 
+export async function deleteFlashcardDeck(deckId: string): Promise<boolean> {
+  const result = await db
+    .delete(flashcardDecks)
+    .where(eq(flashcardDecks.id, deckId))
+    .returning({ id: flashcardDecks.id });
+  return result.length > 0;
+}
+
 export async function getFlashcardDeckById(deckId: string) {
   const [row] = await db
     .select()

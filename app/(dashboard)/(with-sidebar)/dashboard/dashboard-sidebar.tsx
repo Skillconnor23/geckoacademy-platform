@@ -61,11 +61,10 @@ const navGroupKeys: Record<
       items: [
         { href: '/dashboard/teacher', icon: UserCog, labelKey: 'dashboard' },
         { href: '/teacher/classes', icon: GraduationCap, labelKey: 'classes' },
-        { href: '/teacher/quizzes', icon: BookOpen, labelKey: 'quizzes' },
         {
-          href: '/dashboard/teacher/learning/flashcards',
-          icon: BookMarked,
-          labelKey: 'flashcards',
+          href: '/dashboard/teacher/learning-tools',
+          icon: BookOpen,
+          labelKey: 'learningTools',
         },
         { href: '/dashboard/teacher/students', icon: Users, labelKey: 'students' },
         { href: '/dashboard/teacher/schedule', icon: CalendarDays, labelKey: 'schedule' },
@@ -211,6 +210,20 @@ export function DashboardSidebar({
   const tNav = useTranslations('nav');
   const groups = navGroupKeys[platformRole] ?? navGroupKeys.student;
   const pathWithoutLocale = stripLocaleFromPath(pathname);
+
+  function sidebarLabel(labelKey: string): string {
+    try {
+      const value = tSidebar(labelKey);
+      if (typeof value === 'string' && value.length > 0) return value;
+    } catch {
+      // Missing translation key
+    }
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[dashboard-sidebar] Missing translation: dashboard.sidebar.${sidebarNs}.${labelKey}`);
+    }
+    const segment = labelKey.split('.').pop() ?? labelKey;
+    return segment.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase()).trim();
+  }
   const isMessages = pathWithoutLocale === '/dashboard/messages';
   const isSchedulePage =
     pathWithoutLocale.startsWith('/dashboard/') &&
@@ -226,7 +239,7 @@ export function DashboardSidebar({
               {groups.map((group) => (
             <div key={group.labelKey}>
               <h3 className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-white/70 md:text-white/60">
-                {tSidebar(group.labelKey)}
+                {sidebarLabel(group.labelKey)}
               </h3>
             <div className="space-y-1">
               {group.items.map((item) => {
@@ -238,10 +251,8 @@ export function DashboardSidebar({
                       pathWithoutLocale?.startsWith('/learning'))) ||
                   (item.href === '/teacher/classes' &&
                     pathWithoutLocale?.startsWith('/teacher/classes')) ||
-                  (item.href === '/teacher/quizzes' &&
-                    pathWithoutLocale?.startsWith('/teacher/quizzes')) ||
-                  (item.href === '/dashboard/teacher/learning/flashcards' &&
-                    pathWithoutLocale?.startsWith('/dashboard/teacher/learning/flashcards')) ||
+                  (item.href === '/dashboard/teacher/learning-tools' &&
+                    pathWithoutLocale?.startsWith('/dashboard/teacher/learning-tools')) ||
                   (item.href === '/dashboard/student/homework' &&
                     pathWithoutLocale?.startsWith('/dashboard/student/homework')) ||
                   (item.href === '/dashboard/homework' &&
@@ -261,7 +272,7 @@ export function DashboardSidebar({
                       }`}
                     >
                       <item.icon className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
-                      <span className="flex-1 text-left">{tSidebar(item.labelKey)}</span>
+                      <span className="flex-1 text-left">{sidebarLabel(item.labelKey)}</span>
                       {showMessageBadge && (
                         <span
                           className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#b64b29] px-1.5 text-[10px] font-medium text-white"
