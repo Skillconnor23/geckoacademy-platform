@@ -91,7 +91,7 @@ function UserMenu() {
           <NavLink href="/academy" isActive={pathname === "/academy"}>
             Students
           </NavLink>
-          <NavLink href="/pricing" isActive={pathname === "/pricing" || pathname === "/pricing-schools" || pathname === "/pricing-students"}>
+          <NavLink href="/pricing" isActive={pathname === "/pricing"}>
             Pricing
           </NavLink>
           <NavLink href="/contact" isActive={pathname === "/contact"}>
@@ -217,8 +217,11 @@ export function MarketingHeader({ showSidebarToggle = false, onMenuClick }: { sh
               <NavLink href="/academy" isActive={pathname === '/academy'} mobile onClick={() => setMobileMenuOpen(false)}>
                 Students
               </NavLink>
-              <NavLink href="/pricing" isActive={pathname === '/pricing' || pathname === '/pricing-schools' || pathname === '/pricing-students'} mobile onClick={() => setMobileMenuOpen(false)}>
+              <NavLink href="/pricing" isActive={pathname === '/pricing'} mobile onClick={() => setMobileMenuOpen(false)}>
                 Pricing
+              </NavLink>
+              <NavLink href="/schools/pricing" isActive={pathname === '/schools/pricing'} mobile onClick={() => setMobileMenuOpen(false)}>
+                School Pricing
               </NavLink>
               <NavLink href="/contact" isActive={pathname === '/contact'} mobile onClick={() => setMobileMenuOpen(false)}>
                 Contact

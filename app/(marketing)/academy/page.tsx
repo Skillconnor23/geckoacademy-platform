@@ -218,7 +218,7 @@ export default function AcademyPage() {
             </Button>
             <p className="mt-6">
               <Link
-                href="/pricing-students"
+                href="/pricing"
                 className="text-sm font-medium text-[#429ead] hover:underline"
               >
                 See student pricing
