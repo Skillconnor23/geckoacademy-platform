@@ -7,6 +7,7 @@
  */
 
 import 'dotenv/config';
+import { hash } from 'bcryptjs';
 import { db } from '../lib/db/drizzle';
 import { like, inArray } from 'drizzle-orm';
 import {
@@ -25,7 +26,9 @@ import {
   homework,
   homeworkSubmissions,
 } from '../lib/db/schema';
-import { hashPassword } from '../lib/auth/session';
+
+// Must match lib/auth/session.ts: SALT_ROUNDS = 10 and bcrypt.compare for login
+const SALT_ROUNDS = 10;
 
 const DEMO_PASSWORD = 'DemoPass123!';
 const DEMO_EMAIL_PATTERN = '%@demo.com';
@@ -224,7 +227,7 @@ async function main() {
   console.log('Clearing existing demo data (idempotent)...');
   await clearExistingDemo();
 
-  const passwordHash = await hashPassword(DEMO_PASSWORD);
+  const passwordHash = await hash(DEMO_PASSWORD, SALT_ROUNDS);
 
   console.log('Creating demo users...');
   const userEmails = [
@@ -270,6 +273,7 @@ async function main() {
           name,
           platformRole,
           schoolId,
+          deletedAt: null,
         };
       })
     )
