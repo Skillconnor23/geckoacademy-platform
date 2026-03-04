@@ -621,6 +621,7 @@ export const eduClassesRelations = relations(eduClasses, ({ many }) => ({
   classroomPosts: many(classroomPosts),
   quizClasses: many(eduQuizClasses),
   flashcardDecks: many(flashcardDecks),
+  homework: many(homework),
 }));
 
 export const eduClassTeachersRelations = relations(eduClassTeachers, ({ one }) => ({
@@ -764,6 +765,87 @@ export const flashcardStudyEventsRelations = relations(
     }),
   })
 );
+
+// --- Homework (uploads-first) ---
+
+export const homework = pgTable(
+  'homework',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    instructions: text('instructions'),
+    dueDate: timestamp('due_date'),
+    attachmentUrl: text('attachment_url'),
+    createdByUserId: integer('created_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('homework_class_id_idx').on(table.classId),
+    index('homework_created_by_idx').on(table.createdByUserId),
+  ]
+);
+
+export const homeworkSubmissions = pgTable(
+  'homework_submissions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    homeworkId: uuid('homework_id')
+      .notNull()
+      .references(() => homework.id, { onDelete: 'cascade' }),
+    studentUserId: integer('student_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    textNote: text('text_note'),
+    files: jsonb('files').$type<{ url: string; mimeType: string; name: string; size: number }[]>().default([]),
+    submittedAt: timestamp('submitted_at').notNull().defaultNow(),
+    feedback: text('feedback'),
+    score: integer('score'),
+  },
+  (table) => [
+    uniqueIndex('homework_submissions_homework_student_idx').on(
+      table.homeworkId,
+      table.studentUserId
+    ),
+    index('homework_submissions_homework_idx').on(table.homeworkId),
+    index('homework_submissions_student_idx').on(table.studentUserId),
+  ]
+);
+
+export const homeworkRelations = relations(homework, ({ one, many }) => ({
+  class: one(eduClasses, {
+    fields: [homework.classId],
+    references: [eduClasses.id],
+  }),
+  createdBy: one(users, {
+    fields: [homework.createdByUserId],
+    references: [users.id],
+  }),
+  submissions: many(homeworkSubmissions),
+}));
+
+export const homeworkSubmissionsRelations = relations(
+  homeworkSubmissions,
+  ({ one }) => ({
+    homework: one(homework, {
+      fields: [homeworkSubmissions.homeworkId],
+      references: [homework.id],
+    }),
+    student: one(users, {
+      fields: [homeworkSubmissions.studentUserId],
+      references: [users.id],
+    }),
+  })
+);
+
+export type Homework = typeof homework.$inferSelect;
+export type NewHomework = typeof homework.$inferInsert;
+export type HomeworkSubmission = typeof homeworkSubmissions.$inferSelect;
+export type NewHomeworkSubmission = typeof homeworkSubmissions.$inferInsert;
 
 // --- Messaging (DM) ---
 

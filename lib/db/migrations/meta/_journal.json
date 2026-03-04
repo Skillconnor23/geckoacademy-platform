@@ -134,6 +134,13 @@
       "when": 1772538000000,
       "tag": "0018_rename_flashcard_cards_to_flashcards",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1772583063480,
+      "tag": "0019_vengeful_madame_masque",
+      "breakpoints": true
     }
   ]
 }

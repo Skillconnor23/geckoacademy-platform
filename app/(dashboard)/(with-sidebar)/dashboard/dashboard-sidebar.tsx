@@ -20,6 +20,7 @@ import {
   User,
   MessageSquare,
   X,
+  ClipboardList,
 } from 'lucide-react';
 import type { PlatformRole } from '@/lib/db/schema';
 import { useNavDrawer } from '@/app/(dashboard)/layout';
@@ -39,6 +40,7 @@ const navGroups: Record<
         { href: '__PRIMARY_CLASS__', icon: BookOpen, label: 'My class' },
         { href: '__PEOPLE__', icon: Users, label: 'People' },
         { href: '/dashboard/student/schedule', icon: CalendarDays, label: 'Schedule' },
+        { href: '/dashboard/student/homework', icon: ClipboardList, label: 'Homework' },
         { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       ],
     },
@@ -65,6 +67,7 @@ const navGroups: Record<
         },
         { href: '/dashboard/teacher/students', icon: Users, label: 'Students' },
         { href: '/dashboard/teacher/schedule', icon: CalendarDays, label: 'Schedule' },
+        { href: '/dashboard/homework', icon: ClipboardList, label: 'Homework' },
         { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       ],
     },
@@ -87,6 +90,7 @@ const navGroups: Record<
         { href: '/dashboard/school-admin/students', icon: Users, label: 'Students' },
         { href: '/dashboard/school-admin/schedule', icon: CalendarDays, label: 'Schedule' },
         { href: '/dashboard/admin/classes', icon: GraduationCap, label: 'Classes' },
+        { href: '/dashboard/homework', icon: ClipboardList, label: 'Homework' },
         { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       ],
     },
@@ -108,6 +112,7 @@ const navGroups: Record<
         { href: '/dashboard/admin', icon: UserCog, label: 'Dashboard' },
         { href: '/dashboard/admin/users', icon: Users, label: 'Users' },
         { href: '/dashboard/admin/classes', icon: GraduationCap, label: 'Classes' },
+        { href: '/dashboard/homework', icon: ClipboardList, label: 'Homework' },
         { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
       ],
     },
@@ -210,7 +215,11 @@ export function DashboardSidebar({
                   (item.href === '/teacher/classes' && pathname?.startsWith('/teacher/classes')) ||
                   (item.href === '/teacher/quizzes' && pathname?.startsWith('/teacher/quizzes')) ||
                   (item.href === '/dashboard/teacher/learning/flashcards' &&
-                    pathname?.startsWith('/dashboard/teacher/learning/flashcards'));
+                    pathname?.startsWith('/dashboard/teacher/learning/flashcards')) ||
+                  (item.href === '/dashboard/student/homework' &&
+                    pathname?.startsWith('/dashboard/student/homework')) ||
+                  (item.href === '/dashboard/homework' &&
+                    pathname?.startsWith('/dashboard/homework'));
                 const showMessageBadge =
                   item.href === '/dashboard/messages' && unreadMessageCount > 0;
                 return (

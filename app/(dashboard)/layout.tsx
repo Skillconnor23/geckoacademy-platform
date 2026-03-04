@@ -37,8 +37,31 @@ function formatRole(platformRole: string | null): string {
   return platformRole.charAt(0).toUpperCase() + platformRole.slice(1);
 }
 
+function NavLink({
+  href,
+  children,
+  isActive,
+  muted,
+}: {
+  href: string;
+  children: React.ReactNode;
+  isActive: boolean;
+  muted?: boolean;
+}) {
+  const baseColor = isActive ? "text-[#7daf41]" : muted ? "text-gray-400" : "text-gray-700";
+  return (
+    <Link
+      href={href}
+      className={`hidden sm:inline font-medium transition-colors duration-200 hover:text-[#429ead] ${baseColor}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
 function UserMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
   const { data: user } = useSWR<User>('/api/user', fetcher);
   const router = useRouter();
 
@@ -51,18 +74,23 @@ function UserMenu() {
   if (!user) {
     return (
       <>
-        <Link
-          href="/sign-in"
-          className="text-sm font-medium text-[#5a5f57] hover:text-[#3d4236]"
-        >
-          Log in
-        </Link>
-        <Link
-          href="/pricing"
-          className="text-sm font-medium text-[#5a5f57] hover:text-[#3d4236]"
-        >
-          Pricing
-        </Link>
+        <nav className="flex items-center gap-8 md:gap-10">
+          <NavLink href="/schools" isActive={pathname === "/schools"}>
+            Schools
+          </NavLink>
+          <NavLink href="/academy" isActive={pathname === "/academy"}>
+            Students
+          </NavLink>
+          <NavLink href="/pricing" isActive={pathname === "/pricing" || pathname === "/pricing-schools" || pathname === "/pricing-students"}>
+            Pricing
+          </NavLink>
+          <NavLink href="/contact" isActive={pathname === "/contact"}>
+            Contact
+          </NavLink>
+          <NavLink href="/sign-in" isActive={pathname === "/sign-in"} muted>
+            Log in
+          </NavLink>
+        </nav>
         <Button asChild>
           <Link href="/sign-up">Sign up</Link>
         </Button>
@@ -154,17 +182,24 @@ function Header() {
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
   const pathname = usePathname();
-  const isLandingPage = pathname === "/";
+  const isMarketingPage =
+    pathname === "/" ||
+    pathname === "/schools" ||
+    pathname === "/academy" ||
+    pathname === "/pricing" ||
+    pathname === "/pricing-schools" ||
+    pathname === "/pricing-students" ||
+    pathname === "/contact";
 
-  // Landing page: scrollable, min-h-screen, no overflow-hidden
-  if (isLandingPage) {
+  // Marketing pages: scrollable, no overflow-hidden, normal document flow
+  if (isMarketingPage) {
     return (
       <NavDrawerContext.Provider value={{ navOpen, setNavOpen }}>
-        <div className="min-h-screen flex flex-col bg-white">
-          <header className="sticky top-0 z-50 shrink-0 border-b border-gray-200 bg-white/90 backdrop-blur-sm">
+        <div className="min-h-screen bg-white">
+          <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur-sm">
             <Header />
           </header>
-          <main className="w-full flex-1">{children}</main>
+          <main className="w-full">{children}</main>
         </div>
       </NavDrawerContext.Provider>
     );
