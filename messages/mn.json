@@ -447,7 +447,8 @@
         "security": "Аюулгүй байдал",
         "profile": "Профайл",
         "activity": "Идэвх",
-        "learningTools": "Сургалтын хэрэгсэл"
+        "learningTools": "Сургалтын хэрэгсэл",
+        "curriculum": "Сургалтын төлөвлөгөө"
       },
       "schoolAdmin": {
         "main": "Үндсэн",
@@ -609,6 +610,32 @@
       "avgParticipation": "Дундаж оролцоо",
       "atRiskStudents": "Эрсдэлтэй сурагчид"
     }
+  },
+  "curriculum": {
+    "title": "Сургалтын төлөвлөгөө",
+    "materialsTitle": "Сургалтын материал",
+    "plannerTitle": "Сургалтын төлөвлөгч",
+    "uploadMaterial": "Материал оруулах",
+    "noMaterialsYet": "Одоогоор материал оруулаагүй байна.",
+    "file": "Файл",
+    "titleOptional": "Гарчиг (заавал биш)",
+    "tagOptional": "Таг (заавал биш)",
+    "weekOptional": "Долоо хоног (заавал биш)",
+    "upload": "Оруулах",
+    "cancel": "Болих",
+    "download": "Татах",
+    "delete": "Устгах",
+    "topic": "Сэдэв",
+    "goals": "Зорилго",
+    "notes": "Тэмдэглэл",
+    "attachMaterial": "Материал хавсаргах",
+    "attachedMaterials": "Хавсаргасан материал",
+    "selectClass": "Анги сонгох",
+    "noClassesYet": "Одоогоор танд анги оноогдоогүй байна.",
+    "weekNumber": "Долоо хоног {number}",
+    "fileTooBig": "Файл хэт том (дээд тал нь {max} MB).",
+    "invalidFileType": "Буруу файлын төрөл. Зөвшөөрөгдсөн: PDF, DOCX, PPTX, XLSX, PNG, JPG, MP3, M4A.",
+    "save": "Хадгалах"
   },
   "learningTools": {
     "title": "Сургалтын хэрэгсэл",

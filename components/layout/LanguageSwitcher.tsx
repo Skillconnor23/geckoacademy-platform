@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { localeCookieName, locales, type Locale } from '@/lib/i18n/config';
@@ -27,10 +28,24 @@ function buildPathWithLocale(pathname: string, targetLocale: Locale): string {
 }
 
 export function LanguageSwitcher() {
+  const [mounted, setMounted] = useState(false);
   const locale = useLocale() as Locale;
   const pathname = usePathname() || '/';
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) {
+    return (
+      <div
+        className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700"
+        aria-hidden
+      >
+        Language
+      </div>
+    );
+  }
 
   const current =
     SUPPORTED.find((entry) => entry.locale === locale) ?? SUPPORTED[0];

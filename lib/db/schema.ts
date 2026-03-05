@@ -670,6 +670,8 @@ export const eduClassesRelations = relations(eduClasses, ({ many }) => ({
   flashcardDecks: many(flashcardDecks),
   homework: many(homework),
   readings: many(eduReadings),
+  curriculumFiles: many(curriculumFiles),
+  curriculumWeeks: many(curriculumWeeks),
 }));
 
 export const eduClassTeachersRelations = relations(eduClassTeachers, ({ one }) => ({
@@ -916,6 +918,112 @@ export type Homework = typeof homework.$inferSelect;
 export type NewHomework = typeof homework.$inferInsert;
 export type HomeworkSubmission = typeof homeworkSubmissions.$inferSelect;
 export type NewHomeworkSubmission = typeof homeworkSubmissions.$inferInsert;
+
+// --- Curriculum (teacher-only) ---
+
+export const curriculumFiles = pgTable(
+  'curriculum_files',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    uploaderUserId: integer('uploader_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    title: text('title'),
+    originalFilename: text('original_filename').notNull(),
+    storagePath: text('storage_path').notNull(),
+    mimeType: text('mime_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    tag: text('tag'),
+    weekNumber: integer('week_number'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('curriculum_files_class_idx').on(table.classId),
+    index('curriculum_files_uploader_idx').on(table.uploaderUserId),
+  ]
+);
+
+export const curriculumWeeks = pgTable(
+  'curriculum_weeks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    weekNumber: integer('week_number').notNull(),
+    topic: text('topic'),
+    goals: text('goals'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('curriculum_weeks_class_week_idx').on(table.classId, table.weekNumber),
+    index('curriculum_weeks_class_idx').on(table.classId),
+  ]
+);
+
+export const curriculumWeekFiles = pgTable(
+  'curriculum_week_files',
+  {
+    weekId: uuid('week_id')
+      .notNull()
+      .references(() => curriculumWeeks.id, { onDelete: 'cascade' }),
+    fileId: uuid('file_id')
+      .notNull()
+      .references(() => curriculumFiles.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    uniqueIndex('curriculum_week_files_week_file_idx').on(table.weekId, table.fileId),
+    index('curriculum_week_files_week_idx').on(table.weekId),
+  ]
+);
+
+export const curriculumFilesRelations = relations(curriculumFiles, ({ one, many }) => ({
+  class: one(eduClasses, {
+    fields: [curriculumFiles.classId],
+    references: [eduClasses.id],
+  }),
+  uploader: one(users, {
+    fields: [curriculumFiles.uploaderUserId],
+    references: [users.id],
+  }),
+  weekAttachments: many(curriculumWeekFiles),
+}));
+
+export const curriculumWeeksRelations = relations(
+  curriculumWeeks,
+  ({ one, many }) => ({
+    class: one(eduClasses, {
+      fields: [curriculumWeeks.classId],
+      references: [eduClasses.id],
+    }),
+    files: many(curriculumWeekFiles),
+  })
+);
+
+export const curriculumWeekFilesRelations = relations(
+  curriculumWeekFiles,
+  ({ one }) => ({
+    week: one(curriculumWeeks, {
+      fields: [curriculumWeekFiles.weekId],
+      references: [curriculumWeeks.id],
+    }),
+    file: one(curriculumFiles, {
+      fields: [curriculumWeekFiles.fileId],
+      references: [curriculumFiles.id],
+    }),
+  })
+);
+
+export type CurriculumFile = typeof curriculumFiles.$inferSelect;
+export type NewCurriculumFile = typeof curriculumFiles.$inferInsert;
+export type CurriculumWeek = typeof curriculumWeeks.$inferSelect;
+export type NewCurriculumWeek = typeof curriculumWeeks.$inferInsert;
 
 // --- Messaging (DM) ---
 

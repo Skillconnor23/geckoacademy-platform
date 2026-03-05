@@ -155,6 +155,20 @@
       "when": 1772583200000,
       "tag": "0021_student_readings",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1772663947810,
+      "tag": "0022_typical_krista_starr",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1772664000000,
+      "tag": "0023_curriculum_tables",
+      "breakpoints": true
     }
   ]
 }

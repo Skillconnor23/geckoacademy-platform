@@ -66,6 +66,11 @@ const navGroupKeys: Record<
           icon: BookOpen,
           labelKey: 'learningTools',
         },
+        {
+          href: '/dashboard/teacher/curriculum/materials',
+          icon: BookMarked,
+          labelKey: 'curriculum',
+        },
         { href: '/dashboard/teacher/students', icon: Users, labelKey: 'students' },
         { href: '/dashboard/teacher/schedule', icon: CalendarDays, labelKey: 'schedule' },
         { href: '/dashboard/homework', icon: ClipboardList, labelKey: 'homework' },
@@ -253,6 +258,8 @@ export function DashboardSidebar({
                     pathWithoutLocale?.startsWith('/teacher/classes')) ||
                   (item.href === '/dashboard/teacher/learning-tools' &&
                     pathWithoutLocale?.startsWith('/dashboard/teacher/learning-tools')) ||
+                  (item.href === '/dashboard/teacher/curriculum/materials' &&
+                    pathWithoutLocale?.startsWith('/dashboard/teacher/curriculum')) ||
                   (item.href === '/dashboard/student/homework' &&
                     pathWithoutLocale?.startsWith('/dashboard/student/homework')) ||
                   (item.href === '/dashboard/homework' &&

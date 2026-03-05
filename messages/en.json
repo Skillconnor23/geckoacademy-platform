@@ -473,7 +473,8 @@
         "security": "Security",
         "profile": "Profile",
         "activity": "Activity",
-        "learningTools": "Learning tools"
+        "learningTools": "Learning tools",
+        "curriculum": "Curriculum"
       },
       "schoolAdmin": {
         "main": "Main",
@@ -635,6 +636,32 @@
       "avgParticipation": "Avg participation",
       "atRiskStudents": "At-risk students"
     }
+  },
+  "curriculum": {
+    "title": "Curriculum",
+    "materialsTitle": "Curriculum materials",
+    "plannerTitle": "Curriculum planner",
+    "uploadMaterial": "Upload material",
+    "noMaterialsYet": "No materials uploaded yet.",
+    "file": "File",
+    "titleOptional": "Title (optional)",
+    "tagOptional": "Tag (optional)",
+    "weekOptional": "Week (optional)",
+    "upload": "Upload",
+    "cancel": "Cancel",
+    "download": "Download",
+    "delete": "Delete",
+    "topic": "Topic",
+    "goals": "Goals",
+    "notes": "Notes",
+    "attachMaterial": "Attach material",
+    "attachedMaterials": "Attached materials",
+    "selectClass": "Select class",
+    "noClassesYet": "You are not assigned to any classes yet.",
+    "weekNumber": "Week {number}",
+    "fileTooBig": "File too large (max {max} MB).",
+    "invalidFileType": "Invalid file type. Allowed: PDF, DOCX, PPTX, XLSX, PNG, JPG, MP3, M4A.",
+    "save": "Save"
   },
   "learningTools": {
     "title": "Learning tools",
