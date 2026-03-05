@@ -1,16 +1,11 @@
+import { randomBytes } from 'node:crypto';
+
 /**
- * Generates a random invite token: 8–10 chars, A-Z + 0-9 (uppercase + digits), not easily guessable.
+ * Generates a cryptographically random invite token with ~132 bits of entropy.
+ * Base64url chars only, URL-safe and unguessable.
  */
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-const MIN_LENGTH = 8;
-const MAX_LENGTH = 10;
+const TOKEN_BYTES = 17; // 136 bits raw entropy
 
 export function generateInviteToken(): string {
-  const length =
-    MIN_LENGTH + Math.floor(Math.random() * (MAX_LENGTH - MIN_LENGTH + 1));
-  let code = '';
-  for (let i = 0; i < length; i++) {
-    code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
-  }
-  return code;
+  return randomBytes(TOKEN_BYTES).toString('base64url');
 }

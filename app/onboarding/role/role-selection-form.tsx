@@ -9,9 +9,6 @@ import { Loader2 } from 'lucide-react';
 
 const PLATFORM_ROLES = [
   { value: 'student', label: 'Student' },
-  { value: 'teacher', label: 'Teacher' },
-  { value: 'school_admin', label: 'School Admin' },
-  { value: 'admin', label: 'Admin' },
 ] as const;
 
 type ActionState = { error?: string };

@@ -1127,6 +1127,25 @@ export async function hasStudentEnrollment(studentUserId: number): Promise<boole
   return !!row;
 }
 
+/** Returns true if student has at least one enrollment and belongs to the same school. */
+export async function hasStudentEnrollmentInSchool(
+  studentUserId: number,
+  schoolId: string
+): Promise<boolean> {
+  const [row] = await db
+    .select({ studentUserId: eduEnrollments.studentUserId })
+    .from(eduEnrollments)
+    .innerJoin(users, eq(eduEnrollments.studentUserId, users.id))
+    .where(
+      and(
+        eq(eduEnrollments.studentUserId, studentUserId),
+        eq(users.schoolId, schoolId)
+      )
+    )
+    .limit(1);
+  return !!row;
+}
+
 /** Returns true if student is enrolled in any class assigned to the teacher. */
 export async function isStudentInTeacherClass(
   teacherUserId: number,

@@ -2,18 +2,11 @@ import type { ReactNode } from 'react';
 import {getMessages, setRequestLocale} from 'next-intl/server';
 import {NextIntlClientProvider} from 'next-intl';
 import {locales, defaultLocale} from '@/lib/i18n/config';
-import { Nunito } from 'next/font/google';
 import { SWRConfig } from 'swr';
-import { getUser, getTeamForUser } from '@/lib/db/queries';
 import '../globals.css';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-const nunito = Nunito({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700']
-});
 
 type Props = {
   children: ReactNode;
@@ -30,10 +23,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <SWRConfig
       value={{
-        fallback: {
-          '/api/user': getUser(),
-          '/api/team': getTeamForUser()
-        }
+        fallback: {}
       }}
     >
       <NextIntlClientProvider locale={locale} messages={messages}>
@@ -42,4 +32,3 @@ export default async function LocaleLayout({ children, params }: Props) {
     </SWRConfig>
   );
 }
-

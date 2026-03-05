@@ -25,8 +25,10 @@ import {
   unarchiveUser,
 } from '@/lib/db/queries/education';
 import { generateJoinCode } from '@/lib/education/join-code';
+import { assertRateLimit, getRequestClientIp } from '@/lib/security/rate-limit';
 import { redirect } from 'next/navigation';
 import type { PlatformRole } from '@/lib/db/schema';
+import { assertValidOrigin } from '@/lib/security/csrf';
 
 const createClassSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -363,7 +365,18 @@ const joinClassByCodeSchema = z.object({
 });
 
 export async function joinClassByCodeAction(_prev: unknown, formData: FormData) {
+  await assertValidOrigin();
   const user = await requirePermission('classes:read');
+  const clientIp = await getRequestClientIp();
+  const rateLimit = await assertRateLimit({
+    key: `join-code:${user.id}:${clientIp}`,
+    limit: 10,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) {
+    return { error: `Too many attempts. Please try again in ${rateLimit.retryAfterSeconds}s.` };
+  }
+
   if ((user.platformRole as PlatformRole) !== 'student') {
     redirect('/dashboard');
   }

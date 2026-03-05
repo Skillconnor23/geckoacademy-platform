@@ -26,6 +26,8 @@ import {
   validatedActionWithUser
 } from '@/lib/auth/middleware';
 import { consumeClassInviteCookieAndRedirect } from '@/lib/actions/class-invite';
+import { assertRateLimit, getRequestClientIp } from '@/lib/security/rate-limit';
+import { assertValidOrigin } from '@/lib/security/csrf';
 
 async function logActivity(
   teamId: number | null | undefined,
@@ -51,7 +53,21 @@ const signInSchema = z.object({
 });
 
 export const signIn = validatedAction(signInSchema, async (data, formData) => {
+  await assertValidOrigin();
   const { email, password } = data;
+  const clientIp = await getRequestClientIp();
+  const rateLimit = await assertRateLimit({
+    key: `sign-in:${email}:${clientIp}`,
+    limit: 10,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) {
+    return {
+      error: `Too many sign in attempts. Retry in ${rateLimit.retryAfterSeconds}s.`,
+      email,
+      password,
+    };
+  }
 
   const userWithTeam = await db
     .select({
@@ -112,7 +128,21 @@ const signUpSchema = z.object({
 });
 
 export const signUp = validatedAction(signUpSchema, async (data, formData) => {
+  await assertValidOrigin();
   const { email, password, inviteId } = data;
+  const clientIp = await getRequestClientIp();
+  const rateLimit = await assertRateLimit({
+    key: `sign-up:${email}:${clientIp}`,
+    limit: 8,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) {
+    return {
+      error: `Too many sign up attempts. Retry in ${rateLimit.retryAfterSeconds}s.`,
+      email,
+      password
+    };
+  }
 
   const existingUser = await db
     .select()

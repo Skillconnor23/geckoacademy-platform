@@ -1,7 +1,5 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { Nunito } from 'next/font/google';
-import { getUser, getTeamForUser } from '@/lib/db/queries';
 import { SWRConfig } from 'swr';
 
 export const metadata: Metadata = {
@@ -13,11 +11,6 @@ export const viewport: Viewport = {
   maximumScale: 1
 };
 
-const nunito = Nunito({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700']
-});
-
 export default function RootLayout({
   children
 }: {
@@ -25,15 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="bg-white dark:bg-gray-950 text-black dark:text-white">
-      <body className={`min-h-[100dvh] bg-white ${nunito.className}`}>
+      <body className="min-h-[100dvh] bg-white">
         <SWRConfig
           value={{
-            fallback: {
-              // We do NOT await here
-              // Only components that read this data will suspend
-              '/api/user': getUser(),
-              '/api/team': getTeamForUser()
-            }
+            fallback: {}
           }}
         >
           {children}

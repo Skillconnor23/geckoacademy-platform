@@ -3,10 +3,16 @@ import { db } from '@/lib/db/drizzle';
 import { users, teams, teamMembers } from '@/lib/db/schema';
 import { setSession } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/payments/stripe';
+import { getStripe } from '@/lib/payments/stripe';
 import Stripe from 'stripe';
+import { getUser } from '@/lib/db/queries';
 
 export async function GET(request: NextRequest) {
+  const currentUser = await getUser();
+  if (!currentUser) {
+    return NextResponse.redirect(new URL('/sign-in', request.url));
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const sessionId = searchParams.get('session_id');
 
@@ -15,7 +21,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    const session = await getStripe().checkout.sessions.retrieve(sessionId, {
       expand: ['customer', 'subscription'],
     });
 
@@ -33,7 +39,7 @@ export async function GET(request: NextRequest) {
       throw new Error('No subscription found for this session.');
     }
 
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    const subscription = await getStripe().subscriptions.retrieve(subscriptionId, {
       expand: ['items.data.price.product'],
     });
 
@@ -52,6 +58,10 @@ export async function GET(request: NextRequest) {
     const userId = session.client_reference_id;
     if (!userId) {
       throw new Error("No user ID found in session's client_reference_id.");
+    }
+
+    if (Number(userId) !== currentUser.id) {
+      throw new Error('Checkout session does not belong to the current user.');
     }
 
     const user = await db

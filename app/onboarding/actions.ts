@@ -6,8 +6,10 @@ import { users } from '@/lib/db/schema';
 import { requireAuth } from '@/lib/auth/user';
 import { platformRoleSchema } from '@/lib/validations/platform-role';
 import { redirect } from 'next/navigation';
+import { assertValidOrigin } from '@/lib/security/csrf';
 
 export async function setPlatformRole(prevState: { error?: string }, formData: FormData) {
+  await assertValidOrigin();
   const user = await requireAuth();
 
   const result = platformRoleSchema.safeParse(formData.get('platformRole'));
@@ -16,6 +18,12 @@ export async function setPlatformRole(prevState: { error?: string }, formData: F
   }
 
   const role = result.data;
+
+  // Self-serve onboarding can only ever set the least-privileged role.
+  // Elevated roles must be assigned via admin-managed workflows.
+  if (role !== 'student') {
+    return { error: 'Only student role can be selected during onboarding.' };
+  }
 
   await db
     .update(users)

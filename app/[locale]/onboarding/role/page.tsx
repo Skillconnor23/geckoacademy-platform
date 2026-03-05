@@ -1,21 +1,22 @@
-import { redirect } from 'next/navigation';
-import { getLocale } from 'next-intl/server';
-import { getCurrentUserOrNull } from '@/lib/auth/user';
-import { getRoleDashboardPath } from '@/lib/auth/dashboard-redirect';
-import type { PlatformRole } from '@/lib/db/schema';
+import { setPlatformRole } from '@/app/onboarding/actions';
+import { RoleSelectionForm } from '@/app/onboarding/role/role-selection-form';
 
-/**
- * Legacy route: no role selection. Redirects to the correct dashboard by existing DB role.
- * Users cannot self-assign teacher/admin/school_admin; default signup role is student.
- */
-export const dynamic = 'force-dynamic';
+export default function LocalizedRoleOnboardingPage() {
+  return (
+    <div className="min-h-[100dvh] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="mt-6 text-center text-2xl font-bold text-gray-900">
+          Choose your role
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Select how you&apos;ll use the platform. You can&apos;t change this later
+          without contacting support.
+        </p>
+      </div>
 
-export default async function OnboardingRolePage() {
-  const user = await getCurrentUserOrNull();
-  const locale = await getLocale();
-  if (!user) {
-    redirect(`/${locale}/sign-in`);
-  }
-  const path = getRoleDashboardPath((user.platformRole as PlatformRole) ?? null);
-  redirect(`/${locale}${path}`);
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <RoleSelectionForm action={setPlatformRole} />
+      </div>
+    </div>
+  );
 }
