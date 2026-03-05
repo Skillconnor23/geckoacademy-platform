@@ -1,13 +1,13 @@
 export const dynamic = 'force-dynamic';
 
-import { requirePermission } from '@/lib/auth/permissions';
+import { requireRole } from '@/lib/auth/user';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { GraduationCap } from 'lucide-react';
 
 export default async function AdminDashboardPage() {
-  await requirePermission(['classes:read']);
+  await requireRole(['admin']);
 
   return (
     <section className="flex-1 p-4 lg:p-8">

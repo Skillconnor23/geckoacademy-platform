@@ -1,16 +1,17 @@
+import { randomBytes } from 'node:crypto';
+
 /**
- * Generates a random join code: 6–8 chars, A-Z + 2–9, excluding confusing chars (O, 0, I, 1, L).
+ * Generates a cryptographically random join code.
+ * 16 chars from unambiguous alphabet (~80 bits entropy).
  */
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-const MIN_LENGTH = 6;
-const MAX_LENGTH = 8;
+const CODE_LENGTH = 16;
 
 export function generateJoinCode(): string {
-  const length =
-    MIN_LENGTH + Math.floor(Math.random() * (MAX_LENGTH - MIN_LENGTH + 1));
+  const bytes = randomBytes(CODE_LENGTH);
   let code = '';
-  for (let i = 0; i < length; i++) {
-    code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    code += ALPHABET[bytes[i] % ALPHABET.length];
   }
   return code;
 }

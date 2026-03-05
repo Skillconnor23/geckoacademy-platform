@@ -1,10 +1,21 @@
 import Stripe from 'stripe';
 import { handleSubscriptionChange, stripe } from '@/lib/payments/stripe';
 import { NextRequest, NextResponse } from 'next/server';
+import { assertRateLimit, getRequestClientIp, rateLimitHeaders } from '@/lib/security/rate-limit';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: NextRequest) {
+  const clientIp = await getRequestClientIp();
+  const rl = await assertRateLimit({
+    key: `stripe-webhook:${clientIp}`,
+    limit: 300,
+    windowMs: 60_000,
+  });
+  if (!rl.ok) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: rateLimitHeaders(rl.retryAfterSeconds) });
+  }
+
   const payload = await request.text();
   const signature = request.headers.get('stripe-signature') as string;
 

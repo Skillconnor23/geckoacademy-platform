@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { TeamDataWithMembers, User } from '@/lib/db/schema';
 import { getTeamForUser, getUser } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
+import { assertValidOrigin } from '@/lib/security/csrf';
 
 export type ActionState = {
   error?: string;
@@ -19,6 +20,7 @@ export function validatedAction<S extends z.ZodType<any, any>, T>(
   action: ValidatedActionFunction<S, T>
 ) {
   return async (prevState: ActionState, formData: FormData) => {
+    await assertValidOrigin();
     const result = schema.safeParse(Object.fromEntries(formData));
     if (!result.success) {
       return { error: result.error.errors[0].message };
@@ -39,6 +41,7 @@ export function validatedActionWithUser<S extends z.ZodType<any, any>, T>(
   action: ValidatedActionWithUserFunction<S, T>
 ) {
   return async (prevState: ActionState, formData: FormData) => {
+    await assertValidOrigin();
     const user = await getUser();
     if (!user) {
       throw new Error('User is not authenticated');
@@ -60,6 +63,7 @@ type ActionWithTeamFunction<T> = (
 
 export function withTeam<T>(action: ActionWithTeamFunction<T>) {
   return async (formData: FormData): Promise<T> => {
+    await assertValidOrigin();
     const user = await getUser();
     if (!user) {
       redirect('/sign-in');

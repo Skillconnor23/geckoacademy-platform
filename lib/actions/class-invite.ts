@@ -2,70 +2,6 @@
 
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-
-const CLASS_INVITE_COOKIE_NAME = 'class_invite_token';
-const CLASS_INVITE_COOKIE_MAX_AGE = 60 * 30; // 30 minutes
-
-/** Set httpOnly cookie with invite token so post-auth flow can consume it. */
-export async function setClassInviteCookie(token: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(CLASS_INVITE_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: CLASS_INVITE_COOKIE_MAX_AGE,
-  });
-}
-
-/** Clear the invite cookie (e.g. after successful join or when invalid). */
-export async function clearClassInviteCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(CLASS_INVITE_COOKIE_NAME);
-}
-
-/** Get FormData from action args (form action may pass (formData) or (prevState, formData)). */
-function getFormDataFromArgs(args: [unknown, unknown?]): FormData | null {
-  const a = args[0];
-  const b = args[1];
-  if (a instanceof FormData) return a;
-  if (b instanceof FormData) return b;
-  return null;
-}
-
-/**
- * Set invite cookie then redirect to sign-up. Use as form action for "Sign up" on join page.
- */
-export async function setClassInviteCookieAndRedirectToSignUp(
-  ...args: [unknown, unknown?]
-): Promise<never> {
-  const formData = getFormDataFromArgs(args);
-  if (!formData) redirect('/sign-in');
-  const token = formData.get('token');
-  const path = formData.get('redirectPath');
-  if (typeof token !== 'string' || !token.trim() || typeof path !== 'string' || !path.trim()) {
-    redirect('/sign-in');
-  }
-  await setClassInviteCookie(token.trim());
-  redirect(path);
-}
-
-/**
- * Set invite cookie then redirect to sign-in. Use as form action for "Log in" on join page.
- */
-export async function setClassInviteCookieAndRedirectToSignIn(
-  ...args: [unknown, unknown?]
-): Promise<never> {
-  const formData = getFormDataFromArgs(args);
-  if (!formData) redirect('/sign-in');
-  const token = formData.get('token');
-  const path = formData.get('redirectPath');
-  if (typeof token !== 'string' || !token.trim() || typeof path !== 'string' || !path.trim()) {
-    redirect('/sign-in');
-  }
-  await setClassInviteCookie(token.trim());
-  redirect(path);
-}
 import { requirePermission, can } from '@/lib/auth/permissions';
 import { getCurrentUserOrNull } from '@/lib/auth/user';
 import type { PlatformRole } from '@/lib/db/schema';
@@ -83,8 +19,66 @@ import {
   enrollStudent,
   getClassById,
 } from '@/lib/db/queries/education';
+import { assertRateLimit, getRequestClientIp } from '@/lib/security/rate-limit';
+import { assertValidOrigin } from '@/lib/security/csrf';
 
-/** Admin/school_admin or teacher assigned to this class can manage invite links. */
+const CLASS_INVITE_COOKIE_NAME = 'class_invite_token';
+const CLASS_INVITE_COOKIE_MAX_AGE = 60 * 30; // 30 minutes
+
+export async function setClassInviteCookie(token: string): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(CLASS_INVITE_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: CLASS_INVITE_COOKIE_MAX_AGE,
+  });
+}
+
+export async function clearClassInviteCookie(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(CLASS_INVITE_COOKIE_NAME);
+}
+
+function getFormDataFromArgs(args: [unknown, unknown?]): FormData | null {
+  const a = args[0];
+  const b = args[1];
+  if (a instanceof FormData) return a;
+  if (b instanceof FormData) return b;
+  return null;
+}
+
+export async function setClassInviteCookieAndRedirectToSignUp(
+  ...args: [unknown, unknown?]
+): Promise<never> {
+  await assertValidOrigin();
+  const formData = getFormDataFromArgs(args);
+  if (!formData) redirect('/sign-in');
+  const token = formData.get('token');
+  const path = formData.get('redirectPath');
+  if (typeof token !== 'string' || !token.trim() || typeof path !== 'string' || !path.trim()) {
+    redirect('/sign-in');
+  }
+  await setClassInviteCookie(token.trim());
+  redirect(path);
+}
+
+export async function setClassInviteCookieAndRedirectToSignIn(
+  ...args: [unknown, unknown?]
+): Promise<never> {
+  await assertValidOrigin();
+  const formData = getFormDataFromArgs(args);
+  if (!formData) redirect('/sign-in');
+  const token = formData.get('token');
+  const path = formData.get('redirectPath');
+  if (typeof token !== 'string' || !token.trim() || typeof path !== 'string' || !path.trim()) {
+    redirect('/sign-in');
+  }
+  await setClassInviteCookie(token.trim());
+  redirect(path);
+}
+
 async function requireCanManageClassInvite(classId: string) {
   const user = await requirePermission('classes:read');
   if (can(user, 'classes:write')) return user;
@@ -92,8 +86,15 @@ async function requireCanManageClassInvite(classId: string) {
   redirect('/dashboard');
 }
 
-/** Get invite by token (for public join page). Returns null if invalid. */
 export async function getInviteByTokenAction(token: string) {
+  const clientIp = await getRequestClientIp();
+  const rateLimit = await assertRateLimit({
+    key: `invite-lookup:${clientIp}`,
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) return null;
+
   const inv = await getInviteByToken(token);
   if (!inv || !isInviteValid(inv)) return null;
   return {
@@ -107,13 +108,11 @@ export type JoinClassWithInviteResult =
   | { success: true; classId: string }
   | { success: false; error: string };
 
-/**
- * Server action for form: join with token, redirect to student dashboard on success.
- */
 export async function joinClassWithInviteFormAction(
   _prev: unknown,
   formData: FormData
 ): Promise<{ error: string | null }> {
+  await assertValidOrigin();
   const token = formData.get('token');
   if (typeof token !== 'string' || !token.trim()) {
     return { error: 'Invalid invite' };
@@ -125,17 +124,25 @@ export async function joinClassWithInviteFormAction(
   return { error: result.error };
 }
 
-/**
- * Join the current user to a class using an invite token.
- * User must have platformRole = student. Idempotent if already enrolled.
- * TODO: Add rate limiting (e.g. per IP) if middleware utilities are added.
- */
 export async function joinClassWithInviteAction(
   token: string
 ): Promise<JoinClassWithInviteResult> {
   const user = await getCurrentUserOrNull();
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  const clientIp = await getRequestClientIp();
+  const rateLimit = await assertRateLimit({
+    key: `invite-join:${user.id}:${clientIp}`,
+    limit: 10,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) {
+    return {
+      success: false,
+      error: `Too many join attempts. Please retry in ${rateLimit.retryAfterSeconds}s.`,
+    };
   }
 
   const role = user.platformRole as PlatformRole | null;
@@ -168,7 +175,6 @@ export async function joinClassWithInviteAction(
   return { success: true, classId: inv.classId };
 }
 
-/** Get active invite for class (for teacher/admin UI). */
 export async function getActiveInviteForClassAction(classId: string) {
   await requireCanManageClassInvite(classId);
   const invite = await getActiveInviteForClass(classId);
@@ -181,7 +187,6 @@ export async function getActiveInviteForClassAction(classId: string) {
   };
 }
 
-/** Create or get active invite link for a class. Only admin/teacher. */
 export async function createOrGetClassInviteAction(classId: string) {
   const user = await requireCanManageClassInvite(classId);
   const existing = await getActiveInviteForClass(classId);
@@ -192,11 +197,11 @@ export async function createOrGetClassInviteAction(classId: string) {
   return { token: created.token };
 }
 
-/** Form action for "Generate invite link" button. */
 export async function createOrGetClassInviteFormAction(
   _prev: { token: string | null; error: string | null },
   formData: FormData
 ): Promise<{ token: string | null; error: string | null }> {
+  await assertValidOrigin();
   const classId = formData.get('classId');
   if (typeof classId !== 'string' || !classId.trim()) {
     return { token: null, error: 'Invalid request' };
@@ -209,29 +214,23 @@ export async function createOrGetClassInviteFormAction(
   }
 }
 
-/** Regenerate invite link (creates new token, deactivates old). */
 export async function regenerateClassInviteAction(classId: string) {
   const user = await requireCanManageClassInvite(classId);
   await regenerateClassInvite(classId, user.id);
   redirect(`/dashboard/admin/classes/${classId}`);
 }
 
-/** Form action for regenerate button. */
 export async function regenerateClassInviteFormAction(
   _prev: unknown,
   formData: FormData
 ): Promise<{ error: string | null }> {
+  await assertValidOrigin();
   const classId = formData.get('classId');
   if (typeof classId !== 'string' || !classId.trim()) return { error: 'Invalid request' };
   await regenerateClassInviteAction(classId.trim());
   return { error: null };
 }
 
-/**
- * If the request has a class_invite_token cookie and the user is a student,
- * join them to the class, clear the cookie, and redirect to /dashboard/student.
- * Call this after sign-in/sign-up with the newly authenticated user.
- */
 export async function consumeClassInviteCookieAndRedirect(
   userId: number,
   platformRole: PlatformRole | null

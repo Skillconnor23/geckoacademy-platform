@@ -7,7 +7,12 @@ import {
   updateTeamSubscription
 } from '@/lib/db/queries';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder';
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.warn('STRIPE_SECRET_KEY is not set; using placeholder key for non-runtime initialization.');
+}
+
+export const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2025-04-30.basil'
 });
 

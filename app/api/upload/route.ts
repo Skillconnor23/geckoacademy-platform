@@ -1,6 +1,8 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getR2, getR2Bucket, getR2PublicBaseUrl } from "@/lib/r2";
 import { getUser } from "@/lib/db/queries";
+import { assertRateLimit, getRequestClientIp, rateLimitHeaders } from '@/lib/security/rate-limit';
+import { assertValidOrigin } from '@/lib/security/csrf';
 
 /** Allowed MIME types: images and PDFs only. */
 const ALLOWED_TYPES = [
@@ -14,6 +16,20 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export async function POST(req: Request) {
   try {
+    await assertValidOrigin();
+    const clientIp = await getRequestClientIp();
+    const rl = await assertRateLimit({
+      key: `api-upload:${clientIp}`,
+      limit: 30,
+      windowMs: 60_000,
+    });
+    if (!rl.ok) {
+      return new Response(
+        JSON.stringify({ error: 'Too many requests' }),
+        { status: 429, headers: { 'Content-Type': 'application/json', ...rateLimitHeaders(rl.retryAfterSeconds) } }
+      );
+    }
+
     const user = await getUser();
     if (!user) {
       return new Response(

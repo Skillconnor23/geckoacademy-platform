@@ -10,7 +10,7 @@ import {
   getUserById,
   getAllEnrollmentsForStudent,
   isStudentInTeacherClass,
-  hasStudentEnrollment,
+  hasStudentEnrollmentInSchool,
 } from '@/lib/db/queries/education';
 import { getQuizResultsForStudentProfile } from '@/lib/db/queries/quizzes';
 import { StudentAssessmentsSection } from '../StudentAssessmentsSection';
@@ -48,7 +48,8 @@ export default async function StudentProfilePage({ params }: Props) {
     if (!canView) notFound();
   } else if (role === 'school_admin') {
     await requirePermission(['users:read']);
-    const canView = await hasStudentEnrollment(studentIdNum);
+    if (!currentUser.schoolId) notFound();
+    const canView = await hasStudentEnrollmentInSchool(studentIdNum, currentUser.schoolId);
     if (!canView) notFound();
   } else {
     notFound();
