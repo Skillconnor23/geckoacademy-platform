@@ -2,8 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import { getTranslations } from 'next-intl/server';
 import { requireRole } from '@/lib/auth/user';
-import { getScheduleSummaryForUser } from '@/lib/db/queries/education';
+import { getScheduleSummaryForSchoolAdmin } from '@/lib/db/queries/education';
 import { getNextOccurrencesForUser } from '@/lib/schedule';
+import { getSchoolIdsForUser } from '@/lib/db/queries/schools';
 import { ScheduleView } from '@/components/schedule/ScheduleView';
 import { SetTimezoneOnMount } from '@/components/calendar/SetTimezoneOnMount';
 import { CalendarDays } from 'lucide-react';
@@ -11,9 +12,10 @@ import { CalendarDays } from 'lucide-react';
 export default async function SchoolAdminSchedulePage() {
   const user = await requireRole(['school_admin']);
   const t = await getTranslations('schoolAdmin.schedule');
+  const schoolIds = await getSchoolIdsForUser(user.id);
   const [classes, nextOccurrences] = await Promise.all([
-    getScheduleSummaryForUser(user.id, 'school_admin'),
-    getNextOccurrencesForUser(user.id, 'school_admin', 2),
+    getScheduleSummaryForSchoolAdmin(schoolIds),
+    getNextOccurrencesForUser(user.id, 'school_admin', 2, schoolIds),
   ]);
   const viewerTimezone = user.timezone ?? 'UTC';
 

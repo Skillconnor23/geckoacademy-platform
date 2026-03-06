@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { requireClassroomAccess, canPostToClassroom } from '@/lib/auth/classroom';
-import { listClassroomPostsWithAuthors, listClassmatesPreview } from '@/lib/db/queries/education';
+import { listClassroomPostsWithAuthors, listClassmatesPreview, getSchoolNameForClass } from '@/lib/db/queries/education';
 import { getClassroomSidebarData } from '@/lib/db/queries/classroom';
 import { getClassMonthSummary } from '@/lib/db/queries/attendance';
 import { ClassAttendanceMonthCard } from '@/components/attendance/AttendanceMonthSummaryCard';
@@ -23,12 +23,13 @@ export default async function ClassroomPage({ params }: Props) {
   const { classId } = await params;
   const { user, eduClass } = await requireClassroomAccess(classId);
 
-  const [posts, canPost, sidebar, classMonthSummary, classmatesData] = await Promise.all([
+  const [posts, canPost, sidebar, classMonthSummary, classmatesData, schoolName] = await Promise.all([
     listClassroomPostsWithAuthors(classId, 50),
-    canPostToClassroom(user, classId),
+    canPostToClassroom(user, classId, eduClass),
     getClassroomSidebarData(classId),
     getClassMonthSummary({ classId }),
     listClassmatesPreview(classId, 8),
+    getSchoolNameForClass(classId),
   ]);
 
   return (
@@ -54,8 +55,10 @@ export default async function ClassroomPage({ params }: Props) {
                 </span>
               )}
             </div>
-            {eduClass.timezone && (
-              <p className="mt-1 text-sm text-muted-foreground">{eduClass.timezone}</p>
+            {(eduClass.timezone || schoolName) && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {[eduClass.timezone, schoolName].filter(Boolean).join(' • ')}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-2">

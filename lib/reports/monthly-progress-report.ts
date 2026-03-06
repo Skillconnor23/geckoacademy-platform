@@ -1,6 +1,6 @@
 import type { PlatformRole } from '@/lib/db/schema';
 import { getUser } from '@/lib/db/queries';
-import { getUserById, getAllEnrollmentsForStudent, isStudentInTeacherClass, hasStudentEnrollment } from '@/lib/db/queries/education';
+import { getUserById, getAllEnrollmentsForStudent, isStudentInTeacherClass, hasStudentEnrollment, getSchoolNameForClass } from '@/lib/db/queries/education';
 import { getStudentAttendanceMonthSummary, getStudentAttendanceMonthSessions } from '@/lib/db/queries/attendance';
 import { db } from '@/lib/db/drizzle';
 import {
@@ -39,7 +39,7 @@ export async function canAccessStudentReport(
   if (role === 'admin') return { allowed: true, role: 'admin' };
 
   if (role === 'school_admin') {
-    const ok = await hasStudentEnrollment(studentId);
+    const ok = await hasStudentEnrollment(studentId, user.id);
     if (!ok) return { allowed: false, error: 'Student not in your school.' };
     return { allowed: true, role: 'school_admin' };
   }
@@ -57,6 +57,7 @@ export type MonthlyReportData = {
   studentName: string;
   studentEmail: string;
   className: string | null;
+  schoolName: string | null;
   teacherName: string | null;
   monthLabel: string;
   monthKey: string;
@@ -112,7 +113,10 @@ export async function getMonthlyReportData(
   const primaryEnrollment = enrollments[0];
   const classId = primaryEnrollment?.class?.id ?? null;
   const className = primaryEnrollment?.class?.name ?? null;
-  const teacherName = classId ? await getTeacherNameForClass(classId) : null;
+  const [teacherName, schoolName] = await Promise.all([
+    classId ? getTeacherNameForClass(classId) : null,
+    classId ? getSchoolNameForClass(classId) : null,
+  ]);
 
   const presentLate = attendanceSummary.presentCount + attendanceSummary.lateCount;
 
@@ -207,6 +211,7 @@ export async function getMonthlyReportData(
     studentName: student.name ?? student.email ?? 'Student',
     studentEmail: student.email,
     className,
+    schoolName: schoolName ?? null,
     teacherName,
     monthLabel: formatMonthLabel(monthKey),
     monthKey,

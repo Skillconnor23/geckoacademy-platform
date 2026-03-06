@@ -86,22 +86,11 @@ const navGroupKeys: Record<
     {
       labelKey: 'main',
       items: [
-        { href: '/dashboard/school-admin', icon: Building2, labelKey: 'dashboard' },
+        { href: '/dashboard/school-admin/school', icon: Building2, labelKey: 'school' },
         { href: '/dashboard/school-admin/students', icon: Users, labelKey: 'students' },
         { href: '/dashboard/school-admin/schedule', icon: CalendarDays, labelKey: 'schedule' },
-        { href: '/dashboard/admin/classes', icon: GraduationCap, labelKey: 'classes' },
         { href: '/dashboard/homework', icon: ClipboardList, labelKey: 'homework' },
         { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'messages' },
-      ],
-    },
-    {
-      labelKey: 'settings',
-      items: [
-        { href: '/dashboard/profile', icon: User, labelKey: 'profile' },
-        { href: '/dashboard/team', icon: Users, labelKey: 'team' },
-        { href: '/dashboard/general', icon: Settings, labelKey: 'general' },
-        { href: '/dashboard/activity', icon: Activity, labelKey: 'activity' },
-        { href: '/dashboard/security', icon: Shield, labelKey: 'security' },
       ],
     },
   ],
@@ -110,6 +99,7 @@ const navGroupKeys: Record<
       labelKey: 'main',
       items: [
         { href: '/dashboard/admin', icon: UserCog, labelKey: 'dashboard' },
+        { href: '/dashboard/admin/schools', icon: Building2, labelKey: 'schools' },
         { href: '/dashboard/admin/users', icon: Users, labelKey: 'users' },
         { href: '/dashboard/admin/classes', icon: GraduationCap, labelKey: 'classes' },
         { href: '/dashboard/homework', icon: ClipboardList, labelKey: 'homework' },
@@ -294,12 +284,19 @@ export function DashboardSidebar({
       {(userName || userEmail) && (
         <>
           <div className="mt-auto shrink-0 border-t border-white/20 pt-4">
-            {platformRole === 'student' && (
+            {(platformRole === 'student' || platformRole === 'school_admin') && (
               <Link
-                href={withLocalePrefix('/dashboard/student/settings')}
+                href={withLocalePrefix(
+                  platformRole === 'student'
+                    ? '/dashboard/student/settings'
+                    : '/dashboard/school-admin/settings'
+                )}
                 onClick={handleNavigate}
                 className={`flex h-12 min-h-[48px] w-full items-center gap-3 rounded-full px-4 py-3 text-base font-medium text-white transition-colors hover:bg-white/12 active:bg-white/14 md:text-sm md:gap-2 md:px-3 md:py-2 ${
-                  pathWithoutLocale?.startsWith('/dashboard/student/settings')
+                  (platformRole === 'student' &&
+                    pathWithoutLocale?.startsWith('/dashboard/student/settings')) ||
+                  (platformRole === 'school_admin' &&
+                    pathWithoutLocale?.startsWith('/dashboard/school-admin/settings'))
                     ? 'bg-white/25 font-semibold md:bg-white/15'
                     : ''
                 }`}

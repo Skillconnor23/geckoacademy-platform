@@ -51,9 +51,10 @@ export async function getOccurrencesForUser(
   role: PlatformRole,
   rangeStart: Date,
   rangeEnd: Date,
-  classIdFilter?: string | null
+  classIdFilter?: string | null,
+  schoolIds?: string[]
 ): Promise<Occurrence[]> {
-  const classes = await getClassesWithScheduleForCalendar(userId, role);
+  const classes = await getClassesWithScheduleForCalendar(userId, role, schoolIds);
   const filtered =
     classIdFilter && classIdFilter !== 'all'
       ? classes.filter((c) => c.id === classIdFilter)
@@ -105,10 +106,11 @@ export async function getOccurrencesForUser(
 export async function getNextOccurrencesForUser(
   userId: number,
   role: PlatformRole,
-  count = 2
+  count = 2,
+  schoolIds?: string[]
 ): Promise<Occurrence[]> {
   const now = new Date();
   const rangeEnd = new Date(now.getTime() + 30 * 86400000);
-  const all = await getOccurrencesForUser(userId, role, now, rangeEnd);
+  const all = await getOccurrencesForUser(userId, role, now, rangeEnd, null, schoolIds);
   return all.slice(0, count);
 }

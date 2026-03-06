@@ -28,7 +28,7 @@ export default async function StudentQuizAttemptPage({ params }: Props) {
     const canView = await isStudentInTeacherClass(currentUser.id, studentIdNum);
     if (!canView) notFound();
   } else if (role === 'school_admin') {
-    const canView = await hasStudentEnrollment(studentIdNum);
+    const canView = await hasStudentEnrollment(studentIdNum, currentUser.id);
     if (!canView) notFound();
   } else if (role !== 'admin') {
     notFound();

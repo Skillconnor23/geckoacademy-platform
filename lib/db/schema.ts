@@ -47,6 +47,43 @@ export const users = pgTable(
   ]
 );
 
+// --- Schools (organizational layer for classes) ---
+
+export const schools = pgTable(
+  'schools',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 200 }).notNull(),
+    slug: varchar('slug', { length: 100 }).notNull().unique(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('schools_slug_idx').on(table.slug)]
+);
+
+export const schoolMemberRoleEnum = ['school_admin'] as const;
+export type SchoolMemberRole = (typeof schoolMemberRoleEnum)[number];
+
+export const schoolMemberships = pgTable(
+  'school_memberships',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    schoolId: uuid('school_id')
+      .notNull()
+      .references(() => schools.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: varchar('role', { length: 30 }).notNull().default('school_admin'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('school_memberships_school_user_idx').on(table.schoolId, table.userId),
+    index('school_memberships_user_idx').on(table.userId),
+    index('school_memberships_school_idx').on(table.schoolId),
+  ]
+);
+
 export const teams = pgTable('teams', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
@@ -167,10 +204,14 @@ export const eduClasses = pgTable(
     scheduleEndDate: date('schedule_end_date'),
     durationMinutes: integer('duration_minutes').notNull().default(50),
     defaultMeetingUrl: text('default_meeting_url'),
+    schoolId: uuid('school_id').references(() => schools.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
-  (table) => [index('edu_classes_join_code_idx').on(table.joinCode)]
+  (table) => [
+    index('edu_classes_join_code_idx').on(table.joinCode),
+    index('edu_classes_school_id_idx').on(table.schoolId),
+  ]
 );
 
 export const eduClassTeachers = pgTable(
@@ -626,6 +667,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   flashcardDecksCreated: many(flashcardDecks),
   flashcardSaves: many(flashcardSaves),
   flashcardStudyEvents: many(flashcardStudyEvents),
+  schoolMemberships: many(schoolMemberships),
 }));
 
 export const invitationsRelations = relations(invitations, ({ one }) => ({
@@ -648,6 +690,16 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
     fields: [teamMembers.teamId],
     references: [teams.id],
   }),
+}));
+
+export const schoolsRelations = relations(schools, ({ many }) => ({
+  memberships: many(schoolMemberships),
+  classes: many(eduClasses),
+}));
+
+export const schoolMembershipsRelations = relations(schoolMemberships, ({ one }) => ({
+  school: one(schools, { fields: [schoolMemberships.schoolId], references: [schools.id] }),
+  user: one(users, { fields: [schoolMemberships.userId], references: [users.id] }),
 }));
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
@@ -685,7 +737,11 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
-export const eduClassesRelations = relations(eduClasses, ({ many }) => ({
+export const eduClassesRelations = relations(eduClasses, ({ one, many }) => ({
+  school: one(schools, {
+    fields: [eduClasses.schoolId],
+    references: [schools.id],
+  }),
   classTeachers: many(eduClassTeachers),
   enrollments: many(eduEnrollments),
   classInvites: many(classInvites),
@@ -1187,6 +1243,10 @@ export type ActivityLog = typeof activityLogs.$inferSelect;
 export type NewActivityLog = typeof activityLogs.$inferInsert;
 export type Invitation = typeof invitations.$inferSelect;
 export type NewInvitation = typeof invitations.$inferInsert;
+export type School = typeof schools.$inferSelect;
+export type NewSchool = typeof schools.$inferInsert;
+export type SchoolMembership = typeof schoolMemberships.$inferSelect;
+export type NewSchoolMembership = typeof schoolMemberships.$inferInsert;
 export type Organization = typeof organizations.$inferSelect;
 export type NewOrganization = typeof organizations.$inferInsert;
 export type Class = typeof classes.$inferSelect;

@@ -6,6 +6,8 @@ import {
   listEnrollmentsByClassId,
   listTeachersByClassId,
 } from '@/lib/db/queries/education';
+import { getSchoolById } from '@/lib/db/queries/schools';
+import { listSchools } from '@/lib/db/queries/schools';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -24,6 +26,7 @@ import { JoinCodeCard } from './join-code-card';
 import { InviteLinkCard } from './invite-link-card';
 import { WeeklyScheduleCard } from './WeeklyScheduleCard';
 import { getActiveInviteForClassAction } from '@/lib/actions/class-invite';
+import { ClassSchoolCard } from './ClassSchoolCard';
 
 export default async function ClassDetailPage({
   params,
@@ -34,10 +37,12 @@ export default async function ClassDetailPage({
   const eduClass = await getClassById(id);
   if (!eduClass) notFound();
 
-  const [enrollments, teachers, invite] = await Promise.all([
+  const [enrollments, teachers, invite, schools, currentSchool] = await Promise.all([
     listEnrollmentsByClassId(id),
     listTeachersByClassId(id),
     getActiveInviteForClassAction(id),
+    listSchools(),
+    eduClass.schoolId ? getSchoolById(eduClass.schoolId) : null,
   ]);
 
   return (
@@ -55,6 +60,13 @@ export default async function ClassDetailPage({
         {eduClass.level && <span>{eduClass.level}</span>}
         {eduClass.timezone && <span className="ml-2">• {eduClass.timezone}</span>}
       </p>
+
+      <ClassSchoolCard
+        classId={id}
+        currentSchoolId={eduClass.schoolId}
+        currentSchoolName={currentSchool?.name ?? null}
+        schools={schools}
+      />
 
       {eduClass.description && (
         <Card className="mb-6">

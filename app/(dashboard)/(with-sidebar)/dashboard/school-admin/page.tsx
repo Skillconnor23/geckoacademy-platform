@@ -8,6 +8,7 @@ import {
   getSchoolAdminNeedsAttention,
 } from '@/lib/db/queries/school-admin-dashboard';
 import { getSchoolMonthSummary } from '@/lib/db/queries/attendance';
+import { getSchoolIdsForUser, getSchoolById } from '@/lib/db/queries/schools';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -16,29 +17,41 @@ import { SchoolAttendanceMonthCard } from '@/components/attendance/AttendanceMon
 import { SchoolAdminClassTable } from './SchoolAdminClassTable';
 
 export default async function SchoolAdminDashboardPage() {
-  await requireRole(['school_admin']);
+  const user = await requireRole(['school_admin']);
   const locale = await getLocale();
   const t = await getTranslations('schoolAdmin.dashboard');
   const tAttendance = await getTranslations('schoolAdmin.attendance');
   const tCommon = await getTranslations('common');
 
+  const schoolIds = await getSchoolIdsForUser(user.id);
+  const firstSchool =
+    schoolIds.length > 0 ? await getSchoolById(schoolIds[0]) : null;
+  const schoolName = firstSchool?.name ?? null;
+
   const [kpis, classRows, needsAttention, schoolAttendanceSummary] = await Promise.all([
-    getSchoolAdminKpis(),
-    getSchoolAdminClassTable(),
-    getSchoolAdminNeedsAttention(),
-    getSchoolMonthSummary(),
+    getSchoolAdminKpis(schoolIds),
+    getSchoolAdminClassTable(schoolIds),
+    getSchoolAdminNeedsAttention(schoolIds),
+    getSchoolMonthSummary(schoolIds),
   ]);
 
   const completionRate = Math.max(0, Math.min(100, kpis.completionRate30d ?? 0));
   const completionDegrees = completionRate * 3.6;
 
+  const title = schoolName
+    ? t('titleWithSchool', { schoolName })
+    : t('titleFallback');
+  const subtitle = schoolName
+    ? t('subtitleWithSchool', { schoolName })
+    : t('subtitleFallback');
+
   return (
     <section className="flex-1">
       <h1 className="text-xl lg:text-2xl font-medium text-[#1f2937] mb-2 tracking-tight">
-        {t('title')}
+        {title}
       </h1>
       <p className="text-sm text-muted-foreground mb-6">
-        {t('subtitle')}
+        {subtitle}
       </p>
 
       {/* Attendance This Month */}
@@ -212,7 +225,7 @@ export default async function SchoolAdminDashboardPage() {
           </Card>
 
           <Button asChild className="mt-4 w-full rounded-full bg-[#429ead] text-white hover:bg-[#36899a]">
-            <Link href={`/${locale}/dashboard/admin/classes`}>
+            <Link href={`/${locale}/dashboard/school-admin/school`}>
               <GraduationCap className="mr-2 h-4 w-4" />
               {t('manageClasses')}
             </Link>

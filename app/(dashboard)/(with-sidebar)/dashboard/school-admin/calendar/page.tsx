@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { requireRole } from '@/lib/auth/user';
 import { getOccurrencesForUser } from '@/lib/schedule';
 import { getClassesWithScheduleForCalendar } from '@/lib/db/queries/education';
+import { getSchoolIdsForUser } from '@/lib/db/queries/schools';
 import { CalendarListView } from '@/components/calendar/CalendarListView';
 import { SetTimezoneOnMount } from '@/components/calendar/SetTimezoneOnMount';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,12 +24,13 @@ export default async function SchoolAdminCalendarPage({
   const days = Math.min(30, Math.max(7, parseInt(params.days ?? String(DEFAULT_DAYS), 10) || DEFAULT_DAYS));
   const classIdFilter = params.classId ?? null;
 
+  const schoolIds = await getSchoolIdsForUser(user.id);
   const [classes, occurrences] = await Promise.all([
-    getClassesWithScheduleForCalendar(user.id, 'school_admin'),
+    getClassesWithScheduleForCalendar(user.id, 'school_admin', schoolIds),
     (async () => {
       const now = new Date();
       const rangeEnd = new Date(now.getTime() + days * 86400000);
-      return getOccurrencesForUser(user.id, 'school_admin', now, rangeEnd, classIdFilter);
+      return getOccurrencesForUser(user.id, 'school_admin', now, rangeEnd, classIdFilter, schoolIds);
     })(),
   ]);
 

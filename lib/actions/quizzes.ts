@@ -339,7 +339,7 @@ export async function getQuizSubmissionForViewerAction(
     // Admin can view all
   } else if (role === 'school_admin') {
     const { hasStudentEnrollment } = await import('@/lib/db/queries/education');
-    if (!(await hasStudentEnrollment(studentUserId))) {
+    if (!(await hasStudentEnrollment(studentUserId, user.id))) {
       return { error: 'Student not found' };
     }
   } else if (role === 'teacher') {

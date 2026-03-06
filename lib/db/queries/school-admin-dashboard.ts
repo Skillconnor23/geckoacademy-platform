@@ -43,7 +43,17 @@ export type SchoolAdminNeedsAttention = {
 const LOW_SCORE_THRESHOLD = 70;
 const LOW_ATTEMPT_THRESHOLD = 50;
 
-export async function getSchoolAdminKpis(): Promise<SchoolAdminKpis> {
+/** Scope: when provided, only classes (and their enrollments) in these schools are included. */
+export async function getSchoolAdminKpis(schoolIds: string[]): Promise<SchoolAdminKpis> {
+  if (schoolIds.length === 0) {
+    return {
+      activeStudents: 0,
+      activeClasses: 0,
+      avgQuizScore7d: null,
+      avgQuizScore30d: null,
+      completionRate30d: 0,
+    };
+  }
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - SEVEN_DAYS_MS);
   const thirtyDaysAgo = new Date(now.getTime() - THIRTY_DAYS_MS);
@@ -55,32 +65,84 @@ export async function getSchoolAdminKpis(): Promise<SchoolAdminKpis> {
           count: sql<number>`count(distinct ${eduEnrollments.studentUserId})::int`,
         })
         .from(eduEnrollments)
-        .where(eq(eduEnrollments.status, 'active')),
+        .innerJoin(eduClasses, eq(eduEnrollments.classId, eduClasses.id))
+        .where(
+          and(
+            eq(eduEnrollments.status, 'active'),
+            inArray(eduClasses.schoolId, schoolIds)
+          )
+        ),
       db
         .select({
           count: sql<number>`count(distinct ${eduEnrollments.classId})::int`,
         })
         .from(eduEnrollments)
-        .where(eq(eduEnrollments.status, 'active')),
+        .innerJoin(eduClasses, eq(eduEnrollments.classId, eduClasses.id))
+        .where(
+          and(
+            eq(eduEnrollments.status, 'active'),
+            inArray(eduClasses.schoolId, schoolIds)
+          )
+        ),
       db
         .select({
           avg: sql<number>`avg(${eduQuizSubmissions.score})::float`,
         })
         .from(eduQuizSubmissions)
-        .where(gte(eduQuizSubmissions.submittedAt, sevenDaysAgo)),
+        .innerJoin(eduQuizClasses, eq(eduQuizClasses.quizId, eduQuizSubmissions.quizId))
+        .innerJoin(eduClasses, eq(eduClasses.id, eduQuizClasses.classId))
+        .where(
+          and(
+            gte(eduQuizSubmissions.submittedAt, sevenDaysAgo),
+            inArray(eduClasses.schoolId, schoolIds)
+          )
+        ),
       db
         .select({
           avg: sql<number>`avg(${eduQuizSubmissions.score})::float`,
         })
         .from(eduQuizSubmissions)
-        .where(gte(eduQuizSubmissions.submittedAt, thirtyDaysAgo)),
-      db
-        .select({
-          studentsWithAttempts: sql<number>`count(distinct ${eduQuizSubmissions.studentUserId})::int`,
-          totalStudents: sql<number>`(select count(distinct student_user_id)::int from edu_enrollments where status = 'active')`,
-        })
-        .from(eduQuizSubmissions)
-        .where(gte(eduQuizSubmissions.submittedAt, thirtyDaysAgo)),
+        .innerJoin(eduQuizClasses, eq(eduQuizClasses.quizId, eduQuizSubmissions.quizId))
+        .innerJoin(eduClasses, eq(eduClasses.id, eduQuizClasses.classId))
+        .where(
+          and(
+            gte(eduQuizSubmissions.submittedAt, thirtyDaysAgo),
+            inArray(eduClasses.schoolId, schoolIds)
+          )
+        ),
+      (async () => {
+        const [attemptsRow, totalRow] = await Promise.all([
+          db
+            .select({
+              studentsWithAttempts: sql<number>`count(distinct ${eduQuizSubmissions.studentUserId})::int`,
+            })
+            .from(eduQuizSubmissions)
+            .innerJoin(eduQuizClasses, eq(eduQuizClasses.quizId, eduQuizSubmissions.quizId))
+            .innerJoin(eduClasses, eq(eduClasses.id, eduQuizClasses.classId))
+            .where(
+              and(
+                gte(eduQuizSubmissions.submittedAt, thirtyDaysAgo),
+                inArray(eduClasses.schoolId, schoolIds)
+              )
+            ),
+          db
+            .select({
+              totalStudents: sql<number>`count(distinct ${eduEnrollments.studentUserId})::int`,
+            })
+            .from(eduEnrollments)
+            .innerJoin(eduClasses, eq(eduEnrollments.classId, eduClasses.id))
+            .where(
+              and(
+                eq(eduEnrollments.status, 'active'),
+                inArray(eduClasses.schoolId, schoolIds)
+              )
+            ),
+        ]);
+        return [{
+          studentsWithAttempts: attemptsRow[0]?.studentsWithAttempts ?? 0,
+          totalStudents: totalRow[0]?.totalStudents ?? 0,
+        }];
+      })(),
     ]);
 
   const activeStudents = activeStudentsRow[0]?.count ?? 0;
@@ -106,7 +168,8 @@ export async function getSchoolAdminKpis(): Promise<SchoolAdminKpis> {
   };
 }
 
-export async function getSchoolAdminClassTable(): Promise<SchoolAdminClassRow[]> {
+export async function getSchoolAdminClassTable(schoolIds: string[]): Promise<SchoolAdminClassRow[]> {
+  if (schoolIds.length === 0) return [];
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - THIRTY_DAYS_MS);
 
@@ -116,6 +179,7 @@ export async function getSchoolAdminClassTable(): Promise<SchoolAdminClassRow[]>
       name: eduClasses.name,
     })
     .from(eduClasses)
+    .where(inArray(eduClasses.schoolId, schoolIds))
     .orderBy(eduClasses.name);
 
   if (classes.length === 0) return [];
@@ -266,12 +330,20 @@ export async function getSchoolAdminClassTable(): Promise<SchoolAdminClassRow[]>
   });
 }
 
-export async function getSchoolAdminNeedsAttention(): Promise<SchoolAdminNeedsAttention> {
+export async function getSchoolAdminNeedsAttention(schoolIds: string[]): Promise<SchoolAdminNeedsAttention> {
+  if (schoolIds.length === 0) {
+    return {
+      lowScoreClasses: [],
+      inactiveStudents: [],
+      lowAttemptQuizzes: [],
+    };
+  }
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - THIRTY_DAYS_MS);
   const fourteenDaysAgo = new Date(now.getTime() - FOURTEEN_DAYS_MS);
 
-  const classRows = await getSchoolAdminClassTable();
+  const classRows = await getSchoolAdminClassTable(schoolIds);
+  const classIds = classRows.map((r) => r.classId);
   const lowScoreClasses = classRows
     .filter((r) => r.avgQuizScore30d != null && r.avgQuizScore30d < LOW_SCORE_THRESHOLD)
     .map((r) => ({
@@ -287,12 +359,25 @@ export async function getSchoolAdminNeedsAttention(): Promise<SchoolAdminNeedsAt
     })
     .from(eduEnrollments)
     .innerJoin(users, eq(eduEnrollments.studentUserId, users.id))
-    .where(eq(eduEnrollments.status, 'active'));
+    .innerJoin(eduClasses, eq(eduEnrollments.classId, eduClasses.id))
+    .where(
+      and(
+        eq(eduEnrollments.status, 'active'),
+        inArray(eduClasses.schoolId, schoolIds)
+      )
+    );
 
   const studentsWithRecentAttempts = await db
     .selectDistinct({ studentId: eduQuizSubmissions.studentUserId })
     .from(eduQuizSubmissions)
-    .where(gte(eduQuizSubmissions.submittedAt, fourteenDaysAgo));
+    .innerJoin(eduQuizClasses, eq(eduQuizClasses.quizId, eduQuizSubmissions.quizId))
+    .innerJoin(eduClasses, eq(eduClasses.id, eduQuizClasses.classId))
+    .where(
+      and(
+        gte(eduQuizSubmissions.submittedAt, fourteenDaysAgo),
+        inArray(eduClasses.schoolId, schoolIds)
+      )
+    );
 
   const recentAttemptSet = new Set(
     studentsWithRecentAttempts.map((r) => r.studentId)
@@ -312,7 +397,12 @@ export async function getSchoolAdminNeedsAttention(): Promise<SchoolAdminNeedsAt
     .from(eduQuizClasses)
     .innerJoin(eduQuizzes, eq(eduQuizzes.id, eduQuizClasses.quizId))
     .innerJoin(eduClasses, eq(eduClasses.id, eduQuizClasses.classId))
-    .where(eq(eduQuizzes.status, 'PUBLISHED'));
+    .where(
+      and(
+        eq(eduQuizzes.status, 'PUBLISHED'),
+        inArray(eduClasses.schoolId, schoolIds)
+      )
+    );
 
   const lowAttemptQuizzes: { quizId: string; quizTitle: string; className: string; attemptPct: number }[] = [];
 

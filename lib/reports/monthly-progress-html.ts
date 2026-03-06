@@ -133,6 +133,7 @@ export function renderMonthlyReportHtml(
         <div><span class="label">${escapeHtml(labels.class)}</span><br/><span class="value">${escapeHtml(data.className ?? '—')}</span></div>
         <div><span class="label">${escapeHtml(labels.teacher)}</span><br/><span class="value">${escapeHtml(data.teacherName ?? '—')}</span></div>
         <div><span class="label">${escapeHtml(labels.reportingMonth)}</span><br/><span class="value">${escapeHtml(data.monthLabel)}</span></div>
+        ${data.schoolName ? `<div><span class="label">${escapeHtml(labels.school ?? 'School')}</span><br/><span class="value">${escapeHtml(data.schoolName)}</span></div>` : ''}
       </div>
     </div>
   </section>

@@ -406,8 +406,17 @@ export type SchoolMonthSummary = {
   atRiskCount: number;
 };
 
-/** School-wide attendance summary this month (all classes). */
-export async function getSchoolMonthSummary(): Promise<SchoolMonthSummary> {
+/** School-wide attendance summary this month. Pass schoolIds to scope to those schools; empty = zeros. */
+export async function getSchoolMonthSummary(schoolIds: string[]): Promise<SchoolMonthSummary> {
+  if (schoolIds.length === 0) {
+    return {
+      totalMarked: 0,
+      attendanceRate: 0,
+      lateRate: 0,
+      participationAvg: null,
+      atRiskCount: 0,
+    };
+  }
   const { monthStart, now } = getCurrentMonthRange();
 
   const [agg, atRiskRows] = await Promise.all([
@@ -420,10 +429,12 @@ export async function getSchoolMonthSummary(): Promise<SchoolMonthSummary> {
       })
       .from(attendanceRecords)
       .innerJoin(classSessions, eq(attendanceRecords.sessionId, classSessions.id))
+      .innerJoin(eduClasses, eq(classSessions.classId, eduClasses.id))
       .where(
         and(
           gte(classSessions.startsAt, monthStart),
-          lte(classSessions.startsAt, now)
+          lte(classSessions.startsAt, now),
+          inArray(eduClasses.schoolId, schoolIds)
         )
       )
       .then((r) => r[0]),
@@ -436,10 +447,12 @@ export async function getSchoolMonthSummary(): Promise<SchoolMonthSummary> {
       })
       .from(attendanceRecords)
       .innerJoin(classSessions, eq(attendanceRecords.sessionId, classSessions.id))
+      .innerJoin(eduClasses, eq(classSessions.classId, eduClasses.id))
       .where(
         and(
           gte(classSessions.startsAt, monthStart),
-          lte(classSessions.startsAt, now)
+          lte(classSessions.startsAt, now),
+          inArray(eduClasses.schoolId, schoolIds)
         )
       )
       .groupBy(attendanceRecords.studentUserId)

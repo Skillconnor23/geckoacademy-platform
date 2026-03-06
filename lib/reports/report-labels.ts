@@ -13,6 +13,7 @@ export type MonthlyReportLabels = {
   studentInfo: string;
   studentName: string;
   class: string;
+  school?: string;
   teacher: string;
   reportingMonth: string;
   performanceMetrics: string;

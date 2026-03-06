@@ -50,7 +50,7 @@ export default async function StudentProfilePage({ params }: Props) {
     if (!canView) notFound();
   } else if (role === 'school_admin') {
     await requirePermission(['users:read']);
-    const canView = await hasStudentEnrollment(studentIdNum);
+    const canView = await hasStudentEnrollment(studentIdNum, currentUser.id);
     if (!canView) notFound();
   } else {
     notFound();

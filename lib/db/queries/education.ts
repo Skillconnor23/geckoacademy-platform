@@ -9,6 +9,8 @@ import {
   classroomPosts,
   eduQuizClasses,
   eduQuizzes,
+  schools,
+  schoolMemberships,
 } from '../schema';
 import type { PlatformRole } from '../schema';
 
@@ -19,11 +21,13 @@ export type CreateClassData = {
   timezone?: string;
   joinCode: string;
   joinCodeEnabled?: boolean;
+  schoolId?: string | null;
 };
 
 export type UpdateClassData = Partial<Omit<CreateClassData, 'joinCode'>> & {
   joinCode?: string;
   joinCodeEnabled?: boolean;
+  schoolId?: string | null;
   geckoLevel?: string | null;
   scheduleDays?: string[] | null;
   scheduleStartTime?: string | null;
@@ -53,6 +57,7 @@ export async function createClass(data: CreateClassData) {
       timezone: data.timezone ?? 'Asia/Ulaanbaatar',
       joinCode: data.joinCode,
       joinCodeEnabled: data.joinCodeEnabled ?? true,
+      schoolId: data.schoolId ?? null,
       updatedAt: new Date(),
     })
     .returning();
@@ -87,7 +92,18 @@ export async function updateClass(
   return updated;
 }
 
-export async function listClasses() {
+export type ListClassesFilters = {
+  schoolIds?: string[] | null;
+};
+
+export async function listClasses(filters?: ListClassesFilters) {
+  if (filters?.schoolIds != null && filters.schoolIds.length > 0) {
+    return db
+      .select()
+      .from(eduClasses)
+      .where(inArray(eduClasses.schoolId, filters.schoolIds))
+      .orderBy(desc(eduClasses.createdAt));
+  }
   return db
     .select()
     .from(eduClasses)
@@ -101,6 +117,17 @@ export async function getClassById(id: string) {
     .where(eq(eduClasses.id, id))
     .limit(1);
   return row ?? null;
+}
+
+/** Returns the school name for a class if the class belongs to a school. */
+export async function getSchoolNameForClass(classId: string): Promise<string | null> {
+  const [row] = await db
+    .select({ schoolName: schools.name })
+    .from(eduClasses)
+    .leftJoin(schools, eq(eduClasses.schoolId, schools.id))
+    .where(eq(eduClasses.id, classId))
+    .limit(1);
+  return row?.schoolName ?? null;
 }
 
 export async function getClassByJoinCode(joinCode: string) {
@@ -412,8 +439,9 @@ export async function getClassesWithHealthForTeacher(
   }));
 }
 
-/** All classes with schedule, student count, and teachers (for school_admin). */
-export async function getClassesForSchoolAdminWithDetails() {
+/** All classes with schedule, student count, and teachers (for school_admin). Scoped by schoolIds. */
+export async function getClassesForSchoolAdminWithDetails(schoolIds: string[]) {
+  if (schoolIds.length === 0) return [];
   const classes = await db
     .select({
       id: eduClasses.id,
@@ -424,8 +452,10 @@ export async function getClassesForSchoolAdminWithDetails() {
       scheduleTimezone: eduClasses.scheduleTimezone,
     })
     .from(eduClasses)
+    .where(inArray(eduClasses.schoolId, schoolIds))
     .orderBy(asc(eduClasses.name));
 
+  const classIds = classes.map((c) => c.id);
   const [studentCountRows, teacherRows] = await Promise.all([
     db
       .select({
@@ -433,7 +463,12 @@ export async function getClassesForSchoolAdminWithDetails() {
         count: sql<number>`count(*)::int`,
       })
       .from(eduEnrollments)
-      .where(eq(eduEnrollments.status, 'active'))
+      .where(
+        and(
+          eq(eduEnrollments.status, 'active'),
+          inArray(eduEnrollments.classId, classIds)
+        )
+      )
       .groupBy(eduEnrollments.classId),
     db
       .select({
@@ -444,7 +479,12 @@ export async function getClassesForSchoolAdminWithDetails() {
       })
       .from(eduClassTeachers)
       .innerJoin(users, eq(eduClassTeachers.teacherUserId, users.id))
-      .where(isNull(users.deletedAt)),
+      .where(
+        and(
+          isNull(users.deletedAt),
+          inArray(eduClassTeachers.classId, classIds)
+        )
+      ),
   ]);
 
   const countMap = new Map(studentCountRows.map((r) => [r.classId, r.count]));
@@ -1004,20 +1044,44 @@ export async function getScheduleSummaryForUser(
       .orderBy(asc(eduClasses.name));
   }
 
-  if (role === 'admin' || role === 'school_admin') {
+  if (role === 'admin') {
     return db
       .select(baseSelect)
       .from(eduClasses)
       .orderBy(asc(eduClasses.name));
   }
 
+  if (role === 'school_admin') {
+    return []; // Caller must use getScheduleSummaryForSchoolAdmin(schoolIds) with school IDs
+  }
+
   return [];
 }
 
-/** Classes with recurring schedule for calendar, by role (student=enrolled, teacher=assigned, school_admin=all). */
+/** Classes with schedule for school_admin (scoped by schoolIds). */
+export async function getScheduleSummaryForSchoolAdmin(schoolIds: string[]) {
+  if (schoolIds.length === 0) return [];
+  return db
+    .select({
+      id: eduClasses.id,
+      name: eduClasses.name,
+      geckoLevel: eduClasses.geckoLevel,
+      scheduleDays: eduClasses.scheduleDays,
+      scheduleStartTime: eduClasses.scheduleStartTime,
+      scheduleTimezone: eduClasses.scheduleTimezone,
+      durationMinutes: eduClasses.durationMinutes,
+      defaultMeetingUrl: eduClasses.defaultMeetingUrl,
+    })
+    .from(eduClasses)
+    .where(inArray(eduClasses.schoolId, schoolIds))
+    .orderBy(asc(eduClasses.name));
+}
+
+/** Classes with recurring schedule for calendar, by role (student=enrolled, teacher=assigned, admin=all, school_admin=use schoolIds). */
 export async function getClassesWithScheduleForCalendar(
   userId: number,
-  role: PlatformRole
+  role: PlatformRole,
+  schoolIds?: string[]
 ) {
   const hasSchedule = and(
     isNotNull(eduClasses.scheduleDays),
@@ -1072,7 +1136,7 @@ export async function getClassesWithScheduleForCalendar(
       .orderBy(asc(eduClasses.name));
   }
 
-  if (role === 'admin' || role === 'school_admin') {
+  if (role === 'admin') {
     return db
       .select({
         id: eduClasses.id,
@@ -1088,6 +1152,25 @@ export async function getClassesWithScheduleForCalendar(
       })
       .from(eduClasses)
       .where(hasSchedule)
+      .orderBy(asc(eduClasses.name));
+  }
+
+  if (role === 'school_admin' && schoolIds && schoolIds.length > 0) {
+    return db
+      .select({
+        id: eduClasses.id,
+        name: eduClasses.name,
+        geckoLevel: eduClasses.geckoLevel,
+        scheduleDays: eduClasses.scheduleDays,
+        scheduleStartTime: eduClasses.scheduleStartTime,
+        scheduleTimezone: eduClasses.scheduleTimezone,
+        scheduleStartDate: eduClasses.scheduleStartDate,
+        scheduleEndDate: eduClasses.scheduleEndDate,
+        durationMinutes: eduClasses.durationMinutes,
+        defaultMeetingUrl: eduClasses.defaultMeetingUrl,
+      })
+      .from(eduClasses)
+      .where(and(hasSchedule, inArray(eduClasses.schoolId, schoolIds)))
       .orderBy(asc(eduClasses.name));
   }
 
@@ -1132,12 +1215,20 @@ export async function getSessionsInRange(
     .orderBy(asc(eduSessions.startsAt));
 }
 
-/** Students enrolled in all classes (for school_admin). */
-export async function getStudentsForSchoolAdmin(filters?: {
-  classId?: string;
-  search?: string;
-}) {
-  const conditions = [isNull(users.deletedAt), isNull(users.archivedAt)];
+/** Students enrolled in school-admin's classes. Scoped by schoolIds. */
+export async function getStudentsForSchoolAdmin(
+  schoolIds: string[],
+  filters?: {
+    classId?: string;
+    search?: string;
+  }
+) {
+  if (schoolIds.length === 0) return [];
+  const conditions = [
+    isNull(users.deletedAt),
+    isNull(users.archivedAt),
+    inArray(eduClasses.schoolId, schoolIds),
+  ];
   if (filters?.classId) conditions.push(eq(eduClasses.id, filters.classId));
   if (filters?.search?.trim()) {
     const pattern = `%${filters.search.trim()}%`;
@@ -1203,12 +1294,39 @@ export async function getStudentsForTeacher(
   return rows;
 }
 
-/** Returns true if student has at least one enrollment (for school_admin - views all classes). */
-export async function hasStudentEnrollment(studentUserId: number): Promise<boolean> {
+/**
+ * Returns true if student has at least one enrollment.
+ * When schoolAdminUserId is provided, returns true only if the student is enrolled in
+ * at least one class that belongs to a school the user is a school_admin of.
+ */
+export async function hasStudentEnrollment(
+  studentUserId: number,
+  schoolAdminUserId?: number
+): Promise<boolean> {
+  if (schoolAdminUserId == null) {
+    const [row] = await db
+      .select({ studentUserId: eduEnrollments.studentUserId })
+      .from(eduEnrollments)
+      .where(eq(eduEnrollments.studentUserId, studentUserId))
+      .limit(1);
+    return !!row;
+  }
+  const schoolIds = await db
+    .select({ schoolId: schoolMemberships.schoolId })
+    .from(schoolMemberships)
+    .where(eq(schoolMemberships.userId, schoolAdminUserId));
+  const ids = schoolIds.map((r) => r.schoolId);
+  if (ids.length === 0) return false;
   const [row] = await db
     .select({ studentUserId: eduEnrollments.studentUserId })
     .from(eduEnrollments)
-    .where(eq(eduEnrollments.studentUserId, studentUserId))
+    .innerJoin(eduClasses, eq(eduEnrollments.classId, eduClasses.id))
+    .where(
+      and(
+        eq(eduEnrollments.studentUserId, studentUserId),
+        inArray(eduClasses.schoolId, ids)
+      )
+    )
     .limit(1);
   return !!row;
 }

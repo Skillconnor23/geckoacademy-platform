@@ -527,6 +527,7 @@
         "main": "Main",
         "settings": "Settings",
         "dashboard": "Dashboard",
+        "school": "My School",
         "students": "Students",
         "schedule": "Schedule",
         "classes": "Classes",
@@ -542,6 +543,7 @@
         "main": "Main",
         "settings": "Settings",
         "dashboard": "Dashboard",
+        "schools": "Schools",
         "users": "Users",
         "classes": "Classes",
         "homework": "Homework",
@@ -614,7 +616,11 @@
   "schoolAdmin": {
     "dashboard": {
       "title": "School Admin Dashboard",
+      "titleWithSchool": "{schoolName} Dashboard",
+      "titleFallback": "My School Dashboard",
       "subtitle": "How are classes doing right now?",
+      "subtitleWithSchool": "Manage classes and students for {schoolName}.",
+      "subtitleFallback": "Manage classes and students for your school.",
       "activeStudents": "Active students",
       "activeClasses": "Active classes",
       "avgQuizScoreLabel": "Avg quiz score (7d / 30d)",
@@ -641,6 +647,16 @@
       "onTrackAria": "On track",
       "needsAttentionTitle": "Needs attention: low activity or quiz attempts",
       "needsAttentionAria": "Needs attention: low activity or quiz attempts"
+    },
+    "settingsPage": {
+      "title": "Settings",
+      "subtitle": "Manage your profile, team, and account preferences.",
+      "linksHeading": "Account & preferences",
+      "profileDesc": "Update your name, email, and profile details.",
+      "teamDesc": "View and manage your team members.",
+      "generalDesc": "App preferences and display options.",
+      "activityDesc": "View your account activity and sessions.",
+      "securityDesc": "Password and security settings."
     },
     "students": {
       "title": "Students",
@@ -957,6 +973,7 @@
       "studentInfo": "Student Information",
       "studentName": "Student name",
       "class": "Class",
+      "school": "School",
       "teacher": "Teacher",
       "reportingMonth": "Reporting month",
       "performanceMetrics": "Performance Metrics",

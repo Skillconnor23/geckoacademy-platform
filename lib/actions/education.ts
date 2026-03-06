@@ -33,29 +33,41 @@ const createClassSchema = z.object({
   level: z.string().optional(),
   timezone: z.string().optional(),
   description: z.string().optional(),
+  schoolId: z.string().uuid().optional().nullable(),
 });
 
 const MAX_JOIN_CODE_RETRIES = 5;
 
 export async function createClassAction(_prev: unknown, formData: FormData) {
   await requirePermission('classes:write');
+  const rawSchoolId = formData.get('schoolId');
+  const schoolIdParam =
+    typeof rawSchoolId === 'string' && rawSchoolId.trim()
+      ? rawSchoolId.trim()
+      : undefined;
   const parsed = createClassSchema.safeParse({
     name: formData.get('name'),
     level: formData.get('level') || undefined,
     timezone: formData.get('timezone') || undefined,
     description: formData.get('description') || undefined,
+    schoolId: schoolIdParam,
   });
   if (!parsed.success) {
     return { error: parsed.error.errors[0]?.message ?? 'Validation failed' };
   }
+  const schoolId = parsed.data.schoolId ?? undefined;
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < MAX_JOIN_CODE_RETRIES; attempt++) {
     try {
       const joinCode = generateJoinCode();
       const created = await dbCreateClass({
-        ...parsed.data,
+        name: parsed.data.name,
+        level: parsed.data.level,
+        timezone: parsed.data.timezone,
+        description: parsed.data.description,
         joinCode,
         joinCodeEnabled: true,
+        schoolId: schoolId ?? null,
       });
       redirect(`/dashboard/admin/classes/${created.id}`);
     } catch (err) {

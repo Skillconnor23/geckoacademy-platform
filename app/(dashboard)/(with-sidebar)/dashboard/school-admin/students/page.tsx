@@ -7,6 +7,7 @@ import {
   getStudentsForSchoolAdmin,
   getClassesForSchoolAdminWithDetails,
 } from '@/lib/db/queries/education';
+import { getSchoolIdsForUser } from '@/lib/db/queries/schools';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -60,12 +61,13 @@ export default async function SchoolAdminStudentsPage({
   const params = await searchParams;
   const t = await getTranslations('schoolAdmin.students');
 
+  const schoolIds = await getSchoolIdsForUser(user.id);
   const [rows, classesWithDetails] = await Promise.all([
-    getStudentsForSchoolAdmin({
+    getStudentsForSchoolAdmin(schoolIds, {
       classId: params.classId || undefined,
       search: params.search || undefined,
     }),
-    getClassesForSchoolAdminWithDetails(),
+    getClassesForSchoolAdminWithDetails(schoolIds),
   ]);
 
   const classesForFilter = classesWithDetails.map((c) => ({
