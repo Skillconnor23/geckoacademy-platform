@@ -519,6 +519,21 @@
       "title": "Check your email",
       "description": "We've sent you a verification link. Click it to verify your account, then sign in.",
       "backToSignIn": "Back to sign in"
+    },
+    "verifyEmail": {
+      "invalidLinkTitle": "Invalid link",
+      "invalidLinkDesc": "This verification link is invalid or missing.",
+      "successTitle": "Email verified",
+      "successDesc": "Your email has been verified. You can now sign in.",
+      "failedTitle": "Verification failed",
+      "failedDesc": "This link has expired or has already been used.",
+      "backToSignIn": "Back to sign in",
+      "signIn": "Sign in"
+    },
+    "acceptInvite": {
+      "invalidTitle": "Invite invalid",
+      "invalidOrMissing": "Invalid or missing invite link.",
+      "backToSignIn": "Back to sign in"
     }
   },
   "dashboard": {

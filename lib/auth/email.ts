@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { getBaseUrl } from '@/lib/config/url';
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -7,7 +8,7 @@ const resend = process.env.RESEND_API_KEY
 const FROM_EMAIL = process.env.EMAIL_FROM ?? 'noreply@example.com';
 
 export async function sendVerificationEmail(email: string, token: string) {
-  const baseUrl = process.env.BASE_URL ?? 'http://localhost:3000';
+  const baseUrl = getBaseUrl();
   const verifyUrl = `${baseUrl}/verify-email?token=${encodeURIComponent(token)}`;
 
   if (!resend) {
@@ -40,7 +41,7 @@ export async function sendPlatformInviteEmail(
   schoolName: string | null,
   token: string
 ) {
-  const baseUrl = process.env.BASE_URL ?? 'http://localhost:3000';
+  const baseUrl = getBaseUrl();
   const inviteUrl = `${baseUrl}/accept-invite?token=${encodeURIComponent(token)}`;
 
   if (!resend) {

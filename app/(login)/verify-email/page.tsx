@@ -1,6 +1,6 @@
 import { verifyEmailAction } from './actions';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { getTranslations, getLocale } from 'next-intl/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +9,10 @@ export default async function VerifyEmailPage({
 }: {
   searchParams: Promise<{ token?: string }>;
 }) {
+  const t = await getTranslations('auth.verifyEmail');
+  const locale = await getLocale();
+  const signInPath = `/${locale}/sign-in`;
+
   const params = await searchParams;
   const token = params.token;
 
@@ -16,15 +20,13 @@ export default async function VerifyEmailPage({
     return (
       <div className="min-h-[100dvh] flex items-center justify-center bg-white px-4 py-10">
         <div className="w-full max-w-md rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-lg sm:p-8 text-center">
-          <h1 className="text-xl font-semibold text-[#111827]">Invalid link</h1>
-          <p className="mt-3 text-sm text-[#6b7280]">
-            This verification link is invalid or missing.
-          </p>
+          <h1 className="text-xl font-semibold text-[#111827]">{t('invalidLinkTitle')}</h1>
+          <p className="mt-3 text-sm text-[#6b7280]">{t('invalidLinkDesc')}</p>
           <Link
-            href="/sign-in"
+            href={signInPath}
             className="mt-6 inline-block text-sm font-medium text-[#429ead] hover:underline"
           >
-            Back to sign in
+            {t('backToSignIn')}
           </Link>
         </div>
       </div>
@@ -37,15 +39,13 @@ export default async function VerifyEmailPage({
     return (
       <div className="min-h-[100dvh] flex items-center justify-center bg-white px-4 py-10">
         <div className="w-full max-w-md rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-lg sm:p-8 text-center">
-          <h1 className="text-xl font-semibold text-[#111827]">Email verified</h1>
-          <p className="mt-3 text-sm text-[#6b7280]">
-            Your email has been verified. You can now sign in.
-          </p>
+          <h1 className="text-xl font-semibold text-[#111827]">{t('successTitle')}</h1>
+          <p className="mt-3 text-sm text-[#6b7280]">{t('successDesc')}</p>
           <Link
-            href="/sign-in"
+            href={signInPath}
             className="mt-6 inline-block rounded-full bg-[#7daf41] px-4 py-2 text-sm font-medium text-white hover:bg-[#6b9a39]"
           >
-            Sign in
+            {t('signIn')}
           </Link>
         </div>
       </div>
@@ -55,15 +55,13 @@ export default async function VerifyEmailPage({
   return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-white px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-lg sm:p-8 text-center">
-        <h1 className="text-xl font-semibold text-[#111827]">Verification failed</h1>
-        <p className="mt-3 text-sm text-[#6b7280]">
-          This link has expired or has already been used.
-        </p>
+        <h1 className="text-xl font-semibold text-[#111827]">{t('failedTitle')}</h1>
+        <p className="mt-3 text-sm text-[#6b7280]">{t('failedDesc')}</p>
         <Link
-          href="/sign-in"
+          href={signInPath}
           className="mt-6 inline-block text-sm font-medium text-[#429ead] hover:underline"
         >
-          Back to sign in
+          {t('backToSignIn')}
         </Link>
       </div>
     </div>

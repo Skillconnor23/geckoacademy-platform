@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { createHash } from 'crypto';
 import { eq, and, gt, isNull } from 'drizzle-orm';
+import { getBaseUrl } from '@/lib/config/url';
 import { db } from '@/lib/db/drizzle';
 import {
   platformInvites,
@@ -62,7 +63,7 @@ export async function createPlatformInvite(
         )[0]?.name ?? null
       : null;
 
-  const baseUrl = process.env.BASE_URL ?? 'http://localhost:3000';
+  const baseUrl = getBaseUrl();
   const inviteLink = `${baseUrl}/accept-invite?token=${encodeURIComponent(token)}`;
 
   await sendPlatformInviteEmail(email, platformRole, schoolName, token);

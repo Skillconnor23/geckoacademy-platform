@@ -40,8 +40,8 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
   );
 
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-white px-4 py-10 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:p-8">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-[#fafbfc] px-4 py-10 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_4px_24px_rgba(15,23,42,0.06)] sm:p-8">
         {/* Brand lockup */}
         <div className="flex flex-col items-center text-center">
           <div className="flex items-center justify-center gap-2">
@@ -60,7 +60,7 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
               {tNav('brand')}
             </span>
           </div>
-          <h1 className="mt-5 text-xl sm:text-2xl font-semibold tracking-tight text-[#111827]">
+          <h1 className="mt-6 text-xl sm:text-2xl font-semibold tracking-tight text-[#111827]">
             {title}
           </h1>
           <p className="mt-2 text-sm text-[#6b7280]">
@@ -68,40 +68,54 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
           </p>
         </div>
 
-        {errorMessage && (
-          <div className="mt-6 space-y-2">
+        {/* Verification notice – rounded panel when email not verified */}
+        {showResendVerification && (
+          <div
+            role="alert"
+            className="mt-6 rounded-xl border border-[#f59e0b]/30 bg-[#fffbeb] px-4 py-4"
+          >
+            <p className="text-sm font-medium text-[#92400e]">
+              {errorMessage}
+            </p>
+            <p className="mt-1.5 text-sm text-[#a16207]">
+              {t('resendVerificationHint')}
+            </p>
+            <form action={resendFormAction} className="mt-3">
+              <input type="hidden" name="email" value={state?.email ?? ''} />
+              <Button
+                type="submit"
+                variant="outline"
+                size="sm"
+                disabled={resendPending || !state?.email}
+                className="h-8 rounded-full border-[#429ead] bg-white text-[#429ead] hover:bg-[#429ead]/10 hover:text-[#388694]"
+              >
+                {resendPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    {t('resendVerificationSending')}
+                  </>
+                ) : (
+                  t('resendVerificationCta')
+                )}
+              </Button>
+            </form>
+            {resendState?.success && (
+              <p className="mt-3 text-sm font-medium text-[#7daf41]">
+                {t('resendVerificationSuccess')}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Generic error – inline, not verification */}
+        {errorMessage && !showResendVerification && (
+          <div
+            role="alert"
+            className="mt-6 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-4 py-3"
+          >
             <p className="text-sm font-medium text-[#b64b29]">
               {errorMessage}
             </p>
-            {showResendVerification && (
-              <div className="space-y-1">
-                <p className="text-sm text-[#6b7280]">
-                  {t('resendVerificationHint')}
-                </p>
-                <form action={resendFormAction} className="inline-block">
-                  <input type="hidden" name="email" value={state?.email ?? ''} />
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    size="sm"
-                    disabled={resendPending || !state?.email}
-                    className="text-[#429ead] border-[#429ead] hover:bg-[#429ead]/10"
-                  >
-                    {resendPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        {t('resendVerificationSending')}
-                      </>
-                    ) : (
-                      t('resendVerificationCta')
-                    )}
-                  </Button>
-                </form>
-                {resendState?.success && (
-                  <p className="text-sm text-[#7daf41]">{t('resendVerificationSuccess')}</p>
-                )}
-              </div>
-            )}
           </div>
         )}
 
