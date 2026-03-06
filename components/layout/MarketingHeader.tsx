@@ -217,11 +217,9 @@ export function MarketingHeader({
               {tNav('brand')}
             </span>
           </Link>
-          <div className="ml-3 hidden items-center md:flex">
-            <LanguageSwitcher />
-          </div>
         </div>
         <div className="ml-auto flex items-center gap-2 shrink-0">
+          <LanguageSwitcher />
           <NotificationsBell />
           <div className="hidden md:flex items-center gap-2">
             <Suspense fallback={<div className="h-9" />}>
@@ -245,9 +243,6 @@ export function MarketingHeader({
       {/* Mobile menu dropdown (only when not on dashboard; dashboard uses single nav drawer) */}
       {!showSidebarToggle && mobileMenuOpen && (
         <div className="absolute left-0 right-0 top-16 z-50 md:hidden w-full bg-white py-2 shadow-lg">
-          <div className="flex w-full items-center justify-between px-4 pb-2">
-            <LanguageSwitcher />
-          </div>
           {!user ? (
             <>
               <NavLink

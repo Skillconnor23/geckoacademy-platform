@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR, { mutate } from 'swr';
 import { Bell } from 'lucide-react';
@@ -56,6 +55,26 @@ const fetcher = (url: string) =>
     return res.json();
   });
 
+/** Mark all as read and keep SWR in sync (optimistic update then revalidate). */
+async function markAllReadAndRevalidate(
+  currentData: NotificationsData | undefined,
+  mutateFn: (data?: NotificationsData, opts?: { revalidate?: boolean }) => Promise<NotificationsData | undefined>
+) {
+  if (!currentData || currentData.unseenCount === 0) return;
+  const nowIso = new Date().toISOString();
+  const optimistic: NotificationsData = {
+    notifications: currentData.notifications.map((n) => ({
+      ...n,
+      seenAt: n.seenAt ?? nowIso,
+    })),
+    unseenCount: 0,
+    unseenMessageCount: 0,
+  };
+  void mutateFn(optimistic, { revalidate: false });
+  await markAllNotificationsSeenAction();
+  void mutateFn();
+}
+
 export function NotificationsBell() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -68,6 +87,16 @@ export function NotificationsBell() {
 
   useEffect(() => setMounted(true), []);
 
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      setOpen(nextOpen);
+      if (nextOpen && (data?.unseenCount ?? 0) > 0) {
+        void markAllReadAndRevalidate(data, mutateNotifications);
+      }
+    },
+    [data, mutateNotifications]
+  );
+
   async function handleNotificationClick(notification: Notification) {
     if (!notification.seenAt) {
       await markNotificationSeenAction(notification.id);
@@ -78,8 +107,7 @@ export function NotificationsBell() {
   }
 
   async function handleMarkAllRead() {
-    await markAllNotificationsSeenAction();
-    void mutate('/api/notifications');
+    await markAllReadAndRevalidate(data, mutateNotifications);
     setOpen(false);
   }
 
@@ -111,7 +139,7 @@ export function NotificationsBell() {
   }
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         {triggerButton}
       </DropdownMenuTrigger>

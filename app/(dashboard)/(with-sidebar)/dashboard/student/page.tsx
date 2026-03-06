@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { requireRole } from '@/lib/auth/user';
 import { getStudentDashboardData, listClassroomPosts } from '@/lib/db/queries/education';
 import {
@@ -76,8 +76,14 @@ export default async function StudentDashboardPage({
 }) {
   const t = await getTranslations('dashboard.student');
   const tCommon = await getTranslations('common');
+  const locale = await getLocale();
   const user = await requireRole(['student']);
   const params = await searchParams;
+
+  function withLocalePrefix(path: string): string {
+    const base = path.startsWith('/') ? path : `/${path}`;
+    return `/${locale}${base}`;
+  }
 
   const [data, stats, needsAttention, attendanceSummary] = await Promise.all([
     getStudentDashboardData(user.id),
@@ -120,7 +126,7 @@ export default async function StudentDashboardPage({
           </CardHeader>
           <CardContent>
             <Button asChild variant="primary" className="rounded-full">
-              <Link href="/dashboard/student/join">{t('classCard.cta')}</Link>
+              <Link href={withLocalePrefix('/dashboard/student/join')}>{t('classCard.cta')}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -244,7 +250,7 @@ export default async function StudentDashboardPage({
                   className="rounded-full bg-white/10 text-white border-white/40 hover:bg-white/20"
                   asChild
                 >
-                  <Link href={`/classroom/${data.primaryClass.id}`} className="inline-flex items-center gap-1.5">
+                  <Link href={withLocalePrefix(`/classroom/${data.primaryClass.id}`)} className="inline-flex items-center gap-1.5">
                     <BookOpen className="h-4 w-4" />
                     {t('nextClassOpenClassroom')}
                     <ArrowRight className="h-3 w-3" />
@@ -277,10 +283,11 @@ export default async function StudentDashboardPage({
                         const quizHref = post.type === 'quiz' && post.quizId ? `/learning/${post.quizId}` : null;
                         const homeworkHref = post.type === 'homework' ? '/dashboard/student/homework' : null;
                         const href = quizHref ?? homeworkHref ?? `/classroom/${data.primaryClass.id}`;
+                        const localeHref = withLocalePrefix(href);
                         return (
                           <li key={post.id}>
                             <Link
-                              href={href}
+                              href={localeHref}
                               className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-[#e5e7eb] px-4 py-3 bg-gray-50 transition hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px]"
                             >
                               <Icon className="h-4 w-4 shrink-0" style={{ color: CLASS_UPDATE_ICON_COLOR }} aria-hidden />
@@ -298,7 +305,7 @@ export default async function StudentDashboardPage({
                     </ul>
                   )}
                   <Link
-                    href={`/classroom/${data.primaryClass.id}`}
+                    href={withLocalePrefix(`/classroom/${data.primaryClass.id}`)}
                     className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
                   >
                     {t('viewAllUpdates')}
@@ -336,7 +343,7 @@ export default async function StudentDashboardPage({
                           {needsAttention.incompleteQuizzes.slice(0, 3).map((q) => (
                             <li key={q.quizId}>
                               <Link
-                                href={`/learning/${q.quizId}`}
+                                href={withLocalePrefix(`/learning/${q.quizId}`)}
                                 className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-[#e5e7eb] px-4 py-3 bg-gray-50 transition hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px]"
                               >
                                 <ClipboardList className="h-4 w-4 shrink-0" style={{ color: GECKO_COLORS.alert }} aria-hidden />
@@ -358,7 +365,7 @@ export default async function StudentDashboardPage({
                         )}
                         {(needsAttention.incompleteQuizzes.length > 0 || needsAttention.noActivityIn7Days) && (
                           <Link
-                            href="/dashboard/student/learning"
+                            href={withLocalePrefix('/dashboard/student/learning')}
                             className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
                           >
                             {t('needsAttentionViewAll')}

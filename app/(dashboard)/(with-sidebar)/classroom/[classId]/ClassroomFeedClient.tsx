@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import type { ClassroomPostType } from '@/lib/db/schema';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronRight, ExternalLink, Download } from 'lucide-react';
@@ -133,6 +133,8 @@ type Props = {
 
 export function ClassroomFeedClient({ classId, posts, canPost }: Props) {
   const t = useTranslations('classroom');
+  const locale = useLocale();
+  const withLocalePrefix = (path: string) => `/${locale}${path.startsWith('/') ? path : `/${path}`}`;
   const [visibleWeeks, setVisibleWeeks] = useState(INITIAL_WEEKS);
   const [collapsedWeeks, setCollapsedWeeks] = useState<Set<string>>(() => {
     const weeks = groupPostsByWeekAndDay(posts);
@@ -203,7 +205,8 @@ export function ClassroomFeedClient({ classId, posts, canPost }: Props) {
                         const isAnnouncement = post.type === 'announcement';
                         const quizHref = post.type === 'quiz' && post.quizId ? `/learning/${post.quizId}` : null;
                         const homeworkHref = post.type === 'homework' ? '/dashboard/student/homework' : null;
-                        const href = quizHref ?? homeworkHref ?? null;
+                        const internalHref = quizHref ?? homeworkHref;
+                        const href = internalHref ? withLocalePrefix(internalHref) : null;
 
                         if (isAnnouncement) {
                           return (
@@ -271,8 +274,8 @@ export function ClassroomFeedClient({ classId, posts, canPost }: Props) {
                           );
                         }
 
-                        const primaryAction = quizHref
-                          ? { href: quizHref, label: 'Open', Icon: ExternalLink, isInternal: true }
+                        const primaryAction = internalHref
+                          ? { href: withLocalePrefix(internalHref), label: 'Open', Icon: ExternalLink, isInternal: true }
                           : post.linkUrl
                             ? { href: post.linkUrl, label: 'Open', Icon: ExternalLink, isInternal: false }
                             : post.fileUrl

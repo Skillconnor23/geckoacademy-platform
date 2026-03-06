@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import { Globe } from 'lucide-react';
 import { localeCookieName, locales, type Locale } from '@/lib/i18n/config';
 import {
   DropdownMenu,
@@ -70,18 +71,21 @@ export function LanguageSwitcher() {
         <Button
           variant="outline"
           size="sm"
-          className="rounded-full border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700"
+          className="rounded-full border-slate-200 bg-white px-2 py-1.5 md:px-3 md:py-1 text-xs font-medium text-slate-700 shrink-0"
+          aria-label="Switch language"
         >
-          {label}
+          <Globe className="h-4 w-4 md:hidden shrink-0" aria-hidden />
+          <span className="hidden md:inline">{label}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="end" className="min-w-[10rem]">
         {SUPPORTED.map((entry) => (
           <DropdownMenuItem
             key={entry.locale}
             onClick={() => handleSelect(entry.locale as Locale)}
           >
-            {entry.label} ({entry.short})
+            <span className="font-medium">{entry.label}</span>
+            <span className="text-muted-foreground ml-1">({entry.locale})</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

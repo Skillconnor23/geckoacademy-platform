@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import {
   getQuizzesForStudentClasses,
   getQuizResultsForStudentProfile,
@@ -32,6 +32,8 @@ export async function StudentQuizList({
 }) {
   const t = await getTranslations('quizzes');
   const tLearning = await getTranslations('learning');
+  const locale = await getLocale();
+  const withLocalePrefix = (path: string) => `/${locale}${path.startsWith('/') ? path : `/${path}`}`;
   const [quizzes, stats, assessments] = await Promise.all([
     getQuizzesForStudentClasses(studentUserId),
     getStudentDashboardStats(studentUserId),
@@ -83,7 +85,7 @@ export async function StudentQuizList({
                       className="h-7 rounded-full border-0 bg-white px-3 text-xs font-medium text-[#7daf41] hover:bg-white/90"
                       asChild
                     >
-                      <Link href={`/learning/${latest.quiz.id}`}>{t('review')}</Link>
+                      <Link href={withLocalePrefix(`/learning/${latest.quiz.id}`)}>{t('review')}</Link>
                     </Button>
                   </>
                 ) : (
@@ -93,7 +95,7 @@ export async function StudentQuizList({
                     className="h-7 rounded-full border-0 bg-white px-3 text-xs font-medium text-[#7daf41] hover:bg-white/90"
                     asChild
                   >
-                    <Link href={`/learning/${latest.quiz.id}`}>{t('startQuiz')}</Link>
+                    <Link href={withLocalePrefix(`/learning/${latest.quiz.id}`)}>{t('startQuiz')}</Link>
                   </Button>
                 )}
               </div>
@@ -170,7 +172,7 @@ export async function StudentQuizList({
                       className="h-7 shrink-0 rounded-full bg-[#429ead] px-3 text-xs text-white hover:bg-[#36899a]"
                       asChild
                     >
-                      <Link href={`/learning/${quiz.id}`}>{submission ? t('review') : t('startQuiz')}</Link>
+                      <Link href={withLocalePrefix(`/learning/${quiz.id}`)}>{submission ? t('review') : t('startQuiz')}</Link>
                     </Button>
                   </li>
                 ))}

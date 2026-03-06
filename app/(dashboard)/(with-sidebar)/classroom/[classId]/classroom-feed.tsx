@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getLocale } from 'next-intl/server';
 import type { ClassroomPost, ClassroomPostType } from '@/lib/db/schema';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Download } from 'lucide-react';
@@ -37,7 +38,7 @@ function isClassroomPostType(s: string): s is ClassroomPostType {
   return (POST_TYPES as readonly string[]).includes(s);
 }
 
-export function ClassroomFeed({
+export async function ClassroomFeed({
   classId,
   initialPosts,
   canPost,
@@ -46,6 +47,9 @@ export function ClassroomFeed({
   initialPosts: Post[];
   canPost: boolean;
 }) {
+  const locale = await getLocale();
+  const withLocalePrefix = (path: string) => `/${locale}${path.startsWith('/') ? path : `/${path}`}`;
+
   if (initialPosts.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-8 text-center leading-relaxed">
@@ -61,7 +65,7 @@ export function ClassroomFeed({
         const pillColor = TYPE_BORDER_COLORS[postType];
         const quizHref = post.type === 'quiz' && post.quizId ? `/learning/${post.quizId}` : null;
         const primaryAction = quizHref
-          ? { href: quizHref, label: 'Open', Icon: ExternalLink, isInternal: true }
+          ? { href: withLocalePrefix(quizHref), label: 'Open', Icon: ExternalLink, isInternal: true }
           : post.linkUrl
             ? { href: post.linkUrl, label: 'Open', Icon: ExternalLink, isInternal: false }
             : post.fileUrl

@@ -313,12 +313,14 @@ type StudentAnswer = {
 export async function getQuizForStudentAction(quizId: string) {
   const user = await getUser();
   if (!user || user.platformRole !== 'student') {
-    redirect('/dashboard');
+    const { getLocale } = await import('next-intl/server');
+    const locale = await getLocale();
+    redirect(`/${locale}/dashboard`);
   }
 
   const result = await dbGetQuizForStudent(quizId, user.id);
   if (!result) {
-    redirect('/dashboard');
+    return null;
   }
 
   return result;

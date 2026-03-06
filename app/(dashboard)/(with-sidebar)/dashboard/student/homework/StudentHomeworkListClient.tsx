@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { ChevronRight, NotebookPen } from 'lucide-react';
 import { GECKO_COLORS } from '@/lib/constants/colors';
 
@@ -203,7 +203,7 @@ export function StudentHomeworkListClient({ list }: Props) {
                   </span>
                 </div>
                 <Link
-                  href={`/dashboard/student/homework/${item.homework.id}`}
+                  href={withLocalePrefix(`/dashboard/student/homework/${item.homework.id}`)}
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#429ead] px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#388694] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#429ead]/50 focus-visible:ring-offset-2 active:opacity-90"
                 >
                   {t('open')}
