@@ -35,6 +35,8 @@ export type UpdateClassData = Partial<Omit<CreateClassData, 'joinCode'>> & {
   scheduleStartDate?: Date | string | null;
   scheduleEndDate?: Date | string | null;
   defaultMeetingUrl?: string | null;
+  isArchived?: boolean;
+  archivedAt?: Date | null;
 };
 
 export type CreateSessionData = {
@@ -94,20 +96,19 @@ export async function updateClass(
 
 export type ListClassesFilters = {
   schoolIds?: string[] | null;
+  includeArchived?: boolean;
 };
 
 export async function listClasses(filters?: ListClassesFilters) {
+  const includeArchived = filters?.includeArchived === true;
+  const conditions: Parameters<typeof and>[0][] = [];
+  if (!includeArchived) conditions.push(eq(eduClasses.isArchived, false));
   if (filters?.schoolIds != null && filters.schoolIds.length > 0) {
-    return db
-      .select()
-      .from(eduClasses)
-      .where(inArray(eduClasses.schoolId, filters.schoolIds))
-      .orderBy(desc(eduClasses.createdAt));
+    conditions.push(inArray(eduClasses.schoolId, filters.schoolIds));
   }
-  return db
-    .select()
-    .from(eduClasses)
-    .orderBy(desc(eduClasses.createdAt));
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  const query = db.select().from(eduClasses).orderBy(desc(eduClasses.createdAt));
+  return whereClause ? query.where(whereClause) : query;
 }
 
 export async function getClassById(id: string) {
@@ -136,7 +137,7 @@ export async function getClassByJoinCode(joinCode: string) {
   const [row] = await db
     .select()
     .from(eduClasses)
-    .where(eq(eduClasses.joinCode, normalized))
+    .where(and(eq(eduClasses.joinCode, normalized), eq(eduClasses.isArchived, false)))
     .limit(1);
   return row ?? null;
 }
@@ -452,7 +453,7 @@ export async function getClassesForSchoolAdminWithDetails(schoolIds: string[]) {
       scheduleTimezone: eduClasses.scheduleTimezone,
     })
     .from(eduClasses)
-    .where(inArray(eduClasses.schoolId, schoolIds))
+    .where(and(inArray(eduClasses.schoolId, schoolIds), eq(eduClasses.isArchived, false)))
     .orderBy(asc(eduClasses.name));
 
   const classIds = classes.map((c) => c.id);
@@ -1048,6 +1049,7 @@ export async function getScheduleSummaryForUser(
     return db
       .select(baseSelect)
       .from(eduClasses)
+      .where(eq(eduClasses.isArchived, false))
       .orderBy(asc(eduClasses.name));
   }
 
@@ -1073,7 +1075,7 @@ export async function getScheduleSummaryForSchoolAdmin(schoolIds: string[]) {
       defaultMeetingUrl: eduClasses.defaultMeetingUrl,
     })
     .from(eduClasses)
-    .where(inArray(eduClasses.schoolId, schoolIds))
+    .where(and(inArray(eduClasses.schoolId, schoolIds), eq(eduClasses.isArchived, false)))
     .orderBy(asc(eduClasses.name));
 }
 
@@ -1151,7 +1153,7 @@ export async function getClassesWithScheduleForCalendar(
         defaultMeetingUrl: eduClasses.defaultMeetingUrl,
       })
       .from(eduClasses)
-      .where(hasSchedule)
+      .where(and(hasSchedule, eq(eduClasses.isArchived, false)))
       .orderBy(asc(eduClasses.name));
   }
 
@@ -1170,7 +1172,7 @@ export async function getClassesWithScheduleForCalendar(
         defaultMeetingUrl: eduClasses.defaultMeetingUrl,
       })
       .from(eduClasses)
-      .where(and(hasSchedule, inArray(eduClasses.schoolId, schoolIds)))
+      .where(and(hasSchedule, inArray(eduClasses.schoolId, schoolIds), eq(eduClasses.isArchived, false)))
       .orderBy(asc(eduClasses.name));
   }
 
@@ -1482,7 +1484,7 @@ export async function getClassesCountByStudent(): Promise<Map<number, number>> {
   return new Map(rows.map((r) => [r.studentUserId, r.count]));
 }
 
-/** Classes with schedule summary for assign dropdown. */
+/** Classes with schedule summary for assign dropdown. Excludes archived. */
 export async function listClassesWithScheduleForAssign() {
   return db
     .select({
@@ -1494,6 +1496,7 @@ export async function listClassesWithScheduleForAssign() {
       scheduleTimezone: eduClasses.scheduleTimezone,
     })
     .from(eduClasses)
+    .where(eq(eduClasses.isArchived, false))
     .orderBy(asc(eduClasses.name));
 }
 

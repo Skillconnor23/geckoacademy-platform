@@ -10,15 +10,8 @@ import {
 } from '@/lib/db/queries/schools';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Plus, Building2 } from 'lucide-react';
+import { AdminSchoolsTable } from './AdminSchoolsTable';
 
 export default async function AdminSchoolsPage() {
   await requirePermission('classes:read');
@@ -68,39 +61,7 @@ export default async function AdminSchoolsPage() {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Classes</TableHead>
-                  <TableHead>Students</TableHead>
-                  <TableHead>School admins</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {schools.map((s) => {
-                  const c = countMap.get(s.id);
-                  return (
-                    <TableRow key={s.id}>
-                      <TableCell className="font-medium">{s.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{s.slug}</TableCell>
-                      <TableCell>{c?.classes ?? 0}</TableCell>
-                      <TableCell>{c?.students ?? 0}</TableCell>
-                      <TableCell>{c?.admins ?? 0}</TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/dashboard/admin/schools/${s.id}`}>
-                            Manage
-                          </Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <AdminSchoolsTable schools={schools} countMap={countMap} />
           )}
         </CardContent>
       </Card>

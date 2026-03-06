@@ -89,6 +89,18 @@ export async function createClassAction(_prev: unknown, formData: FormData) {
   }
 }
 
+/** Archive a class. Idempotent (already archived = success). Admin only. */
+export async function archiveClassAction(classId: string) {
+  await requirePermission('classes:write');
+  const cls = await getClassById(classId);
+  if (!cls) return { error: 'Class not found' };
+  await dbUpdateClass(classId, { isArchived: true, archivedAt: new Date() });
+  revalidatePath('/dashboard/admin/classes');
+  revalidatePath(`/dashboard/admin/classes/${classId}`);
+  revalidatePath('/dashboard/admin/schools');
+  return { success: true };
+}
+
 const createSessionSchema = z.object({
   classId: z.string().uuid(),
   startsAt: z.string().transform((s) => new Date(s)),

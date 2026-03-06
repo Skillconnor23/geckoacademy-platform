@@ -179,7 +179,7 @@ export async function getSchoolAdminClassTable(schoolIds: string[]): Promise<Sch
       name: eduClasses.name,
     })
     .from(eduClasses)
-    .where(inArray(eduClasses.schoolId, schoolIds))
+    .where(and(inArray(eduClasses.schoolId, schoolIds), eq(eduClasses.isArchived, false)))
     .orderBy(eduClasses.name);
 
   if (classes.length === 0) return [];

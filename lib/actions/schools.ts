@@ -121,6 +121,19 @@ export async function getClassesForAssignAction() {
   return { classes };
 }
 
+/** Archive a school. Idempotent (already archived = success). Admin only. */
+export async function archiveSchoolAction(schoolId: string) {
+  const user = await getUser();
+  if (!user || !can(user, 'classes:write')) return { error: 'Unauthorized' };
+  if (user.platformRole !== 'admin') return { error: 'Only admins can archive schools' };
+  const school = await getSchoolById(schoolId);
+  if (!school) return { error: 'School not found' };
+  await updateSchool(schoolId, { isArchived: true, archivedAt: new Date() });
+  revalidatePath('/dashboard/admin/schools');
+  revalidatePath(`/dashboard/admin/schools/${schoolId}`);
+  return { success: true };
+}
+
 /** Returns only users with platformRole = school_admin (eligible to be assigned to a school). Optional search. */
 export async function getSchoolAdminCandidatesAction(search?: string) {
   const user = await getUser();

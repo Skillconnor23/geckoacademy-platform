@@ -170,6 +170,7 @@ export async function listManageableFlashcardClasses(
         name: eduClasses.name,
       })
       .from(eduClasses)
+      .where(eq(eduClasses.isArchived, false))
       .orderBy(asc(eduClasses.name));
   }
 

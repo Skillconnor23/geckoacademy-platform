@@ -17,10 +17,24 @@ export type CreateSchoolData = {
 export type UpdateSchoolData = {
   name?: string;
   slug?: string;
+  isArchived?: boolean;
+  archivedAt?: Date | null;
 };
 
-export async function listSchools() {
-  return db.select().from(schools).orderBy(schools.name);
+export type ListSchoolsFilters = {
+  includeArchived?: boolean;
+};
+
+export async function listSchools(filters?: ListSchoolsFilters) {
+  const includeArchived = filters?.includeArchived === true;
+  if (includeArchived) {
+    return db.select().from(schools).orderBy(schools.name);
+  }
+  return db
+    .select()
+    .from(schools)
+    .where(eq(schools.isArchived, false))
+    .orderBy(schools.name);
 }
 
 export async function getSchoolById(id: string) {
@@ -58,11 +72,13 @@ export async function updateSchool(
   id: string,
   data: UpdateSchoolData
 ) {
-  const payload: Partial<{ name: string; slug: string; updatedAt: Date }> = {
+  const payload: Partial<{ name: string; slug: string; isArchived: boolean; archivedAt: Date | null; updatedAt: Date }> = {
     updatedAt: new Date(),
   };
   if (data.name != null) payload.name = data.name;
   if (data.slug != null) payload.slug = data.slug.trim().toLowerCase().replace(/\s+/g, '-');
+  if (data.isArchived != null) payload.isArchived = data.isArchived;
+  if (data.archivedAt !== undefined) payload.archivedAt = data.archivedAt;
   const [updated] = await db
     .update(schools)
     .set(payload)
@@ -178,25 +194,29 @@ export async function isUserSchoolAdmin(userId: number, schoolId: string): Promi
   return !!row;
 }
 
-/** Classes for a school (for admin/school-admin views). */
-export async function listClassesForSchool(schoolId: string) {
+/** Classes for a school (for admin/school-admin views). Excludes archived by default. */
+export async function listClassesForSchool(schoolId: string, options?: { includeArchived?: boolean }) {
+  const conditions = [eq(eduClasses.schoolId, schoolId)];
+  if (options?.includeArchived !== true) {
+    conditions.push(eq(eduClasses.isArchived, false));
+  }
   return db
     .select()
     .from(eduClasses)
-    .where(eq(eduClasses.schoolId, schoolId))
+    .where(and(...conditions))
     .orderBy(eduClasses.name);
 }
 
-/** Count classes per school (for admin list). */
+/** Count active (non-archived) classes per school (for admin list). */
 export async function getClassCountBySchoolId(schoolId: string): Promise<number> {
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(eduClasses)
-    .where(eq(eduClasses.schoolId, schoolId));
+    .where(and(eq(eduClasses.schoolId, schoolId), eq(eduClasses.isArchived, false)));
   return row?.count ?? 0;
 }
 
-/** Count distinct students enrolled in classes belonging to this school. */
+/** Count distinct students in active (non-archived) classes belonging to this school. */
 export async function getStudentCountBySchoolId(schoolId: string): Promise<number> {
   const [row] = await db
     .select({
@@ -207,6 +227,7 @@ export async function getStudentCountBySchoolId(schoolId: string): Promise<numbe
     .where(
       and(
         eq(eduClasses.schoolId, schoolId),
+        eq(eduClasses.isArchived, false),
         eq(eduEnrollments.status, 'active')
       )
     );

@@ -1,20 +1,15 @@
 import Link from 'next/link';
 import { listClasses } from '@/lib/db/queries/education';
-
-export const dynamic = 'force-dynamic';
+import { requirePermission } from '@/lib/auth/permissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Plus } from 'lucide-react';
+import { AdminClassesTable } from './AdminClassesTable';
+
+export const dynamic = 'force-dynamic';
 
 export default async function AdminClassesPage() {
+  await requirePermission('classes:read');
   const classes = await listClasses();
 
   return (
@@ -39,32 +34,7 @@ export default async function AdminClassesPage() {
               No classes yet. Create your first class to get started.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Timezone</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {classes.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell>{c.level ?? '—'}</TableCell>
-                    <TableCell>{c.timezone ?? '—'}</TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/dashboard/admin/classes/${c.id}`}>
-                          View
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <AdminClassesTable classes={classes} />
           )}
         </CardContent>
       </Card>
