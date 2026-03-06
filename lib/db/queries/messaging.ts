@@ -144,6 +144,7 @@ export async function getMessageableRecipients(
           and(
             eq(eduEnrollments.studentUserId, userId),
             eq(eduEnrollments.status, 'active'),
+            eq(eduClassTeachers.isActive, true),
             isNull(users.deletedAt)
           )
         )

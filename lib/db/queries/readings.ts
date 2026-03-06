@@ -177,7 +177,8 @@ export async function listReadingsForTeacher(
       eduClassTeachers,
       and(
         eq(eduClassTeachers.classId, eduReadings.classId),
-        eq(eduClassTeachers.teacherUserId, teacherUserId)
+        eq(eduClassTeachers.teacherUserId, teacherUserId),
+        eq(eduClassTeachers.isActive, true)
       )
     )
     .orderBy(sql`${eduReadings.updatedAt} DESC`);
@@ -200,7 +201,8 @@ export async function getReadingForTeacher(
       eduClassTeachers,
       and(
         eq(eduClassTeachers.classId, eduReadings.classId),
-        eq(eduClassTeachers.teacherUserId, teacherUserId)
+        eq(eduClassTeachers.teacherUserId, teacherUserId),
+        eq(eduClassTeachers.isActive, true)
       )
     )
     .where(eq(eduReadings.id, readingId))

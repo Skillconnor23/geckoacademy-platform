@@ -158,7 +158,7 @@ export async function listManageableFlashcardClasses(
       })
       .from(eduClassTeachers)
       .innerJoin(eduClasses, eq(eduClassTeachers.classId, eduClasses.id))
-      .where(eq(eduClassTeachers.teacherUserId, userId))
+      .where(and(eq(eduClassTeachers.teacherUserId, userId), eq(eduClassTeachers.isActive, true)))
       .orderBy(asc(eduClasses.name));
     return rows;
   }
@@ -342,7 +342,8 @@ export async function teacherCanManageFlashcardDeck(
     .where(
       and(
         eq(eduClassTeachers.classId, row.classId),
-        eq(eduClassTeachers.teacherUserId, teacherUserId)
+        eq(eduClassTeachers.teacherUserId, teacherUserId),
+        eq(eduClassTeachers.isActive, true)
       )
     )
     .limit(1);

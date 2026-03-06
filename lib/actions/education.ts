@@ -9,6 +9,7 @@ import {
   updateClass as dbUpdateClass,
   enrollStudent as dbEnrollStudent,
   assignTeacher as dbAssignTeacher,
+  removeTeacherFromClass as dbRemoveTeacherFromClass,
   getClassByJoinCode,
   updateClassJoinCode,
   getClassById,
@@ -227,6 +228,9 @@ export async function assignTeacherToClassAction(
   if (!eduClass) {
     return { error: 'Class not found' };
   }
+  if (eduClass.isArchived) {
+    return { error: 'Cannot assign teachers to an archived class' };
+  }
   const teacherUser = await getUserById(parsed.data.teacherUserId);
   if (!teacherUser || (teacherUser.platformRole as PlatformRole) !== 'teacher') {
     return { error: 'Teacher not found or is not a teacher' };
@@ -240,7 +244,39 @@ export async function assignTeacherToClassAction(
     teacherUserId: parsed.data.teacherUserId,
   });
   revalidatePath(`/dashboard/admin/classes/${parsed.data.classId}`);
+  revalidatePath(`/dashboard/admin/users/teachers/${parsed.data.teacherUserId}`);
   redirect(`/dashboard/admin/classes/${parsed.data.classId}`);
+}
+
+const removeTeacherFromClassSchema = z.object({
+  classId: z.string().uuid(),
+  teacherUserId: z.number().int().positive(),
+});
+
+export async function removeTeacherFromClassAction(
+  _prev: unknown,
+  formData: FormData
+) {
+  await requirePermission('classes:write');
+  const parsed = removeTeacherFromClassSchema.safeParse({
+    classId: formData.get('classId'),
+    teacherUserId: formData.get('teacherUserId')
+      ? Number(formData.get('teacherUserId'))
+      : undefined,
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0]?.message ?? 'Invalid request' };
+  }
+  const removed = await dbRemoveTeacherFromClass(
+    parsed.data.classId,
+    parsed.data.teacherUserId
+  );
+  if (!removed) {
+    return { error: 'Assignment not found or already removed' };
+  }
+  revalidatePath(`/dashboard/admin/classes/${parsed.data.classId}`);
+  revalidatePath(`/dashboard/admin/users/teachers/${parsed.data.teacherUserId}`);
+  return { success: true };
 }
 
 const deactivateUserSchema = z.object({

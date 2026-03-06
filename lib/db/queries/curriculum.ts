@@ -19,7 +19,8 @@ export async function listCurriculumFilesForTeacher(
     .where(
       and(
         eq(eduClassTeachers.teacherUserId, teacherUserId),
-        eq(eduClassTeachers.classId, classId)
+        eq(eduClassTeachers.classId, classId),
+        eq(eduClassTeachers.isActive, true)
       )
     )
     .limit(1);
@@ -44,7 +45,8 @@ export async function getOrCreateCurriculumWeeks(
     .where(
       and(
         eq(eduClassTeachers.teacherUserId, teacherUserId),
-        eq(eduClassTeachers.classId, classId)
+        eq(eduClassTeachers.classId, classId),
+        eq(eduClassTeachers.isActive, true)
       )
     )
     .limit(1);

@@ -250,6 +250,9 @@ export const eduClasses = pgTable(
   ]
 );
 
+export const eduClassTeacherRoleEnum = ['primary', 'assistant'] as const;
+export type EduClassTeacherRole = (typeof eduClassTeacherRoleEnum)[number];
+
 export const eduClassTeachers = pgTable(
   'edu_class_teachers',
   {
@@ -259,6 +262,10 @@ export const eduClassTeachers = pgTable(
     teacherUserId: integer('teacher_user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    role: varchar('role', { length: 20 }).notNull().default('primary'),
+    isActive: boolean('is_active').notNull().default(true),
+    assignedAt: timestamp('assigned_at').notNull().defaultNow(),
+    removedAt: timestamp('removed_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [

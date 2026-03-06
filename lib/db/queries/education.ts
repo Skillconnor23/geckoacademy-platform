@@ -196,18 +196,39 @@ export async function enrollStudent({
 export async function assignTeacher({
   classId,
   teacherUserId,
+  role = 'primary',
 }: {
   classId: string;
   teacherUserId: number;
+  role?: 'primary' | 'assistant';
 }) {
   const [created] = await db
     .insert(eduClassTeachers)
     .values({
       classId,
       teacherUserId,
+      role,
+      isActive: true,
+      assignedAt: new Date(),
     })
     .returning();
   return created;
+}
+
+/** Soft-remove teacher from class: set isActive=false, removedAt=now. */
+export async function removeTeacherFromClass(classId: string, teacherUserId: number) {
+  const [updated] = await db
+    .update(eduClassTeachers)
+    .set({ isActive: false, removedAt: new Date() })
+    .where(
+      and(
+        eq(eduClassTeachers.classId, classId),
+        eq(eduClassTeachers.teacherUserId, teacherUserId),
+        eq(eduClassTeachers.isActive, true)
+      )
+    )
+    .returning();
+  return updated ?? null;
 }
 
 export async function listUpcomingSessionsForUser(
@@ -249,6 +270,7 @@ export async function listUpcomingSessionsForUser(
       .where(
         and(
           eq(eduClassTeachers.teacherUserId, userId),
+          eq(eduClassTeachers.isActive, true),
           gte(eduSessions.startsAt, now)
         )
       )
@@ -280,7 +302,7 @@ export async function listSessionsByClassId(classId: string) {
     .orderBy(eduSessions.startsAt);
 }
 
-/** Classes assigned to teacher via class_teachers (unique). */
+/** Active classes assigned to teacher. */
 export async function listClassesForTeacher(teacherUserId: number) {
   return db
     .select({
@@ -291,11 +313,11 @@ export async function listClassesForTeacher(teacherUserId: number) {
     })
     .from(eduClassTeachers)
     .innerJoin(eduClasses, eq(eduClassTeachers.classId, eduClasses.id))
-    .where(eq(eduClassTeachers.teacherUserId, teacherUserId))
+    .where(and(eq(eduClassTeachers.teacherUserId, teacherUserId), eq(eduClassTeachers.isActive, true)))
     .orderBy(asc(eduClasses.name));
 }
 
-/** Classes assigned to teacher with schedule + student count (active enrollments). */
+/** Active classes assigned to teacher with schedule + student count. */
 export async function getClassesForTeacherWithDetails(teacherUserId: number) {
   const classes = await db
     .select({
@@ -308,7 +330,7 @@ export async function getClassesForTeacherWithDetails(teacherUserId: number) {
     })
     .from(eduClassTeachers)
     .innerJoin(eduClasses, eq(eduClassTeachers.classId, eduClasses.id))
-    .where(eq(eduClassTeachers.teacherUserId, teacherUserId))
+    .where(and(eq(eduClassTeachers.teacherUserId, teacherUserId), eq(eduClassTeachers.isActive, true)))
     .orderBy(asc(eduClasses.name));
 
   const studentCountRows = await db
@@ -355,7 +377,7 @@ export async function getClassesWithHealthForTeacher(
     })
     .from(eduClassTeachers)
     .innerJoin(eduClasses, eq(eduClassTeachers.classId, eduClasses.id))
-    .where(eq(eduClassTeachers.teacherUserId, teacherUserId))
+    .where(and(eq(eduClassTeachers.teacherUserId, teacherUserId), eq(eduClassTeachers.isActive, true)))
     .orderBy(asc(eduClasses.name));
 
   if (classes.length === 0) return [];
@@ -482,6 +504,7 @@ export async function getClassesForSchoolAdminWithDetails(schoolIds: string[]) {
       .innerJoin(users, eq(eduClassTeachers.teacherUserId, users.id))
       .where(
         and(
+          eq(eduClassTeachers.isActive, true),
           isNull(users.deletedAt),
           inArray(eduClassTeachers.classId, classIds)
         )
@@ -525,6 +548,7 @@ export async function listUpcomingSessionsForTeacher(
     .where(
       and(
         eq(eduClassTeachers.teacherUserId, teacherUserId),
+        eq(eduClassTeachers.isActive, true),
         gte(eduSessions.startsAt, now)
       )
     )
@@ -700,6 +724,7 @@ export async function listClassmatesPreview(
   };
 }
 
+/** Active teachers for a class. */
 export async function listTeachersByClassId(classId: string) {
   return db
     .select({
@@ -710,7 +735,7 @@ export async function listTeachersByClassId(classId: string) {
     })
     .from(eduClassTeachers)
     .innerJoin(users, eq(eduClassTeachers.teacherUserId, users.id))
-    .where(eq(eduClassTeachers.classId, classId));
+    .where(and(eq(eduClassTeachers.classId, classId), eq(eduClassTeachers.isActive, true)));
 }
 
 export async function hasEnrollment(classId: string, studentUserId: number) {
@@ -783,7 +808,8 @@ export async function hasTeacherAssignment(classId: string, teacherUserId: numbe
     .where(
       and(
         eq(eduClassTeachers.classId, classId),
-        eq(eduClassTeachers.teacherUserId, teacherUserId)
+        eq(eduClassTeachers.teacherUserId, teacherUserId),
+        eq(eduClassTeachers.isActive, true)
       )
     )
     .limit(1);
@@ -876,7 +902,7 @@ export async function getClassNotificationRecipients(classId: string): Promise<{
     db
       .selectDistinct({ userId: eduClassTeachers.teacherUserId })
       .from(eduClassTeachers)
-      .where(eq(eduClassTeachers.classId, classId)),
+      .where(and(eq(eduClassTeachers.classId, classId), eq(eduClassTeachers.isActive, true))),
   ]);
   return {
     studentUserIds: students.map((r) => r.userId),
@@ -1041,7 +1067,7 @@ export async function getScheduleSummaryForUser(
       .select(baseSelect)
       .from(eduClassTeachers)
       .innerJoin(eduClasses, eq(eduClassTeachers.classId, eduClasses.id))
-      .where(eq(eduClassTeachers.teacherUserId, userId))
+      .where(and(eq(eduClassTeachers.teacherUserId, userId), eq(eduClassTeachers.isActive, true)))
       .orderBy(asc(eduClasses.name));
   }
 
@@ -1134,7 +1160,7 @@ export async function getClassesWithScheduleForCalendar(
       })
       .from(eduClassTeachers)
       .innerJoin(eduClasses, eq(eduClassTeachers.classId, eduClasses.id))
-      .where(and(eq(eduClassTeachers.teacherUserId, userId), hasSchedule))
+      .where(and(eq(eduClassTeachers.teacherUserId, userId), eq(eduClassTeachers.isActive, true), hasSchedule))
       .orderBy(asc(eduClasses.name));
   }
 
@@ -1263,6 +1289,7 @@ export async function getStudentsForTeacher(
 ) {
   const conditions = [
     eq(eduClassTeachers.teacherUserId, teacherUserId),
+    eq(eduClassTeachers.isActive, true),
     isNull(users.deletedAt),
     isNull(users.archivedAt),
   ];
@@ -1345,6 +1372,7 @@ export async function isStudentInTeacherClass(
     .where(
       and(
         eq(eduClassTeachers.teacherUserId, teacherUserId),
+        eq(eduClassTeachers.isActive, true),
         eq(eduEnrollments.studentUserId, studentUserId)
       )
     )
@@ -1352,7 +1380,41 @@ export async function isStudentInTeacherClass(
   return !!row;
 }
 
-/** Teachers assigned to any class (for admin filter dropdown). */
+/** Teachers (platformRole=teacher) with active class count for admin teachers list. */
+export async function listTeachersWithClassCount(): Promise<
+  Array<{ id: number; name: string | null; email: string; activeClassCount: number }>
+> {
+  const teachers = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+    })
+    .from(users)
+    .where(
+      and(eq(users.platformRole, 'teacher'), isNull(users.deletedAt))
+    )
+    .orderBy(asc(users.name));
+
+  if (teachers.length === 0) return [];
+
+  const countRows = await db
+    .select({
+      teacherUserId: eduClassTeachers.teacherUserId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(eduClassTeachers)
+    .where(eq(eduClassTeachers.isActive, true))
+    .groupBy(eduClassTeachers.teacherUserId);
+
+  const countMap = new Map(countRows.map((r) => [r.teacherUserId, r.count]));
+  return teachers.map((t) => ({
+    ...t,
+    activeClassCount: countMap.get(t.id) ?? 0,
+  }));
+}
+
+/** Teachers with active assignments (for admin filter dropdown). */
 export async function listTeachersForAdmin() {
   return db
     .selectDistinct({
@@ -1362,7 +1424,7 @@ export async function listTeachersForAdmin() {
     })
     .from(eduClassTeachers)
     .innerJoin(users, eq(eduClassTeachers.teacherUserId, users.id))
-    .where(isNull(users.deletedAt))
+    .where(and(eq(eduClassTeachers.isActive, true), isNull(users.deletedAt)))
     .orderBy(asc(users.name));
 }
 

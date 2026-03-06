@@ -86,6 +86,7 @@ const navGroupKeys: Record<
     {
       labelKey: 'main',
       items: [
+        { href: '/dashboard/school-admin', icon: UserCog, labelKey: 'dashboard' },
         { href: '/dashboard/school-admin/school', icon: Building2, labelKey: 'school' },
         { href: '/dashboard/school-admin/students', icon: Users, labelKey: 'students' },
         { href: '/dashboard/school-admin/schedule', icon: CalendarDays, labelKey: 'schedule' },
@@ -236,6 +237,8 @@ export function DashboardSidebar({
                 const href = resolveItemHref(item);
                 const isActive =
                   pathWithoutLocale === item.href ||
+                  (item.href === '/dashboard/admin/users' &&
+                    pathWithoutLocale?.startsWith('/dashboard/admin/users')) ||
                   (item.href === '/dashboard/student/learning' &&
                     (pathWithoutLocale?.startsWith('/dashboard/student/learning') ||
                       pathWithoutLocale?.startsWith('/learning'))) ||

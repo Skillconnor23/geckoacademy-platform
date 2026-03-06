@@ -62,7 +62,7 @@ export async function getTeacherDashboardClasses(
     })
     .from(eduClassTeachers)
     .innerJoin(eduClasses, eq(eduClassTeachers.classId, eduClasses.id))
-    .where(eq(eduClassTeachers.teacherUserId, teacherUserId))
+    .where(and(eq(eduClassTeachers.teacherUserId, teacherUserId), eq(eduClassTeachers.isActive, true)))
     .orderBy(asc(eduClasses.name));
 
   if (classes.length === 0) return [];
@@ -171,7 +171,7 @@ export async function getTeacherDashboardKpis(
     await db
       .select({ classId: eduClassTeachers.classId })
       .from(eduClassTeachers)
-      .where(eq(eduClassTeachers.teacherUserId, teacherUserId))
+      .where(and(eq(eduClassTeachers.teacherUserId, teacherUserId), eq(eduClassTeachers.isActive, true)))
   ).map((r) => r.classId);
 
   if (classIds.length === 0) {
@@ -280,7 +280,7 @@ export async function getTeacherDashboardNeedsAttention(
     await db
       .select({ classId: eduClassTeachers.classId })
       .from(eduClassTeachers)
-      .where(eq(eduClassTeachers.teacherUserId, teacherUserId))
+      .where(and(eq(eduClassTeachers.teacherUserId, teacherUserId), eq(eduClassTeachers.isActive, true)))
   ).map((r) => r.classId);
 
   if (classIds.length === 0) {
@@ -414,6 +414,7 @@ export async function getTeacherNextSession(
     .where(
       and(
         eq(eduClassTeachers.teacherUserId, teacherUserId),
+        eq(eduClassTeachers.isActive, true),
         gte(eduSessions.startsAt, now)
       )
     )

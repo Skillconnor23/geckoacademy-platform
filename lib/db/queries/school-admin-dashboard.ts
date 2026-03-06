@@ -208,7 +208,7 @@ export async function getSchoolAdminClassTable(schoolIds: string[]): Promise<Sch
         })
         .from(eduClassTeachers)
         .innerJoin(users, eq(eduClassTeachers.teacherUserId, users.id))
-        .where(inArray(eduClassTeachers.classId, classIds)),
+        .where(and(eq(eduClassTeachers.isActive, true), inArray(eduClassTeachers.classId, classIds))),
       db
         .select({
           classId: eduQuizClasses.classId,

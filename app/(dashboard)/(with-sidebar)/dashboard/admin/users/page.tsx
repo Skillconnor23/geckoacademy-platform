@@ -1,84 +1,68 @@
 export const dynamic = 'force-dynamic';
 
 import { requirePermission } from '@/lib/auth/permissions';
-import {
-  getUsersForAdmin,
-  getActiveClassesCountByStudent,
-  listClasses,
-  listClassesWithScheduleForAssign,
-} from '@/lib/db/queries/education';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users } from 'lucide-react';
-import { AdminUsersFilters } from './admin-users-filters';
-import { AdminUsersTable } from './admin-users-table';
+import Link from 'next/link';
+import { Users, GraduationCap, UserCog, Building2 } from 'lucide-react';
 
-export default async function AdminUsersPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    role?: string;
-    assignment?: string;
-    status?: string;
-    search?: string;
-    classId?: string;
-    geckoLevel?: string;
-  }>;
-}) {
+const hubCards = [
+  {
+    href: '/dashboard/admin/users/teachers',
+    title: 'Teachers',
+    description:
+      'Manage teachers, view their profiles, and assign/remove classes.',
+    icon: GraduationCap,
+  },
+  {
+    href: '/dashboard/admin/users/students',
+    title: 'Students',
+    description:
+      'View students, see their enrolled classes, and manage accounts.',
+    icon: Users,
+  },
+  {
+    href: '/dashboard/admin/users/school-admins',
+    title: 'School Admins',
+    description:
+      'Manage school administrators and their assigned schools.',
+    icon: Building2,
+  },
+  {
+    href: '/dashboard/admin/users/all',
+    title: 'All Users',
+    description:
+      'View all users across the platform with filtering by role and status.',
+    icon: UserCog,
+  },
+];
+
+export default async function AdminUsersHubPage() {
   await requirePermission(['classes:read', 'users:read']);
-  const params = await searchParams;
-
-  const [users, classesCount, classes, classesForAssign] = await Promise.all([
-    getUsersForAdmin({
-      role: params.role || undefined,
-      assignment:
-        params.assignment === 'unassigned' || params.assignment === 'assigned'
-          ? params.assignment
-          : undefined,
-      status:
-        params.status === 'archived' || params.status === 'all'
-          ? params.status
-          : undefined,
-      search: params.search || undefined,
-      classId: params.classId || undefined,
-      geckoLevel: params.geckoLevel || undefined,
-    }),
-    getActiveClassesCountByStudent(),
-    listClasses(),
-    listClassesWithScheduleForAssign(),
-  ]);
 
   return (
     <section className="flex-1 p-4 lg:p-8">
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="mx-auto w-full max-w-4xl">
         <h1 className="text-lg lg:text-2xl font-medium mb-6 flex items-center gap-2">
           <Users className="h-6 w-6" />
-          Users
+          User Management
         </h1>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Users directory</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              View and filter users by role, class, gecko level, or assignment status.
-            </p>
-            <AdminUsersFilters
-              classes={classes.map((c) => ({ id: c.id, name: c.name, geckoLevel: c.geckoLevel }))}
-              currentParams={params}
-            />
-          </CardHeader>
-          <CardContent>
-            <AdminUsersTable
-              users={users}
-              classesCount={classesCount}
-              classesForAssign={classesForAssign}
-              statusFilter={
-                params.status === 'archived' || params.status === 'all'
-                  ? params.status
-                  : 'active'
-              }
-            />
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {hubCards.map((card) => (
+            <Link key={card.href} href={card.href}>
+              <Card className="h-full transition-colors hover:bg-muted/50 cursor-pointer">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <card.icon className="h-5 w-5 text-muted-foreground" />
+                    <CardTitle className="text-base">{card.title}</CardTitle>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {card.description}
+                  </p>
+                </CardHeader>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
     </section>
   );

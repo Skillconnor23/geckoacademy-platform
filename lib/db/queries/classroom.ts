@@ -118,7 +118,7 @@ export async function getClassroomSidebarData(
         })
         .from(eduClassTeachers)
         .innerJoin(users, eq(eduClassTeachers.teacherUserId, users.id))
-        .where(eq(eduClassTeachers.classId, classId))
+        .where(and(eq(eduClassTeachers.classId, classId), eq(eduClassTeachers.isActive, true)))
         .limit(1),
     ]);
 

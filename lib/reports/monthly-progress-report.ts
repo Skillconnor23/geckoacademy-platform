@@ -81,7 +81,7 @@ async function getTeacherNameForClass(classId: string): Promise<string | null> {
     .select({ name: users.name })
     .from(eduClassTeachers)
     .innerJoin(users, eq(eduClassTeachers.teacherUserId, users.id))
-    .where(eq(eduClassTeachers.classId, classId))
+    .where(and(eq(eduClassTeachers.classId, classId), eq(eduClassTeachers.isActive, true)))
     .limit(1);
   return row[0]?.name ?? null;
 }
