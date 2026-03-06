@@ -1,4 +1,7 @@
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { MessageCircle } from 'lucide-react';
 
 type Props = {
   teacher: {
@@ -28,32 +31,37 @@ export function TeacherCard({ teacher }: Props) {
       <CardHeader className="pb-2">
         <CardTitle>Your teacher</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-start gap-4">
-          <div
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#7daf41]/20 text-xl font-semibold text-[#7daf41]"
-            aria-hidden
-          >
-            {teacher.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={teacher.avatarUrl}
-                alt=""
-                className="h-full w-full rounded-full object-cover"
-              />
-            ) : (
-              getInitials(teacher.name)
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-medium text-[#1f2937]">
-              {teacher.name ?? 'Teacher'}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-              {bio}
-            </p>
-          </div>
+      <CardContent className="flex flex-col items-center text-center">
+        <div
+          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[#7daf41]/20 text-2xl font-semibold text-[#7daf41]"
+          aria-hidden
+        >
+          {teacher.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={teacher.avatarUrl}
+              alt=""
+              className="h-full w-full rounded-full object-cover"
+            />
+          ) : (
+            getInitials(teacher.name)
+          )}
         </div>
+        <p className="mt-4 font-medium text-[#1f2937]">
+          {teacher.name ?? 'Teacher'}
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+          {bio}
+        </p>
+        <Button
+          asChild
+          className="mt-4 w-full rounded-full bg-[#7daf41] hover:bg-[#6b9a37] text-white"
+        >
+          <Link href={`/dashboard/messages?start=${teacher.id}`} className="inline-flex items-center justify-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            Message
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   );

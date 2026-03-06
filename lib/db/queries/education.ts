@@ -615,6 +615,50 @@ export async function listEnrollmentsByClassId(classId: string) {
     .where(eq(eduEnrollments.classId, classId));
 }
 
+export type ClassmatePreview = {
+  studentId: number;
+  studentName: string | null;
+  avatarUrl: string | null;
+};
+
+/** Active classmates for sidebar preview (avatar + name). Returns first N and total count. */
+export async function listClassmatesPreview(
+  classId: string,
+  limit = 8
+): Promise<{ classmates: ClassmatePreview[]; total: number }> {
+  const [classmates, countRow] = await Promise.all([
+    db
+      .select({
+        studentId: eduEnrollments.studentUserId,
+        studentName: users.name,
+        avatarUrl: users.avatarUrl,
+      })
+      .from(eduEnrollments)
+      .innerJoin(users, eq(eduEnrollments.studentUserId, users.id))
+      .where(
+        and(
+          eq(eduEnrollments.classId, classId),
+          eq(eduEnrollments.status, 'active')
+        )
+      )
+      .limit(limit),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(eduEnrollments)
+      .where(
+        and(
+          eq(eduEnrollments.classId, classId),
+          eq(eduEnrollments.status, 'active')
+        )
+      )
+      .then((r) => r[0]?.count ?? 0),
+  ]);
+  return {
+    classmates,
+    total: Number(countRow),
+  };
+}
+
 export async function listTeachersByClassId(classId: string) {
   return db
     .select({
@@ -805,6 +849,48 @@ export async function listClassroomPosts(classId: string, limit = 50) {
     .from(classroomPosts)
     .where(eq(classroomPosts.classId, classId))
     .orderBy(desc(classroomPosts.createdAt))
+    .limit(limit);
+}
+
+export type ClassroomPostWithAuthor = typeof classroomPosts.$inferSelect & {
+  authorName: string | null;
+  authorAvatarUrl: string | null;
+};
+
+export async function listClassroomPostsWithAuthors(
+  classId: string,
+  limit = 50
+): Promise<ClassroomPostWithAuthor[]> {
+  const rows = await db
+    .select({
+      post: classroomPosts,
+      authorName: users.name,
+      authorAvatarUrl: users.avatarUrl,
+    })
+    .from(classroomPosts)
+    .innerJoin(users, eq(classroomPosts.authorUserId, users.id))
+    .where(eq(classroomPosts.classId, classId))
+    .orderBy(desc(classroomPosts.createdAt))
+    .limit(limit);
+  return rows.map((r) => ({
+    ...r.post,
+    authorName: r.authorName,
+    authorAvatarUrl: r.authorAvatarUrl,
+  }));
+}
+
+export async function getNextSessionsForClass(
+  classId: string,
+  limit = 5
+) {
+  const now = new Date();
+  return db
+    .select()
+    .from(eduSessions)
+    .where(
+      and(eq(eduSessions.classId, classId), gte(eduSessions.startsAt, now))
+    )
+    .orderBy(asc(eduSessions.startsAt))
     .limit(limit);
 }
 

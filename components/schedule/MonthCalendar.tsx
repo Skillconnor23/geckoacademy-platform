@@ -269,13 +269,13 @@ export function MonthCalendar({
             size="sm"
             onClick={() => void handleToday()}
           >
-            Today
+            {tSchedule('today')}
           </Button>
         </div>
       </div>
 
       {/* Weekday labels */}
-      <div className="hidden sm:grid grid-cols-7 text-center text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+      <div className="hidden sm:grid grid-cols-7 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
         {[
           tSchedule('weekdays.short.sun'),
           tSchedule('weekdays.short.mon'),
@@ -291,8 +291,8 @@ export function MonthCalendar({
         ))}
       </div>
 
-      {/* Month grid - desktop/tablet (slightly denser for tablet) */}
-      <div className="hidden sm:grid grid-cols-7 gap-px rounded-xl border bg-slate-200 overflow-hidden">
+      {/* Month grid - desktop/tablet: larger cells, event pills with label + time */}
+      <div className="hidden sm:grid grid-cols-7 gap-px rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
         {grid.map((cell) => {
           const key = formatDateKey(cell.date);
           const dayEvents = byDate.get(key) ?? [];
@@ -305,23 +305,23 @@ export function MonthCalendar({
               key={key}
               type="button"
               className={cn(
-                "group relative flex flex-col items-stretch bg-white px-1 pb-1 pt-1 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7daf41]/50",
-                !cell.inCurrentMonth && "bg-slate-50 text-muted-foreground/70"
+                "group relative flex flex-col items-stretch bg-white min-h-[5.5rem] px-1.5 pb-1.5 pt-1.5 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7daf41]/50",
+                !cell.inCurrentMonth && "bg-slate-50/80 text-muted-foreground/70"
               )}
               onClick={() => setPanelState({ dateKey: key })}
             >
-              <div className="flex items-center justify-between mb-0.5">
+              <div className="flex items-center justify-between mb-1">
                 <span
                   className={cn(
-                    "text-xs font-medium",
+                    "text-sm font-medium tabular-nums",
                     isToday &&
-                      "inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#7daf41] text-white text-xs"
+                      "inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#7daf41] text-white"
                   )}
                 >
                   {formatDayNumber(cell.date)}
                 </span>
               </div>
-              <div className="space-y-0.5 min-w-0">
+              <div className="space-y-1 min-w-0 flex-1">
                 {visibleEvents.map((ev) => {
                   const start = new Date(ev.startsAt);
                   const timeStr = start.toLocaleTimeString(undefined, {
@@ -330,23 +330,27 @@ export function MonthCalendar({
                     minute: "2-digit",
                     hour12: true,
                   });
+                  const label = ev.title || "Class";
                   return (
                     <div
                       key={ev.id}
-                      className="flex items-center gap-1 rounded-full bg-[#7daf41]/10 px-1.5 py-0.5 text-[11px] leading-tight text-[#1f2937] group-hover:bg-[#7daf41]/20 min-w-0"
+                      className="flex flex-col gap-0.5 rounded-lg border border-[#7daf41]/30 bg-[#7daf41]/12 px-2 py-1 text-left group-hover:bg-[#7daf41]/20 min-w-0 cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         setPanelState({ dateKey: key });
                       }}
                     >
-                      <span className="tabular-nums text-[10px] text-muted-foreground shrink-0">
+                      <span className="truncate text-xs font-medium text-[#1f2937]">
+                        {label}
+                      </span>
+                      <span className="tabular-nums text-[11px] text-muted-foreground">
                         {timeStr}
                       </span>
                     </div>
                   );
                 })}
                 {extraCount > 0 && (
-                  <div className="text-[10px] text-[#7daf41] mt-0.5 font-medium">
+                  <div className="text-xs text-[#7daf41] mt-0.5 font-medium">
                     +{extraCount} more
                   </div>
                 )}
@@ -399,7 +403,7 @@ export function MonthCalendar({
             if (selectedEvents.length === 0) {
               return (
                 <p className="py-4 text-center text-sm text-muted-foreground">
-                  No classes scheduled.
+                  {tSchedule('noClassesScheduled')}
                 </p>
               );
             }
@@ -412,7 +416,7 @@ export function MonthCalendar({
             return (
               <>
                 <p className="text-xs font-medium text-muted-foreground">
-                  Sessions · {dayLabel}
+                  {tSchedule('classesOn')} · {dayLabel}
                 </p>
                 {selectedEvents.map((ev) => {
                   const canJoin = isJoinWindow(ev);
@@ -460,7 +464,7 @@ export function MonthCalendar({
       />
 
       {loading && (
-        <p className="mt-1 text-xs text-muted-foreground">Loading month…</p>
+        <p className="mt-1 text-xs text-muted-foreground">{tSchedule('loadingMonth')}</p>
       )}
     </div>
   );

@@ -228,19 +228,22 @@ export function MarketingHeader({
               <UserMenu />
             </Suspense>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden h-10 w-10 shrink-0 rounded-full text-[#1f2937] hover:bg-[#f3f4f6]"
-            onClick={() => setMobileMenuOpen((open) => !open)}
-            aria-label={mobileMenuOpen ? tNav('closeMenu') : tNav('openMenu')}
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </Button>
+          {/* On dashboard routes we use a single hamburger (left) that opens the nav drawer; hide this second menu. */}
+          {!showSidebarToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden h-10 w-10 shrink-0 rounded-full text-[#1f2937] hover:bg-[#f3f4f6]"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-label={mobileMenuOpen ? tNav('closeMenu') : tNav('openMenu')}
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          )}
         </div>
       </div>
-      {/* Mobile menu dropdown */}
-      {mobileMenuOpen && (
+      {/* Mobile menu dropdown (only when not on dashboard; dashboard uses single nav drawer) */}
+      {!showSidebarToggle && mobileMenuOpen && (
         <div className="absolute left-0 right-0 top-16 z-50 md:hidden w-full bg-white py-2 shadow-lg">
           <div className="flex w-full items-center justify-between px-4 pb-2">
             <LanguageSwitcher />

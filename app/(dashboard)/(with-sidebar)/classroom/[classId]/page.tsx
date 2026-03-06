@@ -3,13 +3,14 @@ export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { requireClassroomAccess, canPostToClassroom } from '@/lib/auth/classroom';
-import { listClassroomPosts } from '@/lib/db/queries/education';
+import { listClassroomPostsWithAuthors, listClassmatesPreview } from '@/lib/db/queries/education';
 import { getClassroomSidebarData } from '@/lib/db/queries/classroom';
 import { getClassMonthSummary } from '@/lib/db/queries/attendance';
 import { ClassAttendanceMonthCard } from '@/components/attendance/AttendanceMonthSummaryCard';
-import { ClassroomFeed } from './classroom-feed';
+import { ClassroomFeedClient } from './ClassroomFeedClient';
 import { ClassScoreCard } from './ClassScoreCard';
 import { TeacherCard } from './TeacherCard';
+import { ClassmatesCard } from './ClassmatesCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, ClipboardList } from 'lucide-react';
@@ -22,16 +23,17 @@ export default async function ClassroomPage({ params }: Props) {
   const { classId } = await params;
   const { user, eduClass } = await requireClassroomAccess(classId);
 
-  const [posts, canPost, sidebar, classMonthSummary] = await Promise.all([
-    listClassroomPosts(classId, 50),
+  const [posts, canPost, sidebar, classMonthSummary, classmatesData] = await Promise.all([
+    listClassroomPostsWithAuthors(classId, 50),
     canPostToClassroom(user, classId),
     getClassroomSidebarData(classId),
     getClassMonthSummary({ classId }),
+    listClassmatesPreview(classId, 8),
   ]);
 
   return (
-    <section className="flex flex-col p-6 lg:p-10 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col lg:min-h-0">
+    <section className="flex flex-col p-6 lg:p-10">
+      <div className="mx-auto flex w-full max-w-6xl flex-col">
         {/* Header - Back link + class title + People (no sticky to avoid ghost overlay) */}
         <div className="shrink-0 border-b border-[#e5e7eb] bg-white pb-4">
           <Button variant="ghost" size="sm" asChild className="-ml-2 mb-4">
@@ -79,15 +81,18 @@ export default async function ClassroomPage({ params }: Props) {
         </div>
         </div>
 
-        {/* Content grid: scrollable left col (lg only) + sticky right sidebar */}
-        <div className="mt-6 grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* Left column - scrollable on desktop only */}
-          <div className="flex min-w-0 flex-col gap-6 lg:col-span-8 lg:min-h-0 lg:overflow-y-auto lg:pr-2 lg:pt-6">
-            <div
-              className="flex h-24 shrink-0 items-center rounded-2xl border border-[#e5e7eb] bg-[#7daf41] px-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:h-[120px]"
-              aria-hidden
-            >
-              <span className="text-sm font-medium text-white/90">Week overview</span>
+        {/* Content grid: left col + sticky right sidebar */}
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Left column */}
+          <div className="flex min-w-0 flex-col gap-6 lg:col-span-8 lg:pr-2 lg:pt-6">
+            <div className="shrink-0 overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/classroom-banner.svg"
+                alt=""
+                className="h-auto w-full object-cover"
+                aria-hidden
+              />
             </div>
             <Card className="shrink-0 rounded-2xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
               <CardHeader>
@@ -97,9 +102,9 @@ export default async function ClassroomPage({ params }: Props) {
                 </p>
               </CardHeader>
               <CardContent>
-                <ClassroomFeed
+                <ClassroomFeedClient
                   classId={classId}
-                  initialPosts={posts}
+                  posts={posts}
                   canPost={canPost}
                 />
               </CardContent>
@@ -121,6 +126,11 @@ export default async function ClassroomPage({ params }: Props) {
               classAverage30d={sidebar.classAverage30d}
               attemptRate30d={sidebar.attemptRate30d}
               lastActivity={sidebar.lastActivity}
+            />
+            <ClassmatesCard
+              classId={classId}
+              classmates={classmatesData.classmates}
+              total={classmatesData.total}
             />
             {sidebar.teacher && (
               <TeacherCard teacher={sidebar.teacher} />

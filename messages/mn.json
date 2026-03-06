@@ -259,7 +259,8 @@
     "todo": "Хийх зүйлс",
     "none": "Байхгүй",
     "pendingCount": "{count} хүлээгдэж байна",
-    "viewDetails": "Дэлгэрэнгүй"
+    "viewDetails": "Дэлгэрэнгүй",
+    "currentWeek": "Энэ долоо хоног"
   },
   "schedule": {
     "weekdays": {
@@ -278,7 +279,17 @@
     "close": "Хаах",
     "join": "Нэгдэх",
     "openClassroom": "Анги нээх",
-    "classTimezone": "Ангийн цагийн бүс: {tz}"
+    "classTimezone": "Ангийн цагийн бүс: {tz}",
+    "nextClassTitle": "Дараагийн хичээл",
+    "nextClassEmpty": "Ойрын хичээл байхгүй. Дараа дахин шалгана уу эсвэл багшаасаа асууна уу.",
+    "joinMeeting": "Хичээлд нэгдэх",
+    "upcomingTitle": "Удахгүй",
+    "viewAgenda": "Жагсаалт",
+    "viewMonth": "Сар",
+    "today": "Өнөөдөр",
+    "noUpcoming": "Дараагийн 30 хоногт хичээл байхгүй.",
+    "noClassesScheduled": "Энэ өдөр хичээл төлөвлөгдөөгүй.",
+    "loadingMonth": "Ачааллаж байна…"
   },
   "homework": {
     "noDueDate": "Дуусах огноо байхгүй",
@@ -305,7 +316,26 @@
     "noHomeworkYet": "Одоогоор даалгавар байхгүй. Дараа дахин шалгана уу.",
     "viewAndSubmit": "Даалгавраа харах, илгээх",
     "open": "Нээх",
-    "due": "Дуусах:"
+    "due": "Дуусах:",
+    "listPage": {
+      "dueSoon": "Удахгүй дуусах",
+      "late": "Хоцорсон",
+      "completed": "Дууссан",
+      "filterAll": "Бүгд",
+      "filterDue": "Дуусах",
+      "filterCompleted": "Дууссан",
+      "statusNotSubmitted": "Илгээгээгүй",
+      "statusSubmitted": "Илгээсэн",
+      "statusGraded": "Үнэлэгдсэн",
+      "statusLate": "Хоцорсон",
+      "dueInDays": "{days} өдрийн дараа дуусах",
+      "dueTomorrow": "Маргааш дуусах",
+      "dueToday": "Өнөөдөр дуусах",
+      "overdueDays": "{days} өдөр хоцорсон",
+      "emptyGuidance": "Багш танд даалгавар энд оруулна. Шинэ даалгавар гарсан эсэхийг ангийн хэсгээс шалгана уу.",
+      "emptyFilterDue": "Одоогоор дуусах даалгавар байхгүй.",
+      "emptyFilterCompleted": "Одоогоор дууссан даалгавар байхгүй."
+    }
   },
   "learning": {
     "title": "Суралцах",
@@ -437,15 +467,16 @@
         "main": "Үндсэн",
         "settings": "Тохиргоо",
         "dashboard": "Хяналтын самбар",
-        "learning": "Суралцах",
-        "myClass": "Миний анги",
-        "people": "Хүмүүс",
-        "schedule": "Хуваарь",
+        "myClassroom": "Миний анги",
         "homework": "Даалгавар",
-        "messages": "Мессеж",
+        "learning": "Суралцах",
+        "schedule": "Хуваарь",
         "joinClass": "Ангид нэгдэх",
         "profile": "Профайл",
-        "activity": "Идэвх"
+        "activity": "Идэвх",
+        "messages": "Мессеж",
+        "people": "Хүмүүс",
+        "myClass": "Миний анги"
       },
       "teacher": {
         "main": "Үндсэн",
@@ -520,6 +551,9 @@
       "nextClassJoinMeeting": "Хичээлд нэгдэх",
       "nextClassJoinMeetingDisabled": "Хичээлд нэгдэх",
       "upcomingSessionsTitle": "Ойрын хичээлүүд",
+      "classUpdatesTitle": "Ангийн шинэчлэл",
+      "classUpdatesEmpty": "Шинэ шинэчлэл байхгүй. Та дууслаа.",
+      "viewAllUpdates": "Бүх шинэчлэл харах",
       "whatToDoNextTitle": "Дараа юу хийх вэ",
       "whatToDoNextCompleteQuiz": "{quizTitle} дуусгах",
       "whatToDoNextJoinNextClass": "Дараагийн хичээлдээ {date} нэгдэнэ үү.",
@@ -533,12 +567,21 @@
       "needsAttentionIncompleteQuiz": "Та {quizTitle} дуусгаагүй байна",
       "needsAttentionPrefix": "Та дуусгаагүй байна: ",
       "needsAttentionNoActivity": "7 хоногийн турш идэвхгүй. Тэгвэлдээ шалгалт өгөөрэй.",
+      "needsAttentionAllCaughtUp": "Бүгдийг хийж дууслаа.",
       "needsAttentionOpenLearning": "Суралцах нээх",
+      "needsAttentionItemsCount": "{count} зүйл дуусгах",
+      "needsAttentionBadgeCount": "{count}",
+      "needsAttentionViewAll": "Бүгдийг харах",
       "status": {
         "startTakingQuizzes": "Шалгалт өгч ахицаа харна",
         "onTrack": "Зөв чиглэлд",
         "keepImproving": "Үргэлжлүүлэн сайжруул",
         "needsAttention": "Анхаарал шаардлагатай"
+      },
+      "settingsPage": {
+        "title": "Тохиргоо",
+        "subtitle": "Профайл засварлах, ангид нэгдэх, идэвхээ харах.",
+        "linksHeading": "Бүртгэл ба тохиргоо"
       }
     }
   },

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { MarketingHeader } from '@/components/layout/MarketingHeader';
+import { locales, type Locale } from '@/lib/i18n/config';
 
 type NavDrawerContextValue = {
   navOpen: boolean;
@@ -14,6 +15,16 @@ export function useNavDrawer() {
   return ctx ?? { navOpen: false, setNavOpen: () => {} };
 }
 
+/** Path without locale prefix so we can match dashboard routes (e.g. /en/dashboard -> /dashboard). */
+function pathWithoutLocale(pathname: string | null): string {
+  if (!pathname) return '/';
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments.length > 0 && locales.includes(segments[0] as Locale)) {
+    return '/' + segments.slice(1).join('/');
+  }
+  return pathname;
+}
+
 /**
  * Dashboard/app layout only. Serves /dashboard, /teacher, /classroom, etc.
  * Does NOT serve "/" — the root is owned by (marketing). There must be no
@@ -22,13 +33,14 @@ export function useNavDrawer() {
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
   const pathname = usePathname();
+  const path = pathWithoutLocale(pathname);
   const showSidebar =
-    pathname?.startsWith('/dashboard') ||
-    pathname?.startsWith('/learning') ||
-    pathname?.startsWith('/teacher') ||
-    pathname?.startsWith('/admin') ||
-    pathname?.startsWith('/classroom') ||
-    pathname?.startsWith('/students');
+    path.startsWith('/dashboard') ||
+    path.startsWith('/learning') ||
+    path.startsWith('/teacher') ||
+    path.startsWith('/admin') ||
+    path.startsWith('/classroom') ||
+    path.startsWith('/students');
 
   return (
     <NavDrawerContext.Provider value={{ navOpen, setNavOpen }}>

@@ -2,8 +2,10 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { signOut } from '@/app/(login)/actions';
+import { mutate } from 'swr';
 import { locales } from '@/lib/i18n/config';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,6 +18,7 @@ import {
   UserCog,
   Building2,
   LogIn,
+  LogOut,
   BookOpen,
   BookMarked,
   CalendarDays,
@@ -38,20 +41,11 @@ const navGroupKeys: Record<
       labelKey: 'main',
       items: [
         { href: '/dashboard/student', icon: GraduationCap, labelKey: 'dashboard' },
-        { href: '/dashboard/student/learning', icon: BookOpen, labelKey: 'learning' },
-        { href: '__PRIMARY_CLASS__', icon: BookOpen, labelKey: 'myClass' },
-        { href: '__PEOPLE__', icon: Users, labelKey: 'people' },
-        { href: '/dashboard/student/schedule', icon: CalendarDays, labelKey: 'schedule' },
+        { href: '__PRIMARY_CLASS__', icon: GraduationCap, labelKey: 'myClassroom' },
         { href: '/dashboard/student/homework', icon: ClipboardList, labelKey: 'homework' },
+        { href: '/dashboard/student/learning', icon: BookOpen, labelKey: 'learning' },
         { href: '/dashboard/messages', icon: MessageSquare, labelKey: 'messages' },
-      ],
-    },
-    {
-      labelKey: 'settings',
-      items: [
-        { href: '/dashboard/student/join', icon: LogIn, labelKey: 'joinClass' },
-        { href: '/dashboard/profile', icon: User, labelKey: 'profile' },
-        { href: '/dashboard/activity', icon: Activity, labelKey: 'activity' },
+        { href: '/dashboard/student/schedule', icon: CalendarDays, labelKey: 'schedule' },
       ],
     },
   ],
@@ -164,6 +158,7 @@ export function DashboardSidebar({
   userAvatarUrl,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const locale = useLocale();
   const { navOpen, setNavOpen } = useNavDrawer();
 
@@ -297,32 +292,68 @@ export function DashboardSidebar({
         ))}
       </div>
       {(userName || userEmail) && (
-        <Link
-          href={withLocalePrefix('/dashboard/profile')}
-          className="mt-auto block min-h-[48px] border-t border-white/20 pt-4 group"
-        >
-          <div className="flex min-h-[48px] items-center gap-3 rounded-full py-2 group-hover:bg-white/10 group-active:bg-white/12 cursor-pointer md:py-0">
-            <Avatar className="h-9 w-9 shrink-0 border-2 border-white/30">
-              {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName ?? ''} />}
-              <AvatarFallback className="bg-white/20 text-sm font-medium text-white">
-                {userInitials(userName ?? null, userEmail ?? '')}
-              </AvatarFallback>
-            </Avatar>
-            <span className="truncate text-base font-medium text-white md:text-sm">
-              {userName?.trim() || userEmail}
-            </span>
+        <>
+          <div className="mt-auto shrink-0 border-t border-white/20 pt-4">
+            {platformRole === 'student' && (
+              <Link
+                href={withLocalePrefix('/dashboard/student/settings')}
+                onClick={handleNavigate}
+                className={`flex h-12 min-h-[48px] w-full items-center gap-3 rounded-full px-4 py-3 text-base font-medium text-white transition-colors hover:bg-white/12 active:bg-white/14 md:text-sm md:gap-2 md:px-3 md:py-2 ${
+                  pathWithoutLocale?.startsWith('/dashboard/student/settings')
+                    ? 'bg-white/25 font-semibold md:bg-white/15'
+                    : ''
+                }`}
+              >
+                <Settings className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
+                <span className="flex-1 text-left">{tSidebar('settings')}</span>
+              </Link>
+            )}
+            <form
+              action={async () => {
+                setNavOpen(false);
+                await signOut();
+                mutate('/api/user');
+                router.push(withLocalePrefix('/'));
+              }}
+              className="pt-2"
+            >
+              <button
+                type="submit"
+                className="flex h-12 w-full items-center gap-3 rounded-full px-4 py-3 text-base font-medium text-white transition-colors hover:bg-white/12 active:bg-white/14 md:text-sm md:px-3 md:py-2"
+              >
+                <LogOut className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
+                <span className="flex-1 text-left">{tNav('logout')}</span>
+              </button>
+            </form>
+            <Link
+              href={withLocalePrefix('/dashboard/profile')}
+              onClick={handleNavigate}
+              className="mt-2 block min-h-[48px] group border-t border-white/20 pt-2"
+            >
+              <div className="flex min-h-[48px] items-center gap-3 rounded-full py-2 group-hover:bg-white/10 group-active:bg-white/12 cursor-pointer md:py-0">
+                <Avatar className="h-9 w-9 shrink-0 border-2 border-white/30">
+                  {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName ?? ''} />}
+                  <AvatarFallback className="bg-white/20 text-sm font-medium text-white">
+                    {userInitials(userName ?? null, userEmail ?? '')}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="truncate text-base font-medium text-white md:text-sm">
+                  {userName?.trim() || userEmail}
+                </span>
+              </div>
+            </Link>
           </div>
-        </Link>
+        </>
       )}
     </>
   );
 
   return (
     <div className="flex h-full w-full min-w-0 overflow-hidden">
-      {/* Mobile: overlay + off-canvas drawer */}
+      {/* Mobile: overlay + off-canvas drawer (high z-index so always on top, never trapped) */}
       {navOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          className="fixed inset-0 z-[100] bg-black/40 md:hidden"
           onClick={() => setNavOpen(false)}
           aria-hidden
         />
@@ -330,7 +361,7 @@ export function DashboardSidebar({
 
       {/* Sidebar / drawer */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-dvh w-[85vw] max-w-[320px] transform bg-[#7daf41] transition-transform duration-200 ease-out md:relative md:left-auto md:top-auto md:z-auto md:h-full md:w-[260px] md:translate-x-0 md:transform-none ${
+        className={`fixed top-0 left-0 z-[101] h-dvh w-[85vw] max-w-[320px] transform bg-[#7daf41] transition-transform duration-200 ease-out md:relative md:left-auto md:top-auto md:z-auto md:h-full md:w-[260px] md:translate-x-0 md:transform-none ${
           navOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
@@ -361,7 +392,7 @@ export function DashboardSidebar({
             {children}
           </div>
         ) : (
-          <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-y-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
             {children}
           </div>
         )}

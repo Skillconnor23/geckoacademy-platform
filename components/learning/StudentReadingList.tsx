@@ -23,29 +23,25 @@ export async function StudentReadingList({
     <div className="space-y-5">
       {thisWeek && (
         <>
-          <Card
-            className={`rounded-2xl border-2 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] ${
-              !thisWeek.completedAt ? 'border-[#7daf41]/50' : 'border-[#e5e7eb]'
-            }`}
-          >
+          <Card className="rounded-2xl border-0 bg-[#7daf41] shadow-[0_1px_3px_rgba(0,0,0,0.12)]">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg text-white">
                 {tQuizzes('thisWeek')}
-                <span className="inline-flex rounded-full bg-[#e5e7eb]/80 px-2.5 py-0.5 text-xs font-medium text-[#6b7280]">
+                <span className="inline-flex rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium text-white">
                   {tQuizzes('thisWeek')}
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 pt-0">
               <div>
-                <p className="font-medium text-[#1f2937]">{thisWeek.reading.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="font-medium text-white">{thisWeek.reading.title}</p>
+                <p className="text-xs text-white/80 mt-0.5">
                   {thisWeek.className}
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 {thisWeek.completedAt ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#7daf41]/10 px-3 py-1 text-sm font-medium text-[#7daf41]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     {t('completed')}
                   </span>
@@ -53,7 +49,7 @@ export async function StudentReadingList({
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="min-h-10 rounded-full bg-[#429ead] px-4 text-sm text-white hover:bg-[#36899a]"
+                  className="min-h-10 rounded-full border-0 bg-white px-4 text-sm font-medium text-[#7daf41] hover:bg-white/90"
                   asChild
                 >
                   <Link href={`/dashboard/student/learning/reading/${thisWeek.reading.id}`}>

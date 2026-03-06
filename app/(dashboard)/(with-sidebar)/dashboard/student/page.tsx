@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { requireRole } from '@/lib/auth/user';
-import { getStudentDashboardData } from '@/lib/db/queries/education';
+import { getStudentDashboardData, listClassroomPosts } from '@/lib/db/queries/education';
 import {
   getStudentDashboardStats,
   getStudentNeedsAttention,
@@ -13,73 +13,19 @@ import { StudentAttendanceMonthCard } from '@/components/attendance/AttendanceMo
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Calendar,
   BookOpen,
-  TrendingUp,
-  CheckCircle2,
-  ClipboardCheck,
   AlertTriangle,
-  BarChart3,
   Video,
   ArrowRight,
+  Megaphone,
+  NotebookPen,
+  ClipboardList,
+  FileText,
+  ChevronRight,
 } from 'lucide-react';
 import { PercentRing } from '@/components/dashboard/PercentRing';
 import { ProgressBar } from '@/components/dashboard/ProgressBar';
-
-function ScoreRing({
-  score,
-  size,
-  strokeWidth,
-}: {
-  score: number | null;
-  size: number;
-  strokeWidth: number;
-}) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progress = score != null ? (score / 100) * circumference : 0;
-  const strokeColor =
-    score == null
-      ? '#e5e7eb'
-      : score >= 80
-        ? '#7daf41'
-        : score >= 65
-          ? '#429ead'
-          : '#f59e0b';
-
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="overflow-visible -rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={strokeColor}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference - progress}
-          className="transition-all duration-300 ease-out"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xl font-semibold text-[#1f2937]">
-          {score != null ? `${score}%` : '—'}
-        </span>
-      </div>
-    </div>
-  );
-}
+import { GECKO_COLORS } from '@/lib/constants/colors';
 
 function isToday(d: Date): boolean {
   const today = new Date();
@@ -89,6 +35,39 @@ function isToday(d: Date): boolean {
     d.getDate() === today.getDate()
   );
 }
+
+function formatFeedTime(date: Date): string {
+  const now = new Date();
+  const d = new Date(date);
+  const diffMs = now.getTime() - d.getTime();
+  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1d ago';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 14) return '1w ago';
+  return d.toLocaleDateString();
+}
+
+const FEED_TYPE_ICONS = {
+  announcement: Megaphone,
+  homework: NotebookPen,
+  quiz: ClipboardList,
+  test: FileText,
+  recording: Video,
+  document: FileText,
+} as const;
+
+const FEED_TYPE_LABELS: Record<string, string> = {
+  announcement: 'Announcement',
+  homework: 'Homework',
+  quiz: 'Quiz',
+  test: 'Test',
+  recording: 'Recording',
+  document: 'Document',
+};
+
+/** Icon colors for Class updates (neutral gray rows, color only in icons). */
+const CLASS_UPDATE_ICON_COLOR = GECKO_COLORS.blue; // #429ead
 
 export default async function StudentDashboardPage({
   searchParams,
@@ -107,41 +86,26 @@ export default async function StudentDashboardPage({
     getStudentMonthSummary({ studentUserId: user.id }),
   ]);
 
+  const classFeedItems =
+    data.hasClasses ? await listClassroomPosts(data.primaryClass.id, 3) : [];
+
   const hasNeedsAttention =
     needsAttention.incompleteQuizzes.length > 0 || needsAttention.noActivityIn7Days;
-
-  const statusMessage =
-    stats.avgScore30d == null
-      ? t('status.startTakingQuizzes')
-      : stats.avgScore30d >= 80
-        ? t('status.onTrack')
-        : stats.avgScore30d >= 65
-          ? t('status.keepImproving')
-          : t('status.needsAttention');
-
-  const statusColor =
-    stats.avgScore30d == null
-      ? 'text-muted-foreground'
-      : stats.avgScore30d >= 80
-        ? 'text-[#7daf41]'
-        : stats.avgScore30d >= 65
-          ? 'text-[#429ead]'
-          : 'text-amber-600';
 
   const firstName = user.name?.split(/\s+/)[0] ?? 'there';
   const attendanceRate30d = Math.round((stats.activeDays30d / 30) * 100);
 
   return (
     <section className="flex-1">
-      <h1 className="text-xl lg:text-2xl font-medium text-[#1f2937] mb-2 tracking-tight">
+      <h1 className="text-xl lg:text-2xl font-medium text-[#1f2937] mb-1 tracking-tight">
         {user.name ? t('welcomeWithName', { name: firstName }) : t('welcome')}
       </h1>
-      <p className="text-sm text-muted-foreground mb-6">
+      <p className="text-sm text-muted-foreground mb-3">
         {t('subtitle')}
       </p>
 
       {params.joined === '1' && (
-        <div className="mb-6 rounded-2xl border border-[#e5e7eb] bg-[#7daf41]/10 px-5 py-4 text-sm text-[#1f2937] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div className="mb-3 rounded-2xl border border-[#e5e7eb] bg-[#7daf41]/10 px-4 py-3 text-sm text-[#1f2937] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           {t('joinedBanner')}
         </div>
       )}
@@ -162,22 +126,21 @@ export default async function StudentDashboardPage({
         </Card>
       ) : (
         <>
-          {/* 1. Top Stats Row — compact, mobile-friendly */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 mb-6 sm:mb-8">
-            {/* Avg score (30d) — label + % left, donut right (blue accent) */}
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#e5e7eb] bg-white px-4 py-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:px-5 sm:py-3">
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-sm font-medium text-muted-foreground">
+          {/* A) Quick stats — 3 columns on desktop */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex min-w-0 flex-col gap-0">
+                <span className="text-xs font-medium text-muted-foreground">
                   {t('avgScoreTitle')}
                 </span>
-                <p className="text-xl font-semibold text-[#1f2937] sm:text-2xl">
+                <p className="text-lg font-semibold text-gray-900 sm:text-xl">
                   {stats.avgScore30d != null ? `${stats.avgScore30d}%` : '—'}
                 </p>
               </div>
               <PercentRing
                 value={stats.avgScore30d}
-                size={48}
-                strokeWidth={5}
+                size={40}
+                strokeWidth={4}
                 fillColor="#429ead"
                 className="shrink-0"
                 aria-label={
@@ -187,13 +150,12 @@ export default async function StudentDashboardPage({
                 }
               />
             </div>
-            {/* Attendance rate (30d) — label + % on top, progress bar at bottom */}
-            <div className="flex flex-col gap-2 rounded-2xl border border-[#e5e7eb] bg-white px-4 py-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:px-5 sm:py-3">
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-sm font-medium text-muted-foreground">
+            <div className="flex flex-col gap-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex min-w-0 flex-col gap-0">
+                <span className="text-xs font-medium text-muted-foreground">
                   {t('attendanceTitle')}
                 </span>
-                <p className="text-xl font-semibold text-[#1f2937] sm:text-2xl">
+                <p className="text-lg font-semibold text-gray-900 sm:text-xl">
                   {attendanceRate30d}%
                 </p>
               </div>
@@ -202,278 +164,226 @@ export default async function StudentDashboardPage({
                 aria-label={t('attendanceAria', { percent: attendanceRate30d })}
               />
             </div>
-            {/* Quizzes completed — label left, number right (reddish-brown accent) */}
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#e5e7eb] bg-white px-4 py-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:px-5 sm:py-3">
-              <span className="text-sm font-medium text-muted-foreground min-w-0">
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <span className="text-xs font-medium text-muted-foreground min-w-0">
                 {t('quizzesCompletedTitle')}
               </span>
-              <p className="text-xl font-bold text-[#b64b29] shrink-0 sm:text-2xl" aria-label={t('quizzesCompletedAria', { count: stats.quizzesCompleted })}>
+              <p className="text-lg font-bold text-gray-900 shrink-0 sm:text-xl" aria-label={t('quizzesCompletedAria', { count: stats.quizzesCompleted })}>
                 {stats.quizzesCompleted}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* 2. Next Class (primary focus) — blue card, white text */}
-            <div className="lg:col-span-2">
-              <Card className="mb-6 rounded-2xl border-transparent bg-[#429ead] shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <Video className="h-5 w-5 text-white/90" aria-hidden />
-                    {t('nextClassTitle')}
-                    {data.nextSessions.length > 0 &&
-                      isToday(new Date(data.nextSessions[0].session.startsAt)) && (
-                        <span className="inline-flex rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium text-white">
-                          {t('nextClassToday')}
-                        </span>
-                      )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 text-white">
-                  {data.nextSessions.length === 0 ? (
-                    <>
-                      <p className="text-sm text-white/90 py-2">
-                        {t('nextClassEmpty')}
-                      </p>
-                      <Link
-                        href={`/classroom/${data.primaryClass.id}`}
-                        className="inline-flex items-center gap-1.5 text-sm text-white/90 hover:text-white transition-colors"
-                      >
-                        <BookOpen className="h-4 w-4" />
-                        {t('nextClassOpenClassroom')}
-                        <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                          <p className="font-medium text-white">
-                            {data.nextSessions[0].session.title ??
-                              data.nextSessions[0].className}
-                          </p>
-                          <p className="text-sm text-white/85 mt-0.5">
-                            {data.nextSessions[0].className}
-                          </p>
-                          <p className="text-sm text-white/85 mt-1">
-                            {new Date(
-                              data.nextSessions[0].session.startsAt
-                            ).toLocaleString('en-US', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}{' '}
-                            –{' '}
-                            {new Date(
-                              data.nextSessions[0].session.endsAt
-                            ).toLocaleTimeString('en-US', {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
-                          </p>
-                        </div>
-                        {data.nextSessions[0].session.meetingUrl ? (
-                          <Button
-                            size="lg"
-                            className="rounded-full shrink-0 bg-white text-[#429ead] hover:bg-white/90 hover:text-[#388694] border-0"
-                            asChild
-                          >
-                            <a
-                              href={data.nextSessions[0].session.meetingUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Video className="mr-2 h-4 w-4" />
-                              {t('nextClassJoinMeeting')}
-                            </a>
-                          </Button>
-                        ) : (
-                          <Button
-                            size="lg"
-                            className="rounded-full shrink-0 bg-white/20 text-white border border-white/40 cursor-not-allowed"
-                            disabled
-                          >
-                            {t('nextClassJoinMeetingDisabled')}
-                          </Button>
-                        )}
-                      </div>
-                      <Link
-                        href={`/classroom/${data.primaryClass.id}`}
-                        className="inline-flex items-center gap-1.5 text-sm text-white/90 hover:text-white transition-colors"
-                      >
-                        <BookOpen className="h-4 w-4" />
-                        {t('nextClassOpenClassroom')}
-                        <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* 5. Upcoming Sessions (condensed, max 3) */}
-              {data.nextSessions.length > 1 && (
-                <Card className="rounded-2xl border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-[#429ead]" aria-hidden />
-                      {t('upcomingSessionsTitle')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {data.nextSessions.slice(1, 4).map(({ session, className }) => (
-                        <li
-                          key={session.id}
-                          className="flex items-center justify-between rounded-lg border border-[#e5e7eb]/60 bg-muted/30 px-4 py-2.5"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-[#1f2937]">
-                              {session.title ?? className}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(session.startsAt).toLocaleString()}
-                            </p>
-                          </div>
-                          {session.meetingUrl ? (
-                            <Button variant="secondary" size="sm" className="rounded-full" asChild>
-                              <a
-                                href={session.meetingUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {t('nextClassJoinMeeting')}
-                              </a>
-                            </Button>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* 3. My Progress + 4. Needs Attention + What to do next */}
-            <div className="space-y-6">
-              {/* Attendance — This month */}
-              <StudentAttendanceMonthCard
-                attendanceRate={attendanceSummary.attendanceRate}
-                presentCount={attendanceSummary.presentCount}
-                lateCount={attendanceSummary.lateCount}
-                absentCount={attendanceSummary.absentCount}
-                participationAvg={attendanceSummary.participationAvg}
-                title={tCommon('thisMonth')}
-              />
-
-              {/* What to do next */}
-              <Card className="rounded-2xl border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ClipboardCheck className="h-5 w-5 text-[#429ead]" aria-hidden />
-                    {t('whatToDoNextTitle')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {needsAttention.incompleteQuizzes.length > 0 ? (
-                    <Link
-                      href={`/learning/${needsAttention.incompleteQuizzes[0].quizId}`}
-                      className="flex items-center justify-between rounded-lg border border-[#e5e7eb] bg-muted/30 px-4 py-3 text-sm font-medium text-[#1f2937] hover:bg-muted/50 transition-colors"
-                    >
-                      {t('whatToDoNextCompleteQuiz', { quizTitle: needsAttention.incompleteQuizzes[0].quizTitle })}
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    </Link>
-                  ) : data.nextSessions.length > 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      {t('whatToDoNextJoinNextClass', {
-                        date: new Date(data.nextSessions[0].session.startsAt).toLocaleDateString('en-US', {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric',
-                        }),
+          {/* B) Next class — full-width hero strip (brand green #7daf41) */}
+          <div className="mt-4">
+            <div
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full rounded-xl border border-[#6a9538] px-6 py-4 text-white shadow-sm"
+              style={{ backgroundColor: '#7daf41' }}
+            >
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-white/90 uppercase tracking-wide">
+                  {t('nextClassTitle')}
+                  {data.nextSessions.length > 0 &&
+                    isToday(new Date(data.nextSessions[0].session.startsAt)) && (
+                      <span className="ml-2 normal-case">— {t('nextClassToday')}</span>
+                    )}
+                </p>
+                {data.nextSessions.length === 0 ? (
+                  <p className="text-sm text-white/90 mt-0.5">{t('nextClassEmpty')}</p>
+                ) : (
+                  <>
+                    <p className="font-medium text-white mt-1">
+                      {data.nextSessions[0].session.title ?? data.nextSessions[0].className}
+                    </p>
+                    <p className="text-sm text-white/90 mt-0.5">
+                      {data.nextSessions[0].className} ·{' '}
+                      {new Date(data.nextSessions[0].session.startsAt).toLocaleString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}{' '}
+                      –{' '}
+                      {new Date(data.nextSessions[0].session.endsAt).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
                       })}
                     </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {t('whatToDoNextAllCaughtUp')}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+                  </>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {data.nextSessions.length > 0 && data.nextSessions[0].session.meetingUrl ? (
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-white text-[#1f2937] hover:bg-white/90 border-0"
+                    asChild
+                  >
+                    <a
+                      href={data.nextSessions[0].session.meetingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Video className="mr-2 h-4 w-4" />
+                      {t('nextClassJoinMeeting')}
+                    </a>
+                  </Button>
+                ) : data.nextSessions.length > 0 ? (
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-white/10 text-white border border-white/40 cursor-not-allowed"
+                    disabled
+                  >
+                    {t('nextClassJoinMeetingDisabled')}
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="rounded-full bg-white/10 text-white border-white/40 hover:bg-white/20"
+                  asChild
+                >
+                  <Link href={`/classroom/${data.primaryClass.id}`} className="inline-flex items-center gap-1.5">
+                    <BookOpen className="h-4 w-4" />
+                    {t('nextClassOpenClassroom')}
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
 
-              {/* My Progress */}
-              <Card className="rounded-2xl border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-[#7daf41]" aria-hidden />
-                    {t('myProgressTitle')}
+          {/* C) Remaining cards — 2-col grid, equal-height rows */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch mt-6">
+            {/* Class updates — white card with color-coded rows by type (spans full width when no Needs attention) */}
+            <div className={`h-full ${!hasNeedsAttention ? 'lg:col-span-2' : ''}`}>
+              <Card className="h-full flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
+                <CardHeader className="p-6 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base text-gray-900">
+                    <Megaphone className="h-4 w-4 text-gray-600" aria-hidden />
+                    {t('classUpdatesTitle')}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="flex items-center gap-6">
-                    <ScoreRing score={stats.avgScore30d} size={108} strokeWidth={10} />
-                    <div className="min-w-0">
-                      <p className={`font-medium ${statusColor}`}>{statusMessage}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{t('myProgress30d')}</p>
-                      {stats.avgScore30d != null && stats.avgScore30d < 80 && (
-                        <p className="text-xs text-muted-foreground mt-1.5">
-                          {t('myProgressGoalAway', { percent: 80 - stats.avgScore30d })}
-                        </p>
-                      )}
-                      {stats.avgScore30d != null && stats.avgScore30d >= 80 && (
-                        <p className="text-xs text-[#7daf41] mt-1.5">
-                          {t('myProgressGoalReached')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <Button asChild variant="secondary" size="sm" className="rounded-full w-full">
-                    <Link href="/dashboard/profile">{t('myProgressViewScores')}</Link>
-                  </Button>
+                <CardContent className="flex flex-col flex-1 p-6 pt-0">
+                  {classFeedItems.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-2">{t('classUpdatesEmpty')}</p>
+                  ) : (
+                    <ul className="space-y-2 flex-1">
+                      {classFeedItems.map((post) => {
+                        const type = (post.type in FEED_TYPE_ICONS ? post.type : 'document') as keyof typeof FEED_TYPE_ICONS;
+                        const Icon = FEED_TYPE_ICONS[type] ?? FileText;
+                        const label = post.title ?? FEED_TYPE_LABELS[post.type] ?? post.type;
+                        const quizHref = post.type === 'quiz' && post.quizId ? `/learning/${post.quizId}` : null;
+                        const homeworkHref = post.type === 'homework' ? '/dashboard/student/homework' : null;
+                        const href = quizHref ?? homeworkHref ?? `/classroom/${data.primaryClass.id}`;
+                        return (
+                          <li key={post.id}>
+                            <Link
+                              href={href}
+                              className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-[#e5e7eb] px-4 py-3 bg-gray-50 transition hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px]"
+                            >
+                              <Icon className="h-4 w-4 shrink-0" style={{ color: CLASS_UPDATE_ICON_COLOR }} aria-hidden />
+                              <span className="min-w-0 flex-1 truncate font-medium text-gray-900">{label}</span>
+                              <div className="ml-auto flex shrink-0 items-center gap-3">
+                                <span className="whitespace-nowrap text-sm text-muted-foreground">
+                                  {formatFeedTime(new Date(post.createdAt))}
+                                </span>
+                                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                              </div>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <Link
+                    href={`/classroom/${data.primaryClass.id}`}
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  >
+                    {t('viewAllUpdates')}
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
                 </CardContent>
               </Card>
+            </div>
 
-              {/* Needs Attention — only when score <65 or critical items; avoid orange overload */}
-              {hasNeedsAttention && (
-                <Card className="rounded-2xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden />
+            {/* Needs attention — white card like others, tinted rows (right column) */}
+            {hasNeedsAttention && (
+              <div className="h-full">
+                <Card className="h-full flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <CardHeader className="p-6 pb-2">
+                    <CardTitle className="flex flex-wrap items-center gap-2 text-base text-gray-900">
+                      <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: GECKO_COLORS.alert }} aria-hidden />
                       {t('needsAttentionTitle')}
+                      {needsAttention.incompleteQuizzes.length > 0 && (
+                        <span
+                          className="ml-2 rounded-full px-2 py-0.5 text-xs font-medium"
+                          style={{ backgroundColor: GECKO_COLORS.alertTint, color: GECKO_COLORS.alert }}
+                        >
+                          {t('needsAttentionBadgeCount', { count: needsAttention.incompleteQuizzes.length })}
+                        </span>
+                      )}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    {needsAttention.incompleteQuizzes.map((q) => (
-                      <p key={q.quizId} className="text-sm text-[#1f2937]">
-                        {t('needsAttentionPrefix')}
-                        <Link
-                          href={`/learning/${q.quizId}`}
-                          className="font-medium text-primary hover:underline"
-                        >
-                          {q.quizTitle}
-                        </Link>
-                        {q.className && (
-                          <span className="text-muted-foreground"> ({q.className})</span>
+                  <CardContent className="flex flex-col flex-1 p-6 pt-0">
+                    {needsAttention.incompleteQuizzes.length === 0 && !needsAttention.noActivityIn7Days ? (
+                      <p className="text-sm text-muted-foreground py-1">{t('needsAttentionAllCaughtUp')}</p>
+                    ) : (
+                      <>
+                        {needsAttention.incompleteQuizzes.length > 0 && (
+                        <ul className="space-y-2 flex-1">
+                          {needsAttention.incompleteQuizzes.slice(0, 3).map((q) => (
+                            <li key={q.quizId}>
+                              <Link
+                                href={`/learning/${q.quizId}`}
+                                className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-[#e5e7eb] px-4 py-3 bg-gray-50 transition hover:bg-gray-100 hover:shadow-sm hover:-translate-y-[1px]"
+                              >
+                                <ClipboardList className="h-4 w-4 shrink-0" style={{ color: GECKO_COLORS.alert }} aria-hidden />
+                                <span className="min-w-0 flex-1 truncate font-medium text-gray-900">
+                                  {q.quizTitle}
+                                  {q.className && <span className="text-muted-foreground"> ({q.className})</span>}
+                                </span>
+                                <ChevronRight className="h-4 w-4 shrink-0 text-gray-500" aria-hidden />
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
                         )}
-                      </p>
-                    ))}
-                    {needsAttention.noActivityIn7Days && (
-                      <p className="text-sm text-[#1f2937]">
-                        {t('needsAttentionNoActivity')}
-                      </p>
+                        {needsAttention.noActivityIn7Days && (
+                          <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                            <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: GECKO_COLORS.alert }} aria-hidden />
+                            {t('needsAttentionNoActivity')}
+                          </p>
+                        )}
+                        {(needsAttention.incompleteQuizzes.length > 0 || needsAttention.noActivityIn7Days) && (
+                          <Link
+                            href="/dashboard/student/learning"
+                            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                          >
+                            {t('needsAttentionViewAll')}
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </Link>
+                        )}
+                      </>
                     )}
-                    <Button asChild variant="outline" size="sm" className="mt-3 rounded-full w-full">
-                      <Link href="/dashboard/student/learning">
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        {t('needsAttentionOpenLearning')}
-                      </Link>
-                    </Button>
                   </CardContent>
                 </Card>
-              )}
+              </div>
+            )}
+
+            {/* Attendance this month — full width */}
+            <div className="h-full lg:col-span-2">
+              <div className="h-full [&>div]:h-full [&_.rounded-2xl]:rounded-xl [&_[data-slot=card-header]]:p-6 [&_[data-slot=card-header]]:pb-2 [&_[data-slot=card-content]]:p-6 [&_[data-slot=card-content]]:pt-0 [&_[data-slot=card-content]]:space-y-2 [&_.h-16]:h-10">
+                <StudentAttendanceMonthCard
+                  attendanceRate={attendanceSummary.attendanceRate}
+                  presentCount={attendanceSummary.presentCount}
+                  lateCount={attendanceSummary.lateCount}
+                  absentCount={attendanceSummary.absentCount}
+                  participationAvg={attendanceSummary.participationAvg}
+                  title={tCommon('thisMonth')}
+                />
+              </div>
             </div>
           </div>
         </>
