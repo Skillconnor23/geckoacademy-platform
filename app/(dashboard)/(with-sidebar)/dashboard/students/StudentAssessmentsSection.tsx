@@ -14,13 +14,15 @@ type Props = {
   data: StudentAssessmentsProfile;
   studentId: number;
   viewerRole: 'student' | 'teacher' | 'admin' | 'school_admin';
+  /** When provided (e.g. locale-prefixed), used for teacher/admin quiz links instead of default path. */
+  quizLinkBase?: string;
 };
 
-export function StudentAssessmentsSection({ data, studentId, viewerRole }: Props) {
+export function StudentAssessmentsSection({ data, studentId, viewerRole, quizLinkBase: quizLinkBaseOverride }: Props) {
   const isOwnProfile = viewerRole === 'student';
-  const quizLinkBase = isOwnProfile
+  const quizLinkBase = quizLinkBaseOverride ?? (isOwnProfile
     ? '/learning'
-    : `/dashboard/students/${studentId}/quiz`;
+    : `/dashboard/students/${studentId}/quiz`);
 
   return (
     <Card className="mt-4">

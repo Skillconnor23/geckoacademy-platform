@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { requireRole } from '@/lib/auth/user';
 import {
   getStudentsForTeacher,
@@ -38,6 +38,9 @@ export default async function TeacherStudentsPage({
   const user = await requireRole(['teacher']);
   const params = await searchParams;
   const t = await getTranslations('teacher.students');
+  const locale = await getLocale();
+  const withLocalePrefix = (path: string) =>
+    `/${locale}${path.startsWith('/') ? path : `/${path}`}`;
 
   const [rows, classesWithDetails] = await Promise.all([
     getStudentsForTeacher(user.id, {
@@ -92,7 +95,7 @@ export default async function TeacherStudentsPage({
                     <TableRow key={`${r.studentId}-${r.classId}`}>
                       <TableCell>
                         <Link
-                          href={`/dashboard/students/${r.studentId}`}
+                          href={withLocalePrefix(`/dashboard/students/${r.studentId}`)}
                           className="flex items-center gap-3 font-medium text-primary hover:underline"
                         >
                           <Avatar className="h-8 w-8">
@@ -120,7 +123,7 @@ export default async function TeacherStudentsPage({
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/dashboard/messages?start=${r.studentId}`}>
+                          <Link href={withLocalePrefix(`/dashboard/messages?start=${r.studentId}`)}>
                             {t('message')}
                           </Link>
                         </Button>

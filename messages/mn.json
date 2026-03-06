@@ -905,5 +905,44 @@
       "createTeamFailed": "Багийг үүсгэж чадсангүй. Дахин оролдоно уу.",
       "invalidOrExpiredInvitation": "Буруу эсвэл хугацаа дуссан урилга."
     }
+  },
+  "report": {
+    "monthlyProgress": {
+      "cardTitle": "Сарын дэвшлийн тайлан",
+      "cardDescription": "{name}-ийн дэвшлийн тайланг PDF хэлбэрээр татаж авах.",
+      "thisStudent": "энэ сурагч",
+      "monthLabel": "Сар",
+      "languageLabel": "Тайлангийн хэл",
+      "downloadButton": "Тайлан татах",
+      "generating": "Бэлтгэж байна…",
+      "brandName": "Гэко Академи",
+      "reportTitle": "Сарын дэвшлийн тайлан",
+      "studentInfo": "Сурагчийн мэдээлэл",
+      "studentName": "Сурагчийн нэр",
+      "class": "Анги",
+      "teacher": "Багш",
+      "reportingMonth": "Тайлангийн сар",
+      "performanceMetrics": "Үзүүлэлт",
+      "thisMonth": "Энэ сар",
+      "attendance": "Ирц",
+      "sessions": "хичээл",
+      "avgQuizScore": "Шалгалтын дундаж",
+      "attempts": "оролдлого",
+      "homeworkCompletion": "Гэрийн даалгаврын биелэлт",
+      "completed": "биелүүлсэн",
+      "readingCompleted": "Уншилт дуусгасан",
+      "participationAvg": "Оролцооны дундаж",
+      "teacherFeedback": "Багшийн сэтгэгдэл",
+      "recommendedNextSteps": "Дараагийн алхам: дээрх тэмдэглэлүүдийг дахин харж, багшаас онцолсон талуудад анхаарна уу.",
+      "summary": "Дүгнэлт",
+      "noActivity": "Энэ сард ямар ч үйл ажиллагаа бүртгэгдээгүй.",
+      "footerGenerated": "Гэко Академи · Сарын дэвшлийн тайлан · {month} · {name}",
+      "summaryAttendance": "Сарын ирц {pct}% байсан ({total}-аас {present} хичээлд ирсэн).",
+      "summaryQuiz": "Шалгалтын дундаж {score}%, нийт {count} оролдлого.",
+      "summaryHomework": "Гэрийн даалгаврын биелэлт {pct}% ({total}-аас {completed} биелүүлсэн).",
+      "summaryReading": "Энэ сард {count} уншилтын даалгавар дуусгасан.",
+      "summaryParticipation": "Оролцооны дундаж 5-аас {value}.",
+      "summaryAreasToImprove": "Сайжруулах талууд: доод үнэлгээтэй материал дахин давж, ирцийг тогтвортой байлгана уу."
+    }
   }
 }

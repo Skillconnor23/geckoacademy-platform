@@ -1,10 +1,12 @@
 export const dynamic = 'force-dynamic';
 
 import { redirect } from 'next/navigation';
+import { getLocale } from 'next-intl/server';
 import { getUser } from '@/lib/db/queries';
 import { getQuizResultsForStudentProfile } from '@/lib/db/queries/quizzes';
 import { ProfileCard } from './profile-card';
 import { StudentAssessmentsSection } from '../students/StudentAssessmentsSection';
+import { MonthlyReportCard } from '../students/MonthlyReportCard';
 
 function formatRole(role: string | null): string {
   if (!role) return 'User';
@@ -18,6 +20,9 @@ export default async function ProfilePage() {
 
   const isStudent = user.platformRole === 'student';
   const assessments = isStudent ? await getQuizResultsForStudentProfile(user.id) : null;
+  const locale = await getLocale();
+  const withLocalePrefix = (path: string) =>
+    `/${locale}${path.startsWith('/') ? path : `/${path}`}`;
 
   return (
     <section className="flex-1 p-4 lg:p-8">
@@ -32,12 +37,18 @@ export default async function ProfilePage() {
           }}
           roleLabel={formatRole(user.platformRole)}
         />
-        {isStudent && assessments && (
-          <StudentAssessmentsSection
-            data={assessments}
-            studentId={user.id}
-            viewerRole="student"
-          />
+        {isStudent && (
+          <>
+            <MonthlyReportCard studentId={user.id} studentName={user.name ?? user.email} />
+            {assessments && (
+              <StudentAssessmentsSection
+                data={assessments}
+                studentId={user.id}
+                viewerRole="student"
+                quizLinkBase={withLocalePrefix('/learning')}
+              />
+            )}
+          </>
         )}
       </div>
     </section>

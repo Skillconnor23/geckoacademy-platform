@@ -942,5 +942,44 @@
       "alreadyTeamMember": "User is already a member of this team",
       "invitationExists": "An invitation has already been sent to this email"
     }
+  },
+  "report": {
+    "monthlyProgress": {
+      "cardTitle": "Monthly Progress Report",
+      "cardDescription": "Generate a branded PDF progress report for {name}.",
+      "thisStudent": "this student",
+      "monthLabel": "Month",
+      "languageLabel": "Report language",
+      "downloadButton": "Download Report",
+      "generating": "Generating…",
+      "brandName": "Gecko Academy",
+      "reportTitle": "Monthly Progress Report",
+      "studentInfo": "Student Information",
+      "studentName": "Student name",
+      "class": "Class",
+      "teacher": "Teacher",
+      "reportingMonth": "Reporting month",
+      "performanceMetrics": "Performance Metrics",
+      "thisMonth": "This month",
+      "attendance": "Attendance",
+      "sessions": "sessions",
+      "avgQuizScore": "Avg quiz score",
+      "attempts": "attempt(s)",
+      "homeworkCompletion": "Homework completion",
+      "completed": "completed",
+      "readingCompleted": "Reading completed",
+      "participationAvg": "Participation avg",
+      "teacherFeedback": "Teacher Feedback",
+      "recommendedNextSteps": "Recommended next steps: Review the notes above and focus on any areas your teacher highlighted for improvement.",
+      "summary": "Summary",
+      "noActivity": "No activity recorded for this month.",
+      "footerGenerated": "Gecko Academy Monthly Progress Report · {month} · Generated for {name}",
+      "summaryAttendance": "Attendance for the month was {pct}% ({present} of {total} sessions).",
+      "summaryQuiz": "Quiz performance: average score {score}% across {count} attempt(s).",
+      "summaryHomework": "Homework completion rate was {pct}% ({completed} of {total} assignments).",
+      "summaryReading": "Completed {count} reading assignment(s) this month.",
+      "summaryParticipation": "Participation average was {value} out of 5.",
+      "summaryAreasToImprove": "Areas to focus on: consider reviewing material where scores were lower and maintaining consistent attendance."
+    }
   }
 }

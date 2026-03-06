@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getLocale } from 'next-intl/server';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
@@ -14,6 +15,7 @@ import {
 } from '@/lib/db/queries/education';
 import { getQuizResultsForStudentProfile } from '@/lib/db/queries/quizzes';
 import { StudentAssessmentsSection } from '../StudentAssessmentsSection';
+import { MonthlyReportCard } from '../MonthlyReportCard';
 import { requirePermission } from '@/lib/auth/permissions';
 import type { PlatformRole } from '@/lib/db/schema';
 
@@ -64,18 +66,23 @@ export default async function StudentProfilePage({ params }: Props) {
     notFound();
   }
 
+  const locale = await getLocale();
+  const withLocalePrefix = (path: string) =>
+    `/${locale}${path.startsWith('/') ? path : `/${path}`}`;
+
+  const backHref =
+    role === 'teacher'
+      ? '/dashboard/teacher/students'
+      : role === 'school_admin'
+        ? '/dashboard/school-admin/students'
+        : '/dashboard/admin/users';
+
   return (
     <section className="flex-1 p-4 lg:p-8">
       <div className="mx-auto max-w-2xl">
         <Button variant="ghost" size="sm" asChild>
           <Link
-            href={
-              role === 'teacher'
-                ? '/dashboard/teacher/students'
-                : role === 'school_admin'
-                  ? '/dashboard/school-admin/students'
-                  : '/dashboard/admin/users'
-            }
+            href={withLocalePrefix(backHref)}
             className="gap-1 text-muted-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -89,7 +96,7 @@ export default async function StudentProfilePage({ params }: Props) {
 
         {role === 'teacher' && (
           <Button variant="outline" size="sm" className="mt-4" asChild>
-            <Link href={`/dashboard/messages?start=${student.id}`}>
+            <Link href={withLocalePrefix(`/dashboard/messages?start=${student.id}`)}>
               Message student
             </Link>
           </Button>
@@ -131,7 +138,7 @@ export default async function StudentProfilePage({ params }: Props) {
                   >
                     <div>
                       <Link
-                        href={`/classroom/${cls.id}`}
+                        href={withLocalePrefix(`/classroom/${cls.id}`)}
                         className="font-medium text-primary hover:underline"
                       >
                         {cls.name}
@@ -150,10 +157,16 @@ export default async function StudentProfilePage({ params }: Props) {
           </CardContent>
         </Card>
 
+        <MonthlyReportCard
+          studentId={studentIdNum}
+          studentName={student.name ?? student.email}
+        />
+
         <StudentAssessmentsSection
           data={assessments}
           studentId={studentIdNum}
           viewerRole={role === 'admin' ? 'admin' : role === 'school_admin' ? 'school_admin' : 'teacher'}
+          quizLinkBase={withLocalePrefix(`/dashboard/students/${studentIdNum}/quiz`)}
         />
       </div>
     </section>
