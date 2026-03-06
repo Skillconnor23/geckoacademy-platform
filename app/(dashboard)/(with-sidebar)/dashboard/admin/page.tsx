@@ -127,19 +127,19 @@ export default async function AdminDashboardPage() {
                 Add School
               </Link>
             </Button>
-            <Button size="sm" asChild className="rounded-lg bg-[#7daf41] hover:bg-[#6b9a39]">
+            <Button size="sm" variant="outline" asChild className="rounded-lg">
               <Link href="/dashboard/admin/classes/new">
                 <Plus className="mr-1.5 h-4 w-4" />
                 Add Class
               </Link>
             </Button>
-            <Button size="sm" asChild className="rounded-lg bg-[#7daf41] hover:bg-[#6b9a39]">
+            <Button size="sm" variant="outline" asChild className="rounded-lg">
               <Link href="/dashboard/admin/users/teachers">
                 <UserCog className="mr-1.5 h-4 w-4" />
                 Add Teacher
               </Link>
             </Button>
-            <Button size="sm" asChild className="rounded-lg bg-[#7daf41] hover:bg-[#6b9a39]">
+            <Button size="sm" variant="outline" asChild className="rounded-lg">
               <Link href="/dashboard/admin/users">
                 <UserPlus className="mr-1.5 h-4 w-4" />
                 Invite User
@@ -150,29 +150,29 @@ export default async function AdminDashboardPage() {
 
         {/* Needs Attention - moved up */}
         {attentionItems.length > 0 && (
-          <Card className="border-red-200 bg-red-50/50">
+          <Card className="border-amber-200 bg-amber-50/50">
             <CardContent className="flex flex-wrap items-center gap-2 px-4 py-3">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
-              <span className="text-sm font-medium text-red-900">Needs attention:</span>
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+              <span className="text-sm font-medium text-amber-900">Needs attention:</span>
               {attentionItems.map((item) =>
                 item.href ? (
                   <Link
                     key={item.label}
                     href={item.href}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800 transition-colors hover:bg-red-200"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-200"
                   >
                     {item.label}
-                    <span className="rounded-full bg-red-200 px-1.5 py-0.5 font-semibold">
+                    <span className="rounded-full bg-amber-200 px-1.5 py-0.5 font-semibold">
                       {item.count}
                     </span>
                   </Link>
                 ) : (
                   <span
                     key={item.label}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800"
                   >
                     {item.label}
-                    <span className="rounded-full bg-red-200 px-1.5 py-0.5 font-semibold">
+                    <span className="rounded-full bg-amber-200 px-1.5 py-0.5 font-semibold">
                       {item.count}
                     </span>
                   </span>
@@ -193,32 +193,32 @@ export default async function AdminDashboardPage() {
               value={stats.totalStudents}
               icon={Users}
               href="/dashboard/admin/users/students"
-              iconBg="bg-slate-100"
-              iconColor="text-slate-600"
+              iconBg="bg-blue-100"
+              iconColor="text-blue-600"
             />
             <StatCard
               label="Total Teachers"
               value={stats.totalTeachers}
               icon={GraduationCap}
               href="/dashboard/admin/users/teachers"
-              iconBg="bg-slate-100"
-              iconColor="text-slate-600"
+              iconBg="bg-emerald-100"
+              iconColor="text-emerald-600"
             />
             <StatCard
               label="Total Schools"
               value={stats.totalSchools}
               icon={Building2}
               href="/dashboard/admin/schools"
-              iconBg="bg-slate-100"
-              iconColor="text-slate-600"
+              iconBg="bg-violet-100"
+              iconColor="text-violet-600"
             />
             <StatCard
               label="Active Classes"
               value={stats.activeClasses}
               icon={BookOpen}
               href="/dashboard/admin/classes"
-              iconBg="bg-slate-100"
-              iconColor="text-slate-600"
+              iconBg="bg-[#7daf41]/15"
+              iconColor="text-[#7daf41]"
             />
           </div>
         </div>
@@ -240,8 +240,8 @@ export default async function AdminDashboardPage() {
               label="Pending Invites"
               value={stats.pendingInvites}
               icon={UserPlus}
-              iconBg="bg-slate-100"
-              iconColor="text-slate-600"
+              iconBg="bg-amber-100"
+              iconColor="text-amber-600"
             />
             <StatCard
               label="New Students (7 days)"
@@ -266,7 +266,7 @@ export default async function AdminDashboardPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Heart className="h-4 w-4 text-slate-500" />
+                <Heart className="h-4 w-4 text-rose-500" />
                 Platform Health
               </CardTitle>
             </CardHeader>
