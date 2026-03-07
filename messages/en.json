@@ -513,7 +513,8 @@
       "resendVerificationHint": "Check your inbox or request a new verification link.",
       "resendVerificationCta": "Resend verification email",
       "resendVerificationSending": "Sending…",
-      "resendVerificationSuccess": "Verification email sent. Check your inbox."
+      "resendVerificationSuccess": "Verification email sent. Check your inbox.",
+      "forgotPassword": "Forgot password?"
     },
     "checkEmail": {
       "title": "Check your email",
@@ -535,6 +536,34 @@
       "invalidTitle": "Invite invalid",
       "invalidOrMissing": "Invalid or missing invite link.",
       "backToSignIn": "Back to sign in"
+    },
+    "forgotPassword": {
+      "title": "Forgot password?",
+      "subtitle": "Enter your email and we'll send you a link to reset your password.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link",
+      "sending": "Sending…",
+      "successMessage": "If an account exists with that email, we've sent a password reset link. Check your inbox.",
+      "backToSignIn": "Back to sign in"
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "subtitle": "Enter your new password below.",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm password",
+      "passwordPlaceholder": "••••••••",
+      "confirmPasswordPlaceholder": "••••••••",
+      "submit": "Reset password",
+      "resetting": "Resetting…",
+      "successTitle": "Password reset",
+      "successDesc": "Your password has been updated. You can now sign in.",
+      "signIn": "Sign in",
+      "invalidToken": "This link is invalid or has expired. Request a new one.",
+      "invalidTokenTitle": "Invalid link",
+      "missingToken": "No reset token provided. Request a new password reset link.",
+      "requestNewLink": "Request a new link",
+      "passwordMismatch": "Passwords do not match."
     }
   },
   "dashboard": {

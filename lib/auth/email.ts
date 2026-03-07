@@ -70,3 +70,32 @@ export async function sendPlatformInviteEmail(
   }
   return { ok: true };
 }
+
+export async function sendPasswordResetEmail(email: string, token: string) {
+  const baseUrl = getBaseUrl();
+  const resetUrl = `${baseUrl}/reset-password?token=${encodeURIComponent(token)}`;
+
+  if (!resend) {
+    console.log('[DEV] Password reset email would be sent to:', email);
+    console.log('[DEV] Reset URL:', resetUrl);
+    return { ok: true };
+  }
+
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: 'Reset your password',
+    html: `
+      <p>You requested a password reset. Click the link below to set a new password:</p>
+      <p><a href="${resetUrl}">Reset password</a></p>
+      <p>This link expires in 60 minutes and can only be used once.</p>
+      <p>If you didn't request this, you can safely ignore this email.</p>
+    `,
+  });
+
+  if (error) {
+    console.error('Failed to send password reset email:', error);
+    return { ok: false, error };
+  }
+  return { ok: true };
+}

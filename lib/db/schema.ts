@@ -199,6 +199,26 @@ export const emailVerificationTokens = pgTable(
   ]
 );
 
+// --- Auth: Password reset tokens (single-use, hashed, 60 min expiry) ---
+export const passwordResetTokens = pgTable(
+  'password_reset_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('password_reset_tokens_user_id_idx').on(table.userId),
+    index('password_reset_tokens_token_hash_idx').on(table.tokenHash),
+    index('password_reset_tokens_expires_idx').on(table.expiresAt),
+  ]
+);
+
 // --- Auth: Platform invites (teacher/school_admin only, single-use, hashed token) ---
 export const platformInviteRoleEnum = ['teacher', 'school_admin'] as const;
 export type PlatformInviteRole = (typeof platformInviteRoleEnum)[number];

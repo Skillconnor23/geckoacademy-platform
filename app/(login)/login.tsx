@@ -146,12 +146,22 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
           </div>
 
           <div className="space-y-1.5">
-            <Label
-              htmlFor="password"
-              className="block text-sm font-medium text-[#374151]"
-            >
-              {t('passwordLabel')}
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label
+                htmlFor="password"
+                className="block text-sm font-medium text-[#374151]"
+              >
+                {t('passwordLabel')}
+              </Label>
+              {mode === 'signin' && (
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-medium text-[#429ead] hover:underline"
+                >
+                  {t('forgotPassword')}
+                </Link>
+              )}
+            </div>
             <Input
               id="password"
               name="password"

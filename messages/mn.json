@@ -487,7 +487,8 @@
       "resendVerificationHint": "И-мэйлээ шалгаад шинэ холбоос хүсэх.",
       "resendVerificationCta": "Баталгаажуулах и-мэйл дахин илгээх",
       "resendVerificationSending": "Илгээж байна…",
-      "resendVerificationSuccess": "Баталгаажуулах и-мэйл илгээгдлээ. И-мэйлээ шалгана уу."
+      "resendVerificationSuccess": "Баталгаажуулах и-мэйл илгээгдлээ. И-мэйлээ шалгана уу.",
+      "forgotPassword": "Нууц үгээ мартсан уу?"
     },
     "checkEmail": {
       "title": "И-мэйлээ шалгана уу",
@@ -509,6 +510,34 @@
       "invalidTitle": "Урилга буруу",
       "invalidOrMissing": "Урилгын холбоос буруу эсвэл байхгүй байна.",
       "backToSignIn": "Нэвтрэх руу буцах"
+    },
+    "forgotPassword": {
+      "title": "Нууц үгээ мартсан уу?",
+      "subtitle": "И-мэйлээ оруулаад нууц үгээ шинэчлэх холбоос илгээнэ.",
+      "emailLabel": "И-мэйл",
+      "emailPlaceholder": "ta@example.com",
+      "submit": "Шинэчлэх холбоос илгээх",
+      "sending": "Илгээж байна…",
+      "successMessage": "Ийм и-мэйлтэй бүртгэл байвал нууц үг шинэчлэх холбоос илгээсэн. И-мэйлээ шалгана уу.",
+      "backToSignIn": "Нэвтрэх руу буцах"
+    },
+    "resetPassword": {
+      "title": "Нууц үг шинэчлэх",
+      "subtitle": "Шинэ нууц үгээ доор оруулна уу.",
+      "newPasswordLabel": "Шинэ нууц үг",
+      "confirmPasswordLabel": "Нууц үг давтах",
+      "passwordPlaceholder": "••••••••",
+      "confirmPasswordPlaceholder": "••••••••",
+      "submit": "Нууц үг шинэчлэх",
+      "resetting": "Шинэчилж байна…",
+      "successTitle": "Нууц үг шинэчлэгдлээ",
+      "successDesc": "Нууц үг та шинэчлэгдлээ. Одоо нэвтрэх боломжтой.",
+      "signIn": "Нэвтрэх",
+      "invalidToken": "Энэ холбоос буруу эсвэл хугацаа дууссан. Шинэ холбоос хүснэ үү.",
+      "invalidTokenTitle": "Буруу холбоос",
+      "missingToken": "Шинэчлэх токен байхгүй байна. Шинэ нууц үг шинэчлэх холбоос хүснэ үү.",
+      "requestNewLink": "Шинэ холбоос хүсэх",
+      "passwordMismatch": "Нууц үгнүүд таарахгүй байна."
     }
   },
   "dashboard": {
