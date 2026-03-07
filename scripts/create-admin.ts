@@ -9,7 +9,7 @@
 import 'dotenv/config';
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { db } from '../lib/db/drizzle';
-import { users } from '../lib/db/schema';
+import { users, teams, teamMembers } from '../lib/db/schema';
 import { hashPassword } from '../lib/auth/session';
 
 const ENABLED =
@@ -78,12 +78,28 @@ async function main() {
     console.log('  DB:', dbHost);
     console.log('Sign in at your app with the password you provided.');
   } else {
-    await db.insert(users).values({
-      email,
-      passwordHash,
-      role: 'owner',
-      platformRole: 'admin',
-      emailVerified: new Date(),
+    await db.transaction(async (tx) => {
+      const [user] = await tx.insert(users).values({
+        email,
+        passwordHash,
+        role: 'owner',
+        platformRole: 'admin',
+        emailVerified: new Date(),
+      }).returning();
+
+      if (!user) throw new Error('User insert failed');
+
+      const [team] = await tx.insert(teams).values({
+        name: `${email}'s Team`,
+      }).returning();
+
+      if (!team) throw new Error('Team insert failed');
+
+      await tx.insert(teamMembers).values({
+        userId: user.id,
+        teamId: team.id,
+        role: 'owner',
+      });
     });
 
     const dbHost = process.env.POSTGRES_URL

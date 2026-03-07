@@ -181,13 +181,17 @@ const signUpSchema = z.object({
   inviteId: z.string().optional(),
 });
 
+const isAuthDebug = process.env.NODE_ENV !== 'production' || process.env.AUTH_DEBUG === 'true';
+
 export const signUp = validatedAction(signUpSchema, async (data) => {
   const { email, password, inviteId } = data;
+  const emailNormalized = email.trim().toLowerCase();
 
+  // Case-insensitive duplicate check (auth uses same lookup)
   const existingUser = await db
-    .select()
+    .select({ id: users.id })
     .from(users)
-    .where(eq(users.email, email))
+    .where(sql`lower(${users.email}) = lower(${email})`)
     .limit(1);
 
   if (existingUser.length > 0) {
@@ -201,87 +205,110 @@ export const signUp = validatedAction(signUpSchema, async (data) => {
   const passwordHash = await hashPassword(password);
 
   const newUser: NewUser = {
-    email,
+    email: emailNormalized,
     passwordHash,
     role: 'owner',
     platformRole: 'student', // Public signup is student-only
     emailVerified: null, // Must verify before access
   };
 
-  const [createdUser] = await db.insert(users).values(newUser).returning();
+  let createdUser!: typeof users.$inferSelect;
+  let teamId!: number;
+  let userRole!: string;
 
-  if (!createdUser) {
-    return {
-      error: 'createUserFailed',
-      email,
-      password,
-    };
-  }
+  try {
+  await db.transaction(async (tx) => {
+    // 1. Create user first — auth and all other flows depend on users table
+    const [user] = await tx.insert(users).values(newUser).returning();
+    if (!user) {
+      throw new Error('User insert failed');
+    }
+    createdUser = user;
 
-  let teamId: number;
-  let userRole: string;
-  let createdTeam: typeof teams.$inferSelect | null = null;
+    if (isAuthDebug) {
+      console.log('[signup] User row created: id=', createdUser.id, 'email=', createdUser.email);
+    }
 
-  if (inviteId) {
-    const [invitation] = await db
-      .select()
-      .from(invitations)
-      .where(
-        and(
-          eq(invitations.id, parseInt(inviteId)),
-          eq(invitations.email, email),
-          eq(invitations.status, 'pending')
+    if (inviteId) {
+      const [invitation] = await tx
+        .select()
+        .from(invitations)
+        .where(
+          and(
+            eq(invitations.id, parseInt(inviteId)),
+            sql`lower(${invitations.email}) = lower(${email})`,
+            eq(invitations.status, 'pending')
+          )
         )
-      )
-      .limit(1);
+        .limit(1);
 
-    if (invitation) {
+      if (!invitation) {
+        throw new Error('invalidOrExpiredInvitation');
+      }
+
       teamId = invitation.teamId;
       userRole = invitation.role;
 
-      await db
+      await tx
         .update(invitations)
         .set({ status: 'accepted' })
         .where(eq(invitations.id, invitation.id));
 
-      await logActivity(teamId, createdUser.id, ActivityType.ACCEPT_INVITATION);
+      await tx.insert(activityLogs).values({
+        teamId,
+        userId: createdUser.id,
+        action: ActivityType.ACCEPT_INVITATION,
+      });
 
-      [createdTeam] = await db
-        .select()
-        .from(teams)
-        .where(eq(teams.id, teamId))
-        .limit(1);
+      if (isAuthDebug) {
+        console.log('[signup] Joined existing team: teamId=', teamId);
+      }
     } else {
+      const newTeam: NewTeam = {
+        name: `${emailNormalized}'s Team`,
+      };
+
+      const [team] = await tx.insert(teams).values(newTeam).returning();
+      if (!team) {
+        throw new Error('Team insert failed');
+      }
+      teamId = team.id;
+      userRole = 'owner';
+
+      await tx.insert(activityLogs).values({
+        teamId,
+        userId: createdUser.id,
+        action: ActivityType.CREATE_TEAM,
+      });
+
+      if (isAuthDebug) {
+        console.log('[signup] Team row created: teamId=', teamId);
+      }
+    }
+
+    // 3. Team membership — links user to team
+    await tx.insert(teamMembers).values({
+      userId: createdUser.id,
+      teamId,
+      role: userRole,
+    });
+
+    if (isAuthDebug) {
+      console.log('[signup] Team membership created: userId=', createdUser.id, 'teamId=', teamId);
+    }
+  });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg === 'invalidOrExpiredInvitation') {
       return { error: 'invalidOrExpiredInvitation', email, password };
     }
-  } else {
-    const newTeam: NewTeam = {
-      name: `${email}'s Team`,
-    };
-
-    [createdTeam] = await db.insert(teams).values(newTeam).returning();
-
-    if (!createdTeam) {
-      return {
-        error: 'createTeamFailed',
-        email,
-        password,
-      };
-    }
-
-    teamId = createdTeam.id;
-    userRole = 'owner';
-
-    await logActivity(teamId, createdUser.id, ActivityType.CREATE_TEAM);
+    console.error('[signup] Transaction failed:', err);
+    return { error: 'createUserFailed', email, password };
   }
 
-  const newTeamMember: NewTeamMember = {
-    userId: createdUser.id,
-    teamId,
-    role: userRole,
-  };
-
-  await db.insert(teamMembers).values(newTeamMember);
+  if (isAuthDebug) {
+    console.log('[signup] Provisioning complete. User id=', createdUser.id, '| teamId=', teamId);
+  }
 
   const cookieStore = await cookies();
   const platformInviteToken = cookieStore.get('pending_platform_invite')?.value;
@@ -327,8 +354,8 @@ export const signUp = validatedAction(signUpSchema, async (data) => {
     }
   }
 
-  const token = await createVerificationToken(email);
-  const sendResult = await sendVerificationEmail(email, token);
+  const token = await createVerificationToken(emailNormalized);
+  const sendResult = await sendVerificationEmail(emailNormalized, token);
   if (!sendResult.ok) {
     console.error('[signup] Verification email failed:', sendResult.error, '| email:', email);
   } else if (process.env.NODE_ENV !== 'production') {
