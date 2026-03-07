@@ -167,6 +167,45 @@ export async function getStripePrices() {
   }));
 }
 
+/** One-time payment checkout for Gecko Academy class enrollment. */
+export async function createClassEnrollmentCheckoutSession({
+  classOptionId,
+  stripePriceId,
+  userId,
+  userEmail,
+  successUrl,
+  cancelUrl,
+}: {
+  classOptionId: string;
+  stripePriceId: string;
+  userId?: number | null;
+  userEmail?: string | null;
+  successUrl: string;
+  cancelUrl: string;
+}) {
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price: stripePriceId,
+        quantity: 1,
+      },
+    ],
+    mode: 'payment',
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    client_reference_id: userId?.toString() ?? undefined,
+    customer_email: userEmail ?? undefined,
+    metadata: {
+      classOptionId,
+      type: 'gecko_enrollment',
+    },
+    allow_promotion_codes: true,
+  });
+
+  return session;
+}
+
 export async function getStripeProducts() {
   const products = await stripe.products.list({
     active: true,

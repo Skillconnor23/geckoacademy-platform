@@ -76,9 +76,29 @@ export function InviteForm({
         <p className="text-sm text-[#b64b29]">{state.error}</p>
       )}
       {state?.success && (
-        <p className="text-sm text-[#7daf41]">
-          Invite sent. Link (if needed): {state.success}
-        </p>
+        <div className="flex flex-col gap-2 rounded-lg border border-[#7daf41]/30 bg-[#7daf41]/5 p-4">
+          <p className="text-sm font-medium text-[#7daf41]">Invite sent</p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 truncate rounded bg-white px-2 py-1 text-xs text-[#374151]">
+              {state.success}
+            </code>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(state.success ?? '');
+                } catch {
+                  // ignore
+                }
+              }}
+              className="shrink-0"
+            >
+              Copy link
+            </Button>
+          </div>
+        </div>
       )}
       <Button type="submit" disabled={pending}>
         {pending ? (

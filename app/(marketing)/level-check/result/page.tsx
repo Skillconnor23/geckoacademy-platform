@@ -88,7 +88,7 @@ export default async function LevelCheckResultPage({ searchParams }: Props) {
           variant="outline"
           className="min-h-12 min-w-[200px] rounded-full border-slate-300"
         >
-          <Link href={`/${locale}/academy`} className="inline-flex items-center justify-center">
+          <Link href={`/${locale}/enroll?level=${level}`} className="inline-flex items-center justify-center">
             {t('viewClassesButton')}
           </Link>
         </Button>

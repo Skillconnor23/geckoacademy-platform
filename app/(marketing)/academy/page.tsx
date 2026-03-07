@@ -300,7 +300,14 @@ export default async function AcademyPage() {
             >
               <Link href={STUDENT_TRIAL_HREF}>{t("heroPrimary")}</Link>
             </Button>
-            <p className="mt-6">
+            <p className="mt-6 flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href={`/${locale}/enroll`}
+                className="text-sm font-medium text-[#7daf41] hover:underline"
+              >
+                {t("finalCta.enrollNow")}
+              </Link>
+              <span className="text-slate-400">|</span>
               <Link
                 href="/pricing"
                 className="text-sm font-medium text-[#429ead] hover:underline"

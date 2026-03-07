@@ -146,9 +146,11 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
     return createCheckoutSession({ team, priceId, userId: user.id });
   }
 
+  const locale = await getLocale();
   await consumeClassInviteCookieAndRedirect(
     user.id,
-    user.platformRole as 'student' | 'teacher' | 'admin' | 'school_admin' | null
+    user.platformRole as 'student' | 'teacher' | 'admin' | 'school_admin' | null,
+    locale || undefined
   );
   const safeNext =
     redirectTo &&

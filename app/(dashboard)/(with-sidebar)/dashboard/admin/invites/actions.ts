@@ -1,9 +1,14 @@
 'use server';
 
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/lib/auth/permissions';
 import { createPlatformInvite } from '@/lib/auth/invites';
 import { createAuditLog } from '@/lib/auth/audit';
+import { db } from '@/lib/db/drizzle';
+import { platformInvites } from '@/lib/db/schema';
+import { revokePlatformInvite } from '@/lib/db/queries/platform-invites';
 import type { PlatformInviteRole } from '@/lib/db/schema';
 
 const schema = z.object({
@@ -62,5 +67,49 @@ export async function createPlatformInviteAction(
     metadata: { email, platformRole: role, schoolId: schoolId ?? null },
   });
 
+  revalidatePath('/dashboard/admin/invites');
   return { success: result.inviteLink, error: null };
+}
+
+/** Resend a platform invite (creates new invite for same email/role/school). */
+export async function resendPlatformInviteAction(inviteId: string): Promise<{ link: string | null; error: string | null }> {
+  const user = await requirePermission('invites:create');
+
+  const [inv] = await db.select().from(platformInvites).where(eq(platformInvites.id, inviteId)).limit(1);
+  if (!inv) {
+    return { link: null, error: 'Invite not found' };
+  }
+
+  const result = await createPlatformInvite({
+    email: inv.email,
+    platformRole: inv.platformRole as PlatformInviteRole,
+    schoolId: inv.schoolId,
+    invitedByUserId: user.id,
+  });
+
+  if (!result.ok) {
+    return { link: null, error: result.error };
+  }
+
+  await createAuditLog({
+    action: 'invite_creation',
+    userId: user.id,
+    metadata: { email: inv.email, platformRole: inv.platformRole, schoolId: inv.schoolId, resend: true },
+  });
+
+  revalidatePath('/dashboard/admin/invites');
+  return { link: result.inviteLink, error: null };
+}
+
+/** Revoke a platform invite (expires it). */
+export async function revokePlatformInviteAction(inviteId: string): Promise<{ error: string | null }> {
+  await requirePermission('invites:create');
+
+  const ok = await revokePlatformInvite(inviteId);
+  if (!ok) {
+    return { error: 'Invite not found' };
+  }
+
+  revalidatePath('/dashboard/admin/invites');
+  return { error: null };
 }

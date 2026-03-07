@@ -111,10 +111,11 @@
           "desc": "Classes, homework, and progress you can count on"
         }
       },
-      "finalCta": {
-        "title": "Ready to try a real English class?",
-        "studentPricing": "See student pricing"
-      },
+"finalCta": {
+      "title": "Ready to try a real English class?",
+      "studentPricing": "See student pricing",
+      "enrollNow": "Enroll in a class"
+    },
       "heroImageAlt": "Gecko Academy student dashboard",
       "platformImageAlt": "Gecko Academy platform"
     },
@@ -294,6 +295,62 @@
       "subline": "Book a demo to see the platform and get a custom quote for your students.",
       "primary": "Book a Demo",
       "secondary": "Contact us"
+    }
+  },
+  "enroll": {
+    "heroTitle": "Gecko Academy — Enroll in a Class",
+    "heroSubtitle": "Choose your level, pick a weekend class time, and pay with Stripe to join.",
+    "placementTest": {
+      "title": "Not sure of your level?",
+      "subtitle": "Take our placement test to find the right class for you."
+    },
+    "levelSelector": {
+      "title": "Choose your level",
+      "subtitle": "Each level has multiple weekend class times. Pick one class that fits your schedule."
+    },
+    "schedule": {
+      "title": "Available class times",
+      "seatsRemaining": "{count} seats remaining",
+      "seatsRemaining_other": "{count} seats remaining",
+      "empty": "No classes available for this level yet."
+    },
+    "explanation": {
+      "title": "How class selection works",
+      "intro": "Gecko Academy uses the G.E.C.K.O. curriculum. Choose your level, then pick ONE class time.",
+      "weekend": "Classes meet on Saturday and Sunday.",
+      "oneClass": "You choose ONE class time that fits your schedule.",
+      "example": "Example: G Level — Saturday 10:00 (Ulaanbaatar) or Sunday 14:00 (Ulaanbaatar).",
+      "weekendNote": "All classes are on weekends. Choose the time that works best for you."
+    },
+    "summary": {
+      "title": "Selected class",
+      "level": "Level",
+      "time": "Time",
+      "days": "Days",
+      "price": "Price"
+    },
+    "cta": {
+      "payWithStripe": "Pay with Stripe",
+      "signInToEnroll": "Sign in to enroll",
+      "signInPrompt": "Sign in or create an account to complete your enrollment.",
+      "processing": "Processing..."
+    },
+    "errors": {
+      "stripeNotConfigured": "Payment is not yet configured for this class. Please contact support.",
+      "checkoutFailed": "Checkout failed. Please try again."
+    },
+    "success": {
+      "title": "Enrollment complete",
+      "subtitle": "Thank you for enrolling! Your class details are below. Check your email for confirmation.",
+      "goToDashboard": "Go to Dashboard",
+      "enrollAnother": "Enroll in another class",
+      "errorTitle": "Something went wrong",
+      "notPaid": "Payment was not completed.",
+      "invalidSession": "Invalid checkout session.",
+      "classNotFound": "Class not found.",
+      "enrollmentFailed": "Enrollment could not be created. Please contact support.",
+      "genericError": "An error occurred. Please try again or contact support.",
+      "backToEnroll": "Back to enrollment"
     }
   },
   "trial": {},

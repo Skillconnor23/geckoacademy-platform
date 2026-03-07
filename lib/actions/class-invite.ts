@@ -120,7 +120,9 @@ export async function joinClassWithInviteFormAction(
   }
   const result = await joinClassWithInviteAction(token.trim());
   if (result.success) {
-    redirect('/dashboard/student');
+    const { getLocale } = await import('next-intl/server');
+    const locale = (await getLocale()) || 'en';
+    redirect(`/${locale}/dashboard/student`);
   }
   return { error: result.error };
 }
@@ -234,7 +236,8 @@ export async function regenerateClassInviteFormAction(
  */
 export async function consumeClassInviteCookieAndRedirect(
   userId: number,
-  platformRole: PlatformRole | null
+  platformRole: PlatformRole | null,
+  locale?: string
 ): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get(CLASS_INVITE_COOKIE_NAME)?.value;
@@ -257,5 +260,6 @@ export async function consumeClassInviteCookieAndRedirect(
     }
   }
   await clearClassInviteCookie();
-  redirect('/dashboard/student');
+  const prefix = locale && /^(en|mn)$/.test(locale) ? `/${locale}` : '';
+  redirect(`${prefix}/dashboard/student`);
 }
