@@ -12,7 +12,8 @@
     "db:studio": "drizzle-kit studio",
     "seed:demo": "npx tsx scripts/seed-demo.ts",
     "clear:demo": "npx tsx scripts/clear-demo.ts",
-    "recover": "npx tsx scripts/recover-access.ts"
+    "recover": "npx tsx scripts/recover-access.ts",
+    "create-admin": "npx tsx scripts/create-admin.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
