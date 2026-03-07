@@ -18,6 +18,7 @@ import {
 } from '@/lib/db/schema';
 import { hashPassword } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { signIn as authSignIn, signOut as authSignOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import { createCheckoutSession } from '@/lib/payments/stripe';
@@ -100,6 +101,10 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
       };
     }
   } catch (error) {
+    // Next.js redirect() throws NEXT_REDIRECT; re-throw so redirect executes, don't treat as invalid credentials
+    if (isRedirectError(error)) {
+      throw error;
+    }
     if (error instanceof AuthError) {
       const authErr = error as AuthError & { code?: string };
       if (authErr.code === 'email_not_verified') {
