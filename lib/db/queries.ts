@@ -81,6 +81,31 @@ export async function getActivityLogs() {
     .limit(10);
 }
 
+/** Get team for a user by ID. Use this when session is not yet available (e.g. right after signIn). */
+export async function getTeamForUserId(userId: number) {
+  const result = await db.query.teamMembers.findFirst({
+    where: eq(teamMembers.userId, userId),
+    with: {
+      team: {
+        with: {
+          teamMembers: {
+            with: {
+              user: {
+                columns: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+  return result?.team || null;
+}
+
 export async function getTeamForUser() {
   const user = await getUser();
   if (!user) {

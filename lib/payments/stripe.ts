@@ -14,12 +14,14 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function createCheckoutSession({
   team,
-  priceId
+  priceId,
+  userId
 }: {
   team: Team | null;
   priceId: string;
+  userId?: number;
 }) {
-  const user = await getUser();
+  const user = userId ? { id: userId } : await getUser();
 
   if (!team || !user) {
     redirect(`/sign-up?redirect=checkout&priceId=${priceId}`);

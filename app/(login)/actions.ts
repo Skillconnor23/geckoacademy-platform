@@ -22,7 +22,7 @@ import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { signIn as authSignIn, signOut as authSignOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import { createCheckoutSession } from '@/lib/payments/stripe';
-import { getUser, getUserWithTeam, getTeamForUser } from '@/lib/db/queries';
+import { getUser, getUserWithTeam, getTeamForUser, getTeamForUserId } from '@/lib/db/queries';
 import {
   validatedAction,
   validatedActionWithUser,
@@ -62,15 +62,34 @@ const signInSchema = z.object({
   password: z.string().min(8).max(100),
 });
 
+const isSignInDebug =
+  process.env.NODE_ENV !== 'production' || process.env.AUTH_DEBUG === 'true';
+
 export const signIn = validatedAction(signInSchema, async (data, formData) => {
   const { email, password } = data;
 
+  if (isSignInDebug) {
+    console.log('[signin] Before authSignIn | email:', email);
+  }
+
+  let result: { ok?: boolean; error?: string; url?: string | null } | undefined;
   try {
-    const result = await authSignIn('credentials', {
+    result = await authSignIn('credentials', {
       email,
       password,
       redirect: false,
     });
+
+    if (isSignInDebug) {
+      console.log(
+        '[signin] After authSignIn (returned) | ok:',
+        result?.ok,
+        '| error:',
+        result?.error,
+        '| url:',
+        result?.url
+      );
+    }
 
     if (result?.error) {
       const errStr = typeof result.error === 'string' ? result.error : String(result.error);
@@ -101,6 +120,16 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
       };
     }
   } catch (error) {
+    if (isSignInDebug) {
+      console.log(
+        '[signin] Caught error | isRedirectError:',
+        isRedirectError(error),
+        '| AuthError:',
+        error instanceof AuthError,
+        '| message:',
+        error instanceof Error ? error.message : String(error)
+      );
+    }
     // Next.js redirect() throws NEXT_REDIRECT; re-throw so redirect executes, don't treat as invalid credentials
     if (isRedirectError(error)) {
       throw error;
@@ -124,9 +153,29 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
     };
   }
 
-  const user = await getUser();
+  // IMPORTANT: auth()/getUser() returns null in the SAME request after signIn(redirect:false)
+  // because the session cookie is set in the response, not yet in the request. Fetch user by
+  // email instead — we know credentials were valid, so the user exists.
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(
+      and(
+        sql`lower(${users.email}) = lower(${email})`,
+        isNull(users.deletedAt)
+      )
+    )
+    .limit(1);
+
   if (!user) {
+    if (isSignInDebug) {
+      console.log('[signin] User lookup by email returned null after authSignIn ok');
+    }
     return { error: 'invalidCredentials', email, password };
+  }
+
+  if (isSignInDebug) {
+    console.log('[signin] User found by email | id:', user.id, '| proceeding to redirect');
   }
 
   const userWithTeam = await getUserWithTeam(user.id);
@@ -135,8 +184,8 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
   const redirectTo = formData.get('redirect') as string | null;
   if (redirectTo === 'checkout') {
     const priceId = formData.get('priceId') as string;
-    const team = await getTeamForUser();
-    return createCheckoutSession({ team, priceId });
+    const team = await getTeamForUserId(user.id);
+    return createCheckoutSession({ team, priceId, userId: user.id });
   }
 
   await consumeClassInviteCookieAndRedirect(
@@ -150,6 +199,10 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
     !redirectTo.startsWith('//')
       ? redirectTo
       : '/dashboard';
+
+  if (isSignInDebug) {
+    console.log('[signin] Success — redirecting to:', safeNext);
+  }
   redirect(safeNext);
 });
 
