@@ -2,6 +2,10 @@ import { desc, and, eq, isNull } from 'drizzle-orm';
 import { db } from './drizzle';
 import { activityLogs, teamMembers, teams, users } from './schema';
 import { auth } from '@/auth';
+import {
+  CONNOR_ADMIN_EMAIL,
+  getImpersonateUserIdFromCookie,
+} from '@/lib/auth/impersonate';
 
 export async function getUser() {
   const session = await auth();
@@ -9,10 +13,15 @@ export async function getUser() {
     return null;
   }
 
+  const email = (session.user as { email?: string }).email?.trim().toLowerCase();
+  const impersonateId =
+    email === CONNOR_ADMIN_EMAIL ? await getImpersonateUserIdFromCookie() : null;
+
+  const userIdToLoad = impersonateId ?? (session.user.id as number);
   const [user] = await db
     .select()
     .from(users)
-    .where(and(eq(users.id, session.user.id), isNull(users.deletedAt)))
+    .where(and(eq(users.id, userIdToLoad), isNull(users.deletedAt)))
     .limit(1);
 
   return user ?? null;

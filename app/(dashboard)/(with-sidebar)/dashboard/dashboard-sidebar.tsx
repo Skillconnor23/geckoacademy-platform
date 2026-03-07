@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { signOut } from '@/app/(login)/actions';
+import { signOut, clearImpersonateAction } from '@/app/(login)/actions';
 import { mutate } from 'swr';
 import { locales } from '@/lib/i18n/config';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ import {
   X,
   ClipboardList,
   Mail,
+  ArrowLeft,
 } from 'lucide-react';
 import type { PlatformRole } from '@/lib/db/schema';
 import { useNavDrawer } from '@/app/(dashboard)/layout';
@@ -125,6 +126,7 @@ const navGroupKeys: Record<
 type DashboardSidebarProps = {
   children: React.ReactNode;
   platformRole: PlatformRole;
+  isImpersonating?: boolean;
   studentPrimaryClassId?: string | null;
   unreadMessageCount?: number;
   userName?: string | null;
@@ -144,6 +146,7 @@ function userInitials(name: string | null, email: string): string {
 export function DashboardSidebar({
   children,
   platformRole,
+  isImpersonating = false,
   studentPrimaryClassId,
   unreadMessageCount = 0,
   userName,
@@ -390,13 +393,31 @@ export function DashboardSidebar({
       </aside>
 
       {/* Main content: column that owns its own scrolling */}
-      <main className="min-w-0 flex-1 h-full overflow-hidden">
+      <main className="min-w-0 flex-1 h-full overflow-hidden flex flex-col">
+        {isImpersonating && (
+          <div className="shrink-0 flex items-center justify-between gap-2 bg-amber-500/90 text-black px-4 py-2 text-sm">
+            <span className="font-medium">Viewing as Teacher</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                const { redirectTo } = await clearImpersonateAction();
+                router.push(withLocalePrefix(redirectTo));
+                setNavOpen(false);
+              }}
+              className="h-8 rounded-full border-black/30 bg-white/90 text-black hover:bg-white"
+            >
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              Return to Admin
+            </Button>
+          </div>
+        )}
         {isMessages || isSchedulePage ? (
-          <div className="flex h-full w-full flex-col overflow-hidden">
+          <div className="flex h-full w-full flex-1 flex-col overflow-hidden min-h-0">
             {children}
           </div>
         ) : (
-          <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
+          <div className="mx-auto flex h-full w-full max-w-6xl flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6 min-h-0">
             {children}
           </div>
         )}

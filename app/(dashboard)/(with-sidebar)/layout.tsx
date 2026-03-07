@@ -1,4 +1,5 @@
 import { requirePlatformRole } from '@/lib/auth/user';
+import { isImpersonating } from '@/lib/auth/impersonate';
 import { getPrimaryClassForStudent } from '@/lib/db/queries/education';
 import { getUnseenMessageNotificationCount } from '@/lib/db/queries/notifications';
 import { DashboardSidebar } from './dashboard/dashboard-sidebar';
@@ -31,13 +32,15 @@ export default async function WithSidebarLayout({
   children: React.ReactNode;
 }) {
   const user = await requirePlatformRole();
-  const [studentPrimaryClassId, unreadMessageCount] = await Promise.all([
+  const [studentPrimaryClassId, unreadMessageCount, impersonating] = await Promise.all([
     user.platformRole === 'student' ? safeGetPrimaryClassForStudent(user.id) : null,
     safeGetUnseenMessageNotificationCount(user.id),
+    isImpersonating(),
   ]);
   return (
     <DashboardSidebar
       platformRole={user.platformRole}
+      isImpersonating={impersonating}
       studentPrimaryClassId={studentPrimaryClassId}
       unreadMessageCount={unreadMessageCount}
       userName={user.name}

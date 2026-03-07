@@ -29,6 +29,12 @@ import {
 } from '@/lib/auth/middleware';
 import { consumeClassInviteCookieAndRedirect } from '@/lib/actions/class-invite';
 import {
+  CONNOR_ADMIN_EMAIL,
+  clearImpersonateCookie,
+  setImpersonateTeacherCookie,
+} from '@/lib/auth/impersonate';
+import { auth } from '@/auth';
+import {
   createVerificationToken,
   sendVerificationEmailIfNeeded,
 } from '@/lib/auth/verification';
@@ -160,8 +166,42 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
       ? redirectTo
       : '/dashboard';
 
+  const emailNormalized = user.email?.trim().toLowerCase();
+  if (emailNormalized === CONNOR_ADMIN_EMAIL) {
+    await clearImpersonateCookie();
+    return { needsAccountChoice: true, redirectTo: safeNext };
+  }
+
   redirect(safeNext);
 });
+
+/**
+ * Connor-only: switch into the teacher test account session.
+ * Call after Connor has logged in and chosen "Continue as Teacher".
+ */
+export async function setImpersonateTeacherAction(): Promise<
+  { ok: true; redirectTo: string } | { ok: false; error: string }
+> {
+  const session = await auth();
+  const email = (session?.user as { email?: string } | undefined)?.email?.trim().toLowerCase();
+  if (email !== CONNOR_ADMIN_EMAIL) {
+    return { ok: false, error: 'Not allowed' };
+  }
+  return setImpersonateTeacherCookie();
+}
+
+/**
+ * Connor-only: clear impersonation and switch back to admin session.
+ */
+export async function clearImpersonateAction(): Promise<{ redirectTo: string }> {
+  const session = await auth();
+  const email = (session?.user as { email?: string } | undefined)?.email?.trim().toLowerCase();
+  if (email !== CONNOR_ADMIN_EMAIL) {
+    return { redirectTo: '/dashboard' };
+  }
+  await clearImpersonateCookie();
+  return { redirectTo: '/dashboard/admin' };
+}
 
 /** Resend verification email for unverified users. Respects cooldown to avoid spam. */
 export async function resendVerificationEmail(

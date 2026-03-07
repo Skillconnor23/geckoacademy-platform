@@ -1,10 +1,12 @@
 /**
- * DEV-ONLY: Create or upsert an app admin user.
- * Usage: pnpm create-admin <email> <password>
+ * DEV-ONLY: Create or upsert Connor admin + teacher test accounts.
+ * Usage: pnpm create-admin <password>
  *
- * - Creates the user if missing
- * - Updates password, emailVerified, platformRole if user exists
- * Uses dotenv and the same hashPassword as auth.ts authorize()
+ * Ensures both accounts exist:
+ * - Admin: connor@geckoteach.com (platformRole: admin, emailVerified)
+ * - Teacher test: connor+teacher@geckoteach.com (platformRole: teacher, emailVerified)
+ *
+ * Same password for both. Uses dotenv and the same hashPassword as auth.ts authorize().
  */
 import 'dotenv/config';
 import { eq, and, isNull, sql } from 'drizzle-orm';
@@ -17,6 +19,10 @@ const ENABLED =
   process.env.NODE_ENV !== 'production';
 
 const ADMIN_EMAIL = 'connor@geckoteach.com';
+
+/** Teacher test account Connor can switch into via "Continue as Teacher" after login. */
+const TEACHER_TEST_EMAIL =
+  process.env.CONNOR_TEACHER_TEST_EMAIL?.trim() || 'connor+teacher@geckoteach.com';
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -112,6 +118,41 @@ async function main() {
     console.log('  platformRole: admin');
     console.log('  DB:', dbHost);
     console.log('Sign in at your app with the password you provided.');
+  }
+
+  // Ensure teacher test account exists for Connor "Continue as Teacher"
+  const teacherEmail = normalizeEmail(TEACHER_TEST_EMAIL);
+  const [existingTeacher] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(
+      and(
+        sql`lower(${users.email}) = lower(${teacherEmail})`,
+        isNull(users.deletedAt)
+      )
+    )
+    .limit(1);
+
+  if (existingTeacher) {
+    await db
+      .update(users)
+      .set({
+        passwordHash,
+        emailVerified: new Date(),
+        platformRole: 'teacher',
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, existingTeacher.id));
+    console.log('Updated teacher test account:', teacherEmail, '| platformRole: teacher | emailVerified: true');
+  } else {
+    await db.insert(users).values({
+      email: teacherEmail,
+      passwordHash,
+      platformRole: 'teacher',
+      emailVerified: new Date(),
+    });
+    console.log('Created teacher test account:', teacherEmail, '| platformRole: teacher | emailVerified: true');
+    console.log('  (Same password as admin. Set CONNOR_TEACHER_TEST_EMAIL to use a different email.)');
   }
 }
 

@@ -1,15 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useActionState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
-import { signIn, signUp, resendVerificationEmail } from './actions';
+import { Loader2, UserCog, GraduationCap } from 'lucide-react';
+import { signIn, signUp, resendVerificationEmail, setImpersonateTeacherAction } from './actions';
 import { ActionState } from '@/lib/auth/middleware';
 
 const AUTH_ERROR_KEYS = ['invalidCredentials', 'emailNotVerified', 'createUserFailed', 'createTeamFailed', 'invalidOrExpiredInvitation'] as const;
@@ -39,8 +40,87 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
     null as { success?: boolean; error?: string } | null
   );
 
+  const router = useRouter();
+  const locale = useLocale();
+  const [teacherSwitchPending, setTeacherSwitchPending] = useState(false);
+  const [teacherSwitchError, setTeacherSwitchError] = useState<string | null>(null);
+  const needsAccountChoice = mode === 'signin' && !!(state as ActionState & { needsAccountChoice?: boolean; redirectTo?: string })?.needsAccountChoice;
+  const redirectTo = (state as ActionState & { redirectTo?: string })?.redirectTo ?? '/dashboard';
+
+  const withLocale = (path: string) => {
+    if (path.startsWith('/en') || path.startsWith('/mn')) return path;
+    return `/${locale}${path}`;
+  };
+
+  async function handleContinueAsAdmin() {
+    router.push(withLocale(redirectTo));
+  }
+
+  async function handleContinueAsTeacher() {
+    setTeacherSwitchError(null);
+    setTeacherSwitchPending(true);
+    try {
+      const result = await setImpersonateTeacherAction();
+      if (result.ok) {
+        router.push(withLocale(result.redirectTo));
+        return;
+      }
+      setTeacherSwitchError(result.error ?? 'Unable to switch to teacher account.');
+    } catch {
+      setTeacherSwitchError('Something went wrong.');
+    } finally {
+      setTeacherSwitchPending(false);
+    }
+  }
+
   return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-[#fafbfc] px-4 py-10 sm:px-6 lg:px-8">
+      {/* Connor account choice modal – only shown when signIn returns needsAccountChoice */}
+      {needsAccountChoice && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="account-choice-title"
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-xl">
+            <h2 id="account-choice-title" className="text-center text-lg font-semibold text-[#111827]">
+              Continue as
+            </h2>
+            <p className="mt-1 text-center text-sm text-[#6b7280]">
+              Choose how to use the dashboard.
+            </p>
+            {teacherSwitchError && (
+              <p className="mt-3 text-center text-sm text-[#b64b29]">{teacherSwitchError}</p>
+            )}
+            <div className="mt-6 flex flex-col gap-3">
+              <Button
+                type="button"
+                onClick={handleContinueAsAdmin}
+                disabled={teacherSwitchPending}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-[#7daf41] bg-white px-4 py-3 text-sm font-semibold text-[#7daf41] hover:bg-[#7daf41]/10"
+              >
+                <UserCog className="h-4 w-4" />
+                Continue as Admin
+              </Button>
+              <Button
+                type="button"
+                onClick={handleContinueAsTeacher}
+                disabled={teacherSwitchPending}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-transparent bg-[#7daf41] px-4 py-3 text-sm font-semibold text-white hover:bg-[#6b9a39] disabled:opacity-60"
+              >
+                {teacherSwitchPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <GraduationCap className="h-4 w-4" />
+                )}
+                {teacherSwitchPending ? 'Switching…' : 'Continue as Teacher'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-md rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_4px_24px_rgba(15,23,42,0.06)] sm:p-8">
         {/* Brand lockup */}
         <div className="flex flex-col items-center text-center">
