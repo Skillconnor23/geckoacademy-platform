@@ -1,38 +1,44 @@
 'use server';
 
-import { verifyAndConsumeToken } from '@/lib/auth/verification';
-import { eq } from 'drizzle-orm';
+import { validateToken, consumeToken } from '@/lib/auth/verification';
+import { sql } from 'drizzle-orm';
 import { db } from '@/lib/db/drizzle';
 import { users } from '@/lib/db/schema';
 import { createAuditLog } from '@/lib/auth/audit';
 
+/**
+ * Verify email via token. Updates users.email_verified (same field authorize() checks).
+ * Only returns success if the user row was actually updated. Token is consumed only after
+ * successful update to prevent "token consumed but user unverified" loop.
+ */
 export async function verifyEmailAction(token: string): Promise<{
   success: boolean;
   error?: string;
 }> {
-  const result = await verifyAndConsumeToken(token);
-  if (!result) {
+  const tokenData = await validateToken(token);
+  if (!tokenData) {
     return { success: false, error: 'Invalid or expired token' };
   }
 
-  await db
+  const updated = await db
     .update(users)
     .set({ emailVerified: new Date(), updatedAt: new Date() })
-    .where(eq(users.email, result.email));
+    .where(sql`lower(${users.email}) = lower(${tokenData.email})`)
+    .returning({ id: users.id });
 
-  const [user] = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.email, result.email))
-    .limit(1);
-
-  if (user) {
-    await createAuditLog({
-      action: 'email_verification',
-      userId: user.id,
-      metadata: { email: result.email },
-    });
+  if (updated.length === 0) {
+    return {
+      success: false,
+      error: 'User not found. The account may have been deleted.',
+    };
   }
+
+  await consumeToken(tokenData.id);
+  await createAuditLog({
+    action: 'email_verification',
+    userId: updated[0].id,
+    metadata: { email: tokenData.email },
+  });
 
   return { success: true };
 }

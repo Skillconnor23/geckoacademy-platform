@@ -64,14 +64,18 @@ export async function sendVerificationEmailIfNeeded(
   return { sent: true };
 }
 
-export async function verifyAndConsumeToken(
+/**
+ * Validates token and returns email if valid. Does NOT consume the token.
+ * Use with consumeToken() after successfully updating the user.
+ */
+export async function validateToken(
   token: string
-): Promise<{ email: string } | null> {
+): Promise<{ id: string; email: string } | null> {
   const tokenHash = hashToken(token);
   const now = new Date();
 
   const [row] = await db
-    .select()
+    .select({ id: emailVerificationTokens.id, email: emailVerificationTokens.email })
     .from(emailVerificationTokens)
     .where(
       and(
@@ -82,12 +86,23 @@ export async function verifyAndConsumeToken(
     )
     .limit(1);
 
-  if (!row) return null;
+  return row ? { id: row.id, email: row.email } : null;
+}
 
+/** Marks a token as used. Call only after the user has been successfully verified. */
+export async function consumeToken(tokenId: string): Promise<void> {
   await db
     .update(emailVerificationTokens)
-    .set({ usedAt: now })
-    .where(eq(emailVerificationTokens.id, row.id));
+    .set({ usedAt: new Date() })
+    .where(eq(emailVerificationTokens.id, tokenId));
+}
 
+export async function verifyAndConsumeToken(
+  token: string
+): Promise<{ email: string } | null> {
+  const row = await validateToken(token);
+  if (!row) return null;
+
+  await consumeToken(row.id);
   return { email: row.email };
 }
