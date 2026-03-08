@@ -24,7 +24,7 @@ function getStripe(): Stripe {
 /** Lazy-initialized Stripe client. Throws only when first used, not at import time. */
 export const stripe = new Proxy({} as Stripe, {
   get(_, prop) {
-    return (getStripe() as Record<string | symbol, unknown>)[prop];
+    return (getStripe() as unknown as Record<string | symbol, unknown>)[prop];
   },
 });
 

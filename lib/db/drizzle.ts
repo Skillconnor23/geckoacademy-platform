@@ -28,13 +28,13 @@ function getDb(): DrizzleDb {
 /** Lazy-initialized postgres client. Throws only when first used, not at import time. */
 export const client = new Proxy({} as PostgresClient, {
   get(_, prop) {
-    return (getClient() as Record<string | symbol, unknown>)[prop];
+    return (getClient() as unknown as Record<string | symbol, unknown>)[prop];
   },
 });
 
 /** Lazy-initialized drizzle DB. Throws only when first used, not at import time. */
 export const db = new Proxy({} as DrizzleDb, {
   get(_, prop) {
-    return (getDb() as Record<string | symbol, unknown>)[prop];
+    return (getDb() as unknown as Record<string | symbol, unknown>)[prop];
   },
 });
