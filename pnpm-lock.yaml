@@ -74,6 +74,9 @@ importers:
       next-intl:
         specifier: ^4.8.3
         version: 4.8.3(next@15.6.0-canary.59(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)(typescript@5.8.3)
+      openai:
+        specifier: ^6.27.0
+        version: 6.27.0(zod@3.24.4)
       playwright:
         specifier: ^1.58.2
         version: 1.58.2
@@ -3048,6 +3051,18 @@ packages:
   object-inspect@1.13.4:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
     engines: {node: '>= 0.4'}
+
+  openai@6.27.0:
+    resolution: {integrity: sha512-osTKySlrdYrLYTt0zjhY8yp0JUBmWDCN+Q+QxsV4xMQnnoVFpylgKGgxwN8sSdTNw0G4y+WUXs4eCMWpyDNWZQ==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
 
   pathe@1.1.2:
     resolution: {integrity: sha512-whLdWMYL2TwI08hn8/ZqAbrVemu0LNaNNJZX73O6qaIdCTfXutsLhMkjdENX0qhsQ9uIimo4/aQOmXkoon2nDQ==}
@@ -6334,6 +6349,10 @@ snapshots:
   oauth4webapi@3.8.5: {}
 
   object-inspect@1.13.4: {}
+
+  openai@6.27.0(zod@3.24.4):
+    optionalDependencies:
+      zod: 3.24.4
 
   pathe@1.1.2: {}
 
