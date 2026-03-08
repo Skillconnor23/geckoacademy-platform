@@ -30,7 +30,7 @@ export async function submitForgotPassword(
   const email = parsed.data.email;
 
   if (!checkRateLimit('forgot-password', email)) {
-    if (isDev) console.log('[forgot-password] Rate limited:', email);
+    if (isDev) console.log('[forgot-password] Rate limited');
     return { submitted: true };
   }
   const [user] = await db
@@ -45,16 +45,15 @@ export async function submitForgotPassword(
     .limit(1);
 
   if (!user) {
-    if (isDev) console.log('[forgot-password] User not found for email:', email);
     return { submitted: true };
   }
 
   const locale = await getLocale();
   const result = await createPasswordResetToken(user.id, user.email, locale);
   if (!result.ok) {
-    console.error('[forgot-password] Token created but email send failed:', result.error, '| user:', user.id);
+    console.error('[forgot-password] Token created but email send failed:', result.error);
   } else if (process.env.NODE_ENV !== 'production' || process.env.AUTH_DEBUG === 'true') {
-    console.log('[forgot-password] Reset token created and email sent to:', user.email);
+    console.log('[forgot-password] Reset token created and email sent');
   }
 
   return { submitted: true };
