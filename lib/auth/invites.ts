@@ -14,6 +14,13 @@ import { sendPlatformInviteEmail } from './email';
 const TOKEN_BYTES = 32;
 const EXPIRY_DAYS = 7;
 
+/** Hex tokens are case-insensitive; normalize to lowercase so URL/email pipeline changes don't break lookup. */
+function normalizeToken(token: string): string {
+  const t = typeof token === 'string' ? token.trim() : '';
+  if (!t) return '';
+  return /^[0-9a-fA-F]+$/.test(t) ? t.toLowerCase() : t;
+}
+
 function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
@@ -96,40 +103,58 @@ export async function createPlatformInvite(
   return { ok: true, inviteLink };
 }
 
+export type ValidateInviteRejectReason =
+  | 'empty_token'
+  | 'token_not_found'
+  | 'already_used'
+  | 'expired'
+  | 'db_error';
+
 /** Validate invite without consuming. Use for redirect flow. */
 export async function validatePlatformInvite(token: string): Promise<
   | { ok: true; email: string; platformRole: PlatformInviteRole; schoolId: string | null; classId: string | null }
-  | { ok: false; error: string }
+  | { ok: false; error: string; reason?: ValidateInviteRejectReason }
 > {
-  const tokenNormalized = typeof token === 'string' ? token.trim() : '';
+  const tokenNormalized = normalizeToken(token);
   if (!tokenNormalized) {
     if (process.env.NODE_ENV !== 'production') {
-      console.log('[validatePlatformInvite] Rejected: empty token');
+      console.log('[validatePlatformInvite] Rejected: empty_token');
     }
-    return { ok: false, error: 'Invalid or expired invite' };
+    return { ok: false, error: 'Invalid or expired invite', reason: 'empty_token' };
   }
 
   const tokenHash = hashToken(tokenNormalized);
   const now = new Date();
 
-  const [invite] = await db
-    .select()
-    .from(platformInvites)
-    .where(eq(platformInvites.tokenHash, tokenHash))
-    .limit(1);
+  let invite: (typeof platformInvites.$inferSelect) | undefined;
+  try {
+    [invite] = await db
+      .select()
+      .from(platformInvites)
+      .where(eq(platformInvites.tokenHash, tokenHash))
+      .limit(1);
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[validatePlatformInvite] Rejected: db_error (ensure migrations run: pnpm db:migrate):', err);
+    }
+    return { ok: false, error: 'Invalid or expired invite', reason: 'db_error' };
+  }
 
   if (!invite) {
     if (process.env.NODE_ENV !== 'production') {
-      console.log('[validatePlatformInvite] Rejected: token not found (no matching hash)');
+      console.log('[validatePlatformInvite] Rejected: token_not_found', {
+        tokenLen: tokenNormalized.length,
+        expectedHexLen: 64,
+      });
     }
-    return { ok: false, error: 'Invalid or expired invite' };
+    return { ok: false, error: 'Invalid or expired invite', reason: 'token_not_found' };
   }
 
   if (invite.usedAt) {
     if (process.env.NODE_ENV !== 'production') {
-      console.log('[validatePlatformInvite] Rejected: invite already used');
+      console.log('[validatePlatformInvite] Rejected: already_used');
     }
-    return { ok: false, error: 'Invalid or expired invite' };
+    return { ok: false, error: 'Invalid or expired invite', reason: 'already_used' };
   }
 
   const expiresAt = invite.expiresAt instanceof Date ? invite.expiresAt : new Date(invite.expiresAt);
@@ -140,7 +165,7 @@ export async function validatePlatformInvite(token: string): Promise<
         now: now.toISOString(),
       });
     }
-    return { ok: false, error: 'Invalid or expired invite' };
+    return { ok: false, error: 'Invalid or expired invite', reason: 'expired' };
   }
 
   return {
@@ -157,7 +182,7 @@ export async function consumePlatformInvite(token: string): Promise<
   | { ok: true; email: string; platformRole: PlatformInviteRole; schoolId: string | null; classId: string | null }
   | { ok: false; error: string }
 > {
-  const tokenNormalized = typeof token === 'string' ? token.trim() : '';
+  const tokenNormalized = normalizeToken(token);
   const result = await validatePlatformInvite(token);
   if (!result.ok) return result;
 
