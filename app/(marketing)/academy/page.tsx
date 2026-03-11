@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { TrialCtaLink } from "@/components/funnel/TrialCtaLink";
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
-import { STUDENT_TRIAL_HREF } from "@/lib/routes";
 import { Card } from "@/components/ui/card";
 import { MarketingSection } from "@/components/marketing/MarketingSection";
 import { FeatureCard } from "@/components/marketing/FeatureCard";
@@ -18,6 +18,8 @@ import {
   BarChart3,
   MessageCircle,
   Calendar,
+  GraduationCap,
+  Home,
 } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
@@ -26,52 +28,83 @@ export const revalidate = 0;
 export default async function AcademyPage() {
   const t = await getTranslations("marketing.home");
   const locale = await getLocale();
+  const trialHref = `/${locale}/trial`;
+  const levelCheckHref = `/${locale}/level-check`;
+
+  const heroTrustItems = [
+    { icon: Users, label: t("heroTrust.smallLiveClasses") },
+    { icon: GraduationCap, label: t("heroTrust.nativeEnglishTeachers") },
+    { icon: Home, label: t("heroTrust.learnFromHome") },
+  ] as const;
 
   return (
     <div className="bg-white">
-      {/* 1. HERO */}
-      <section className="mx-auto max-w-7xl px-6 pt-10 pb-12 md:pt-14 md:pb-16">
-        <div className="grid lg:grid-cols-2 items-center gap-12 lg:gap-20">
-          <div>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-[#3d4236]">
+      {/* 1. HERO — Mobile-first: badge → headline → text → CTAs → image → trust row */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 pt-4 pb-8 sm:pt-6 sm:pb-10 md:pt-8 md:pb-12 lg:pt-8 lg:pb-14">
+        <div className="flex flex-col gap-8 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-16 lg:gap-y-8">
+          <div className="flex flex-col gap-6 sm:gap-7">
+            <span className="inline-flex w-fit rounded-full border border-[#7daf41]/30 bg-[#7daf41]/10 px-4 py-1.5 text-sm font-medium text-[#3d4236]">
+              {t("heroBadge")}
+            </span>
+            <h1 className="text-3xl font-semibold tracking-tight text-[#3d4236] sm:text-4xl md:text-5xl lg:text-6xl">
               {t("heroTitle")}
             </h1>
-            <p className="mt-6 max-w-xl text-lg md:text-xl text-slate-600">
+            <p className="max-w-xl text-base text-slate-600 sm:text-lg">
               {t("heroSubtitle")}
             </p>
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <Button
                 asChild
                 size="lg"
-                className="bg-[#7daf41] hover:bg-[#6b9a39] text-white"
+                className="min-h-12 rounded-full bg-[#7daf41] px-6 text-base font-semibold hover:bg-[#6b9a39] sm:min-h-11 sm:px-8"
               >
-                <Link href={STUDENT_TRIAL_HREF}>{t("heroPrimary")}</Link>
+                <TrialCtaLink href={trialHref} className="inline-flex items-center justify-center">
+                  {t("heroPrimary")}
+                </TrialCtaLink>
               </Button>
               <Button
                 asChild
                 size="lg"
                 variant="outline"
-                className="border-[#429ead] bg-white text-[#429ead] hover:bg-[#429ead]/5 hover:text-[#429ead]"
+                className="min-h-12 rounded-full border-2 border-[#7daf41] bg-white text-[#7daf41] hover:bg-[#7daf41]/5 hover:text-[#7daf41] sm:min-h-11 sm:px-8"
               >
-                <Link href="#how-it-works">{t("heroSecondary")}</Link>
+                <Link href={levelCheckHref}>{t("heroSecondary")}</Link>
               </Button>
             </div>
           </div>
-          <div className="w-full max-w-[760px]">
-            <Image
-              src="/platform-dashboard-cta.svg"
-              alt={t("heroImageAlt")}
-              width={1500}
-              height={1500}
-              priority
-              className="w-full h-auto"
-            />
+          <div className="w-full max-w-[560px] lg:max-w-[760px]">
+            {/* Swappable hero image — replace src to change image */}
+            <div className="relative w-full overflow-hidden rounded-2xl bg-slate-100">
+              <Image
+                src="/platform-dashboard-cta.svg"
+                alt={t("heroImageAlt")}
+                width={760}
+                height={428}
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+          {/* Trust row: mobile = stacked left-aligned, closer to image; desktop = full-width row across bottom */}
+          <div className="-mt-4 flex flex-col gap-3 lg:col-span-2 lg:mt-0 lg:flex-row lg:flex-nowrap lg:justify-between lg:items-center lg:gap-8">
+            {heroTrustItems.map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center gap-2 text-sm font-medium text-[#3d4236] sm:text-base"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#7daf41]/10 sm:h-10 sm:w-10">
+                  <item.icon className="h-4 w-4 text-[#7daf41] sm:h-5 sm:w-5" />
+                </div>
+                <span>{item.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 2. TRUST STRIP */}
-      <MarketingSection className="pt-10 md:pt-14 pb-12">
+      {/* 2. TRUST STRIP (below hero — same content as before for consistency) */}
+      <MarketingSection className="pt-8 md:pt-12 pb-12">
         <div className="grid gap-4 sm:grid-cols-3 sm:gap-6">
           {[
             { icon: MessageCircle, label: t("trust.teachersSpeakYourLanguage") },
@@ -151,7 +184,7 @@ export default async function AcademyPage() {
             size="lg"
             className="bg-[#7daf41] hover:bg-[#6b9a39] text-white"
           >
-            <Link href={STUDENT_TRIAL_HREF}>{t("heroPrimary")}</Link>
+            <Link href={trialHref}>{t("heroPrimary")}</Link>
           </Button>
           <Button
             asChild
@@ -159,7 +192,7 @@ export default async function AcademyPage() {
             variant="outline"
             className="border-[#7daf41] text-[#7daf41] hover:bg-[#7daf41]/5"
           >
-            <Link href={`/${locale}/level-check`}>{t("howItWorks.step1")}</Link>
+            <Link href={levelCheckHref}>{t("howItWorks.step1")}</Link>
           </Button>
         </div>
       </MarketingSection>
@@ -298,7 +331,7 @@ export default async function AcademyPage() {
               size="lg"
               className="mt-8 bg-[#7daf41] hover:bg-[#6b9a39] text-white"
             >
-              <Link href={STUDENT_TRIAL_HREF}>{t("heroPrimary")}</Link>
+              <Link href={trialHref}>{t("heroPrimary")}</Link>
             </Button>
             <p className="mt-6 flex flex-wrap items-center justify-center gap-4">
               <Link
@@ -309,7 +342,7 @@ export default async function AcademyPage() {
               </Link>
               <span className="text-slate-400">|</span>
               <Link
-                href="/pricing"
+                href={`/${locale}/pricing`}
                 className="text-sm font-medium text-[#429ead] hover:underline"
               >
                 {t("finalCta.studentPricing")}

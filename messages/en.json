@@ -45,10 +45,16 @@
   },
   "marketing": {
     "home": {
-      "heroTitle": "Learn English with real teachers.",
-      "heroSubtitle": "Small live classes + a learning platform in your language + structured homework.",
-      "heroPrimary": "Start Free Trial",
-      "heroSecondary": "See How It Works",
+      "heroBadge": "Designed for Mongolian Students",
+      "heroTitle": "Learn English with Live Teachers",
+      "heroSubtitle": "Small online classes designed for Mongolian students. Try your first class free.",
+      "heroPrimary": "Book Free Trial",
+      "heroSecondary": "Find Your English Level",
+      "heroTrust": {
+        "smallLiveClasses": "Small Live Classes",
+        "nativeEnglishTeachers": "Native English Teachers",
+        "learnFromHome": "Learn From Home"
+      },
       "trust": {
         "teachersSpeakYourLanguage": "Teachers speak your language",
         "smallGroups": "Small groups (8–12)",
@@ -354,6 +360,110 @@
     }
   },
   "trial": {},
+  "funnel": {
+    "guide": {
+      "learnerType": {
+        "title": "Who will be learning?",
+        "description": "We're excited to have you join a class. Before scheduling, we just need to know who will be learning so we can set everything up correctly."
+      },
+      "level": {
+        "title": "Let's find the right level",
+        "description": "To place the student in the best class, we need to quickly check their English level."
+      },
+      "info": {
+        "title": "Your free trial",
+        "description": "See what is included below. On the next screen, you will choose a time."
+      },
+      "time": {
+        "title": "Choose a free trial time",
+        "description": "You're almost done. Pick a trial lesson time that works best for you."
+      },
+      "form": {
+        "title": "Where should we send the details?",
+        "description": "Enter the best contact information so we can send class reminders and the lesson link."
+      },
+      "confirmed": {
+        "title": "You're all set",
+        "description": "Your trial lesson has been scheduled. We'll send the details shortly."
+      }
+    },
+    "start": {
+      "title": "Book Your Free Trial",
+      "subtitle": "Answer a few quick questions.",
+      "getStarted": "Get Started"
+    },
+    "learnerType": {
+      "title": "Who is learning?",
+      "options": {
+        "self": "For me",
+        "child": "For my child"
+      }
+    },
+    "level": {
+      "title": "What is your English level?",
+      "options": {
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced",
+        "unknown": "I don't know (take level test)"
+      }
+    },
+    "info": {
+      "title": "Your free trial",
+      "trustLine": "Live English class with a native American teacher.",
+      "subtitle": "See what is included below. On the next screen, you will choose a time.",
+      "bullet1": "Native American teacher",
+      "bullet2": "30-minute free trial lesson",
+      "bullet3": "Small group class (4–8 students)",
+      "bullet4": "No payment required for the trial",
+      "previewHeading": "What happens in the trial?",
+      "preview1": "Meet the teacher",
+      "preview2": "Practice speaking English",
+      "preview3": "Get your level recommendation",
+      "urgency": "Trial spots are limited each week.",
+      "trustSignal": "Trusted by Mongolian students and parents",
+      "bookTrial": "Book my trial lesson",
+      "teacherHeading": "Meet your teacher",
+      "teacherName": "Connor Skillman",
+      "teacherDescription": "Native English-speaking instructor leading small interactive classes."
+    },
+    "time": {
+      "title": "Choose trial time",
+      "subtitle": "Times shown in your timezone.",
+      "selectDate": "Select a date",
+      "timesForDate": "Available times for {date}",
+      "today": "Today",
+      "slots": {
+        "friday": "Friday",
+        "saturday": "Saturday"
+      },
+      "calendar": {
+        "available": "Available",
+        "selected": "Selected",
+        "unavailable": "Unavailable"
+      }
+    },
+    "form": {
+      "title": "Your information",
+      "nameLabel": "Full Name",
+      "namePlaceholder": "Your name",
+      "phoneLabel": "Phone Number",
+      "phonePlaceholder": "e.g. 9911 2345",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "your@email.com",
+      "submit": "Confirm booking"
+    },
+    "confirmed": {
+      "title": "Your trial lesson is booked.",
+      "slot": "Time",
+      "name": "Name",
+      "phone": "Phone",
+      "email": "Email",
+      "reminder": "We'll send you reminders before class."
+    },
+    "back": "Back",
+    "loading": "Loading..."
+  },
   "classroom": {
     "composer": {
       "fileLabel": "File (PDF, PNG, JPG — max 10 MB)",

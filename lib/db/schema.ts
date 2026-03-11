@@ -314,6 +314,52 @@ export const geckoPlacementResultsRelations = relations(
   })
 );
 
+/** Funnel analytics events. */
+export const funnelEvents = pgTable(
+  'funnel_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    event: varchar('event', { length: 80 }).notNull(),
+    properties: jsonb('properties').$type<Record<string, unknown>>().default({}),
+    locale: varchar('locale', { length: 10 }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('funnel_events_event_idx').on(table.event),
+    index('funnel_events_created_idx').on(table.createdAt),
+  ]
+);
+
+export const funnelEventsRelations = relations(funnelEvents, () => ({}));
+
+/** Trial bookings from student funnel — no account required. */
+export const trialBookings = pgTable(
+  'trial_bookings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    fullName: varchar('full_name', { length: 200 }).notNull(),
+    phone: varchar('phone', { length: 50 }).notNull(),
+    email: varchar('email', { length: 255 }),
+    slotId: varchar('slot_id', { length: 50 }).notNull(),
+    slotLabel: text('slot_label').notNull(),
+    trialTime: timestamp('trial_time'),
+    recommendedLevel: varchar('recommended_level', { length: 50 }),
+    learnerType: varchar('learner_type', { length: 20 }),
+    locale: varchar('locale', { length: 10 }),
+    questionnaireAnswers: jsonb('questionnaire_answers').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    reminderStatus: varchar('reminder_status', { length: 30 }),
+    reminderSentAt: timestamp('reminder_sent_at'),
+  },
+  (table) => [
+    index('trial_bookings_created_idx').on(table.createdAt),
+    index('trial_bookings_phone_idx').on(table.phone),
+  ]
+);
+
+export const trialBookingsRelations = relations(trialBookings, () => ({}));
+
 export const eduClasses = pgTable(
   'edu_classes',
   {
@@ -1393,6 +1439,12 @@ export type NewNotification = typeof notifications.$inferInsert;
 
 export type GeckoPlacementResult = typeof geckoPlacementResults.$inferSelect;
 export type NewGeckoPlacementResult = typeof geckoPlacementResults.$inferInsert;
+
+export type FunnelEvent = typeof funnelEvents.$inferSelect;
+export type NewFunnelEvent = typeof funnelEvents.$inferInsert;
+
+export type TrialBooking = typeof trialBookings.$inferSelect;
+export type NewTrialBooking = typeof trialBookings.$inferInsert;
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
