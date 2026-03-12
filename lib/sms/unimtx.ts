@@ -134,6 +134,10 @@ export async function sendSmsViaUnimtx(toRaw: string, text: string): Promise<voi
     : 'MODE international_no_signature';
   console.log(LOG_PREFIX, modeLog, { phonePrefix, signatureIncluded: includeSignature });
 
+  const requestKeys = Object.keys(body).sort();
+  console.log(LOG_PREFIX, 'REQUEST_KEYS', requestKeys);
+  console.log(LOG_PREFIX, 'REQUEST_HAS_SIGNATURE', includeSignature);
+
   try {
     console.log(LOG_PREFIX, 'FETCH_START', { to, urlHost: UNIMTX_ENDPOINT });
 
