@@ -76,7 +76,7 @@ export default async function AcademyPage() {
             {/* Swappable hero image — replace src to change image */}
             <div className="relative w-full overflow-hidden rounded-2xl bg-slate-100">
               <Image
-                src="/platform-dashboard-cta.svg"
+                src="/classroom-hero.svg"
                 alt={t("heroImageAlt")}
                 width={760}
                 height={428}
