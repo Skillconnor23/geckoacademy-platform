@@ -13,6 +13,7 @@ import {
   updateTrialLeadPlacement,
 } from '@/lib/actions/trial-leads';
 import { clearPlacementCookies } from '@/lib/actions/level-check';
+import { sendSmsViaUnimtx } from '@/lib/sms/unimtx';
 import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 
@@ -31,7 +32,15 @@ function safeParseJson(raw: FormDataEntryValue | null): Record<string, unknown> 
 
 const createTrialBookingSchema = z.object({
   fullName: z.string().min(1).max(200).trim(),
-  phone: z.string().min(1).max(50).trim(),
+  phone: z
+    .string()
+    .min(1)
+    .max(50)
+    .trim()
+    .refine(
+      (v) => /^\+\d{8,15}$/.test(v),
+      'Phone must be in international format starting with +'
+    ),
   email: z.string().email().optional().or(z.literal('')),
   slotId: z.string().min(1).max(50),
   slotLabel: z.string().min(1),
@@ -196,6 +205,31 @@ export async function createTrialBookingAction(
     const { token } = await createTrialAccessToken(trialLeadId);
     if (isDev) {
       console.log(LOG_PREFIX, 'createTrialAccessToken success');
+    }
+
+    // Fire-and-forget confirmation SMS. Booking must still succeed even if SMS fails.
+    try {
+      const portalBase = (process.env.BASE_URL || '').replace(/\/+$/, '');
+      const portalPath = `/${locale}/trial/portal?token=${token}`;
+      const portalLink = portalBase ? `${portalBase}${portalPath}` : portalPath;
+
+      const lines = [
+        'Сайн байна уу?',
+        '',
+        'This is Gecko Academy.',
+        'Your English trial class is confirmed.',
+        '',
+        'See details:',
+        portalLink,
+      ];
+      const smsText = lines.join('\n');
+
+      // Do not await; allow booking redirect to proceed.
+      void sendSmsViaUnimtx(parsed.data.phone, smsText);
+    } catch (e) {
+      if (isDev) {
+        console.warn(LOG_PREFIX, 'SMS send failed (non-blocking):', e);
+      }
     }
 
     await trackFunnelEvent(

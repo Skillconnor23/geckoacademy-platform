@@ -33,6 +33,8 @@ function TrialFormContent() {
   const [userTimezone, setUserTimezone] = useState('UTC');
   const [funnelData, setFunnelData] = useState<Record<string, unknown>>({});
   const [placementFromCookie, setPlacementFromCookie] = useState<{ level: string; score: string } | null>(null);
+  const [phoneCountry, setPhoneCountry] = useState<'MN' | 'US' | 'INTL'>('MN');
+  const [phoneLocal, setPhoneLocal] = useState('');
 
   useEffect(() => {
     try {
@@ -99,12 +101,37 @@ function TrialFormContent() {
 
   const trialTime = getSlotTimestamp(slotId, selectedDateStr);
 
+  const computePhoneE164 = () => {
+    const raw = phoneLocal.trim();
+    if (!raw) return '';
+    if (raw.startsWith('+')) {
+      const cleaned = raw.replace(/[^\d+]/g, '');
+      return /^\+\d{8,15}$/.test(cleaned) ? cleaned : '';
+    }
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) return '';
+
+    if (phoneCountry === 'MN') {
+      if (digits.length === 8) return `+976${digits}`;
+      if (digits.length === 11 && digits.startsWith('976')) return `+${digits}`;
+    } else if (phoneCountry === 'US') {
+      if (digits.length === 10) return `+1${digits}`;
+      if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+    } else {
+      if (digits.length >= 8 && digits.length <= 15) return `+${digits}`;
+    }
+    return '';
+  };
+
+  const phoneE164 = computePhoneE164();
+
   return (
     <div className="min-h-[60vh] px-4 py-12">
       <div className="mx-auto max-w-md">
         <StepGuide title={tGuide('title')} description={tGuide('description')} />
 
         <form action={formAction} onSubmit={handleSubmit} className="space-y-6">
+          <input type="hidden" name="phone" value={phoneE164} />
           <input type="hidden" name="slotId" value={slotId} />
           <input type="hidden" name="slotLabel" value={slotLabel} />
           <input
@@ -148,14 +175,28 @@ function TrialFormContent() {
             <Label htmlFor="phone" className="text-[#3d4236] font-medium">
               {t('phoneLabel')}
             </Label>
-            <Input
-              id="phone"
-              name="phone"
-              type="tel"
-              placeholder={t('phonePlaceholder')}
-              required
-              className="mt-2 h-12 rounded-xl border-slate-200"
-            />
+            <div className="mt-2 flex gap-2">
+              <select
+                id="phoneCountry"
+                className="h-12 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                value={phoneCountry}
+                onChange={(e) => setPhoneCountry(e.target.value as 'MN' | 'US' | 'INTL')}
+              >
+                <option value="MN">Mongolia (+976)</option>
+                <option value="US">United States (+1)</option>
+                <option value="INTL">Other (+)</option>
+              </select>
+              <Input
+                id="phone"
+                type="tel"
+                inputMode="tel"
+                placeholder={t('phonePlaceholder')}
+                required
+                className="h-12 flex-1 rounded-xl border-slate-200"
+                value={phoneLocal}
+                onChange={(e) => setPhoneLocal(e.target.value)}
+              />
+            </div>
           </div>
           <div>
             <Label htmlFor="email" className="text-[#3d4236] font-medium">
