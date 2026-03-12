@@ -32,6 +32,7 @@ function TrialFormContent() {
   const [mounted, setMounted] = useState(false);
   const [userTimezone, setUserTimezone] = useState('UTC');
   const [funnelData, setFunnelData] = useState<Record<string, unknown>>({});
+  const [placementFromCookie, setPlacementFromCookie] = useState<{ level: string; score: string } | null>(null);
 
   useEffect(() => {
     try {
@@ -48,6 +49,20 @@ function TrialFormContent() {
     } catch {
       // ignore
     }
+    // Placement test result from cookie (set when user completed placement without account)
+    try {
+      const cookies = document.cookie.split(';');
+      let level = '';
+      let score = '';
+      for (const c of cookies) {
+        const [k, v] = c.trim().split('=');
+        if (k === 'placement_level') level = decodeURIComponent(v ?? '');
+        if (k === 'placement_score') score = decodeURIComponent(v ?? '');
+      }
+      if (level && score) setPlacementFromCookie({ level, score });
+    } catch {
+      // ignore
+    }
     setMounted(true);
   }, []);
 
@@ -60,6 +75,19 @@ function TrialFormContent() {
     : '';
 
   const [state, formAction, pending] = useActionState(createTrialBookingAction, null);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    if (process.env.NODE_ENV === 'development') {
+      const form = e.currentTarget;
+      const payload: Record<string, string> = {};
+      new FormData(form).forEach((value, key) => {
+        payload[key] = typeof value === 'string' && value.length > 200
+          ? `${value.slice(0, 80)}...`
+          : String(value);
+      });
+      console.log('[trial-booking] client submit start', payload);
+    }
+  };
 
   if (!mounted || !slotId) {
     return (
@@ -76,7 +104,7 @@ function TrialFormContent() {
       <div className="mx-auto max-w-md">
         <StepGuide title={tGuide('title')} description={tGuide('description')} />
 
-        <form action={formAction} className="space-y-6">
+        <form action={formAction} onSubmit={handleSubmit} className="space-y-6">
           <input type="hidden" name="slotId" value={slotId} />
           <input type="hidden" name="slotLabel" value={slotLabel} />
           <input
@@ -87,8 +115,14 @@ function TrialFormContent() {
           <input
             type="hidden"
             name="recommendedLevel"
-            value={(funnelData.englishLevel as string) || 'beginner'}
+            value={placementFromCookie?.level || (funnelData.geckoLevel as string) || (funnelData.englishLevel as string) || 'beginner'}
           />
+          {placementFromCookie && (
+            <>
+              <input type="hidden" name="placementLevel" value={placementFromCookie.level} />
+              <input type="hidden" name="placementScore" value={placementFromCookie.score} />
+            </>
+          )}
           <input type="hidden" name="learnerType" value={(funnelData.learnerType as string) || 'self'} />
           <input type="hidden" name="locale" value={locale} />
           <input
@@ -136,7 +170,11 @@ function TrialFormContent() {
             />
           </div>
 
-          {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+          {state?.error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
+              {state.error}
+            </div>
+          )}
 
           <Button
             type="submit"

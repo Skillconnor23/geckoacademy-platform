@@ -19,7 +19,7 @@ export default function TrialLevelPage() {
   const handleSelect = (value: string, routeToLevelCheck?: boolean) => {
     if (routeToLevelCheck) {
       trackFunnelEvent('question_answered', { question: 'level', value: 'unknown', routeToLevelCheck: true }, locale);
-      router.push(`/${locale}/level-check`);
+      router.push(`/${locale}/level-check?source=funnel`);
       return;
     }
     try {

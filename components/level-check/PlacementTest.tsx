@@ -4,14 +4,27 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { PLACEMENT_QUESTIONS, type PlacementQuestion } from '@/lib/level-check/questions';
-import { submitPlacementAction } from '@/lib/actions/level-check';
+import { submitPlacementAction, type PlacementContext } from '@/lib/actions/level-check';
 import { cn } from '@/lib/utils';
 
 const TOTAL = PLACEMENT_QUESTIONS.length;
 
 type AnswerValue = string | string[];
 
-export function PlacementTest() {
+type PlacementTestProps = {
+  /** When set, result page will show "Return to your trial" and redirect will include it for portal return */
+  returnToken?: string | null;
+  /** 'funnel' | 'portal' – used for post-result redirect (booking vs portal) */
+  source?: string | null;
+  /** Trial lead email when available (e.g. from portal link) */
+  email?: string | null;
+};
+
+export function PlacementTest({ returnToken, source, email }: PlacementTestProps = {}) {
+  const placementContext: PlacementContext | undefined =
+    returnToken || source || email
+      ? { returnToken: returnToken ?? undefined, source: source ?? undefined, email: email ?? undefined }
+      : undefined;
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
@@ -76,12 +89,12 @@ export function PlacementTest() {
         value,
       }));
 
-      await submitPlacementAction(answersList, writingList);
+      await submitPlacementAction(answersList, writingList, placementContext);
     } catch (err) {
       console.error(err);
       setIsSubmitting(false);
     }
-  }, [answers, orderWords, question, writingResponses]);
+  }, [answers, orderWords, question, writingResponses, placementContext]);
 
   const hasAnswer = (q: PlacementQuestion) => {
     if (q.type === 'writing') return true;

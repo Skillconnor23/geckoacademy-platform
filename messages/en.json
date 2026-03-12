@@ -246,8 +246,10 @@
       "explanationTitle": "What this level means",
       "recommendedClassTitle": "Recommended class",
       "bookTrialButton": "Book Trial Class",
+      "continueToBookTrialButton": "Continue to book trial",
       "viewClassesButton": "View Classes",
-      "resultSaved": "Your result has been saved to your account."
+      "returnToTrialButton": "Return to your trial",
+      "resultSaved": "Your result has been saved."
     }
   },
   "pricingStudents": {
@@ -359,6 +361,68 @@
       "backToEnroll": "Back to enrollment"
     }
   },
+  "trialPortal": {
+    "title": "Your Gecko Academy Trial",
+    "subtitle": "Here's your trial information and next steps.",
+    "hero": {
+      "title": "Your Gecko Academy Trial",
+      "startsOn": "Starts on",
+      "days": "days",
+      "hours": "hours",
+      "minutes": "minutes"
+    },
+    "upcomingTrial": "Upcoming trial class",
+    "joinPlaceholder": "Join class",
+    "joinButtonLabel": "Join class",
+    "whatHappens": {
+      "title": "What happens in your trial",
+      "meetTeacher": "Meet your teacher",
+      "practiceSpeaking": "Practice speaking English",
+      "learnLevel": "Learn your recommended level",
+      "seeHowItWorks": "See how Gecko Academy works"
+    },
+    "recommendedLevel": "Recommended level",
+    "geckoLevel": "Gecko level",
+    "geckoLevelSection": {
+      "title": "Recommended Gecko Level",
+      "takePlacementPrompt": "We recommend taking our placement test to find your best starting level.",
+      "takePlacementButton": "Take Placement Test",
+      "basedOnPlacement": "Based on your placement test",
+      "bestStartingPoint": "This looks like the best starting point for you."
+    },
+    "levelBeginner": "Beginner",
+    "levelIntermediate": "Intermediate",
+    "levelAdvanced": "Advanced",
+    "fromPlacementTest": "From your placement test",
+    "prepareForClass": {
+      "title": "Prepare for class",
+      "deviceReady": "Make sure your device is ready",
+      "quietPlace": "Find a quiet place",
+      "readyToSpeak": "Be ready to speak and listen",
+      "optionalPractice": "Optional: Review any materials we sent"
+    },
+    "reminders": {
+      "title": "Reminders",
+      "weSendReminders": "We'll send reminders before your trial.",
+      "saveThisPage": "Save this page to come back anytime."
+    },
+    "addToCalendar": "Add to calendar",
+    "afterTrial": {
+      "title": "After your trial",
+      "nextStep": "Next step",
+      "enrollPrompt": "Enroll in your recommended class to continue."
+    },
+    "finalRecommendation": "After your trial",
+    "noBookingYet": "You haven't booked a trial yet.",
+    "bookTrial": "Book trial lesson",
+    "reminder": "We'll send reminders before your trial. Save this page to return anytime.",
+    "backToAcademy": "Back to Gecko Academy",
+    "noTokenTitle": "Trial link required",
+    "noTokenDescription": "Use the link from your confirmation to view your trial.",
+    "invalidTokenTitle": "Link expired or invalid",
+    "invalidTokenDescription": "This link may have expired. Contact us if you need a new link.",
+    "dataNotFound": "We couldn't find your trial information."
+  },
   "trial": {},
   "funnel": {
     "guide": {
@@ -459,7 +523,9 @@
       "name": "Name",
       "phone": "Phone",
       "email": "Email",
-      "reminder": "We'll send you reminders before class."
+      "reminder": "We'll send you reminders before class.",
+      "viewTrialPortal": "View your trial",
+      "backToAcademy": "Back to Gecko Academy"
     },
     "back": "Back",
     "loading": "Loading..."

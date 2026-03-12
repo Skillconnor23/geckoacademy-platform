@@ -1,7 +1,5 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
-import { requireAuth } from '@/lib/auth/user';
 import { PlacementTest } from '@/components/level-check/PlacementTest';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -9,9 +7,16 @@ import { ArrowLeft } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function LevelCheckTestPage() {
-  const user = await requireAuth();
+type Props = {
+  searchParams: Promise<{ returnToken?: string; email?: string; source?: string }>;
+};
+
+export default async function LevelCheckTestPage({ searchParams }: Props) {
   const locale = await getLocale();
+  const params = await searchParams;
+  const returnToken = params.returnToken ?? undefined;
+  const email = params.email ?? undefined;
+  const source = params.source ?? undefined;
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -24,7 +29,7 @@ export default async function LevelCheckTestPage() {
           Back to Level Check
         </Link>
       </Button>
-      <PlacementTest />
+      <PlacementTest returnToken={returnToken} source={source} email={email} />
     </div>
   );
 }

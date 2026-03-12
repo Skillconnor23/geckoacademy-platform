@@ -59,6 +59,21 @@ export function getSlotById(slotId: TrialSlotId) {
 }
 
 /**
+ * Map Gecko level (G,E,C,K,O) to funnel level for trial slot selection.
+ * G,E → beginner; C,K → intermediate; O → advanced.
+ */
+export function geckoLevelToFunnelLevel(
+  level: string | undefined | null
+): FunnelLevel | undefined {
+  if (!level) return undefined;
+  const l = level.toUpperCase();
+  if (l === 'G' || l === 'E') return 'beginner';
+  if (l === 'C' || l === 'K') return 'intermediate';
+  if (l === 'O') return 'advanced';
+  return undefined;
+}
+
+/**
  * Utah DST: 2nd Sunday March - 1st Sunday November.
  * Returns offset hours (UTC - Utah): 7 for MST, 6 for MDT.
  */

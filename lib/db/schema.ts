@@ -332,11 +332,97 @@ export const funnelEvents = pgTable(
 
 export const funnelEventsRelations = relations(funnelEvents, () => ({}));
 
-/** Trial bookings from student funnel — no account required. */
+/** Trial lead lifecycle status. */
+export const trialLeadStatusEnum = [
+  'started',
+  'placement_completed',
+  'trial_booked',
+  'trial_attended',
+  'trial_no_show',
+  'recommended',
+  'enrolled',
+] as const;
+export type TrialLeadStatus = (typeof trialLeadStatusEnum)[number];
+
+/** Trial leads — prospective students before full enrollment. Central record for placement, booking, trial portal. */
+export const trialLeads = pgTable(
+  'trial_leads',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 200 }),
+    email: varchar('email', { length: 255 }),
+    phone: varchar('phone', { length: 50 }),
+    learnerType: varchar('learner_type', { length: 20 }), // self | child
+    locale: varchar('locale', { length: 10 }),
+    source: varchar('source', { length: 100 }), // utm_source, referrer, etc.
+    selfSelectedLevel: varchar('self_selected_level', { length: 50 }), // beginner | intermediate | advanced
+    recommendedLevel: varchar('recommended_level', { length: 32 }), // G|E|C|K|O or beginner|intermediate|advanced
+    status: varchar('status', { length: 30 }).notNull().default('started'),
+    // Placement test result (when completed)
+    placementScore: integer('placement_score'),
+    placementLevel: varchar('placement_level', { length: 1 }), // G | E | C | K | O
+    placementAnswers: jsonb('placement_answers').$type<Record<string, unknown>>(),
+    placementCompletedAt: timestamp('placement_completed_at'),
+    // Post-trial recommendation (admin/teacher fills)
+    finalRecommendedLevel: varchar('final_recommended_level', { length: 32 }),
+    finalRecommendedClass: text('final_recommended_class'),
+    finalNotes: text('final_notes'),
+    // Link to full user when enrolled
+    userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('trial_leads_email_idx').on(table.email),
+    index('trial_leads_phone_idx').on(table.phone),
+    index('trial_leads_status_idx').on(table.status),
+    index('trial_leads_created_idx').on(table.createdAt),
+  ]
+);
+
+export const trialLeadsRelations = relations(trialLeads, ({ one, many }) => ({
+  user: one(users, {
+    fields: [trialLeads.userId],
+    references: [users.id],
+  }),
+  trialBookings: many(trialBookings),
+}));
+
+/** Secure access tokens for trial portal — magic link auth. */
+export const trialAccessTokens = pgTable(
+  'trial_access_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    trialLeadId: uuid('trial_lead_id')
+      .notNull()
+      .references(() => trialLeads.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    lastUsedAt: timestamp('last_used_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('trial_access_tokens_trial_lead_idx').on(table.trialLeadId),
+    index('trial_access_tokens_expires_idx').on(table.expiresAt),
+  ]
+);
+
+export const trialAccessTokensRelations = relations(
+  trialAccessTokens,
+  ({ one }) => ({
+    trialLead: one(trialLeads, {
+      fields: [trialAccessTokens.trialLeadId],
+      references: [trialLeads.id],
+    }),
+  })
+);
+
+/** Trial bookings from student funnel — no account required. Linked to trial lead. */
 export const trialBookings = pgTable(
   'trial_bookings',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    trialLeadId: uuid('trial_lead_id').references(() => trialLeads.id, { onDelete: 'set null' }),
     fullName: varchar('full_name', { length: 200 }).notNull(),
     phone: varchar('phone', { length: 50 }).notNull(),
     email: varchar('email', { length: 255 }),
@@ -353,12 +439,18 @@ export const trialBookings = pgTable(
     reminderSentAt: timestamp('reminder_sent_at'),
   },
   (table) => [
+    index('trial_bookings_trial_lead_idx').on(table.trialLeadId),
     index('trial_bookings_created_idx').on(table.createdAt),
     index('trial_bookings_phone_idx').on(table.phone),
   ]
 );
 
-export const trialBookingsRelations = relations(trialBookings, () => ({}));
+export const trialBookingsRelations = relations(trialBookings, ({ one }) => ({
+  trialLead: one(trialLeads, {
+    fields: [trialBookings.trialLeadId],
+    references: [trialLeads.id],
+  }),
+}));
 
 export const eduClasses = pgTable(
   'edu_classes',
@@ -1216,6 +1308,216 @@ export type NewHomework = typeof homework.$inferInsert;
 export type HomeworkSubmission = typeof homeworkSubmissions.$inferSelect;
 export type NewHomeworkSubmission = typeof homeworkSubmissions.$inferInsert;
 
+// --- G.E.C.K.O curriculum structure (levels, modules, lessons, lesson posts) ---
+
+export const curriculumLessonTypes = pgTable(
+  'curriculum_lesson_types',
+  {
+    id: serial('id').primaryKey(),
+    lessonNumber: integer('lesson_number').notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
+    description: text('description'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('curriculum_lesson_types_lesson_number_unique').on(table.lessonNumber),
+  ]
+);
+
+export const curriculumLevels = pgTable(
+  'curriculum_levels',
+  {
+    id: serial('id').primaryKey(),
+    code: varchar('code', { length: 1 }).notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
+    description: text('description'),
+    orderIndex: integer('order_index').notNull(),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('curriculum_levels_code_unique').on(table.code),
+    index('curriculum_levels_code_idx').on(table.code),
+  ]
+);
+
+export const curriculumModules = pgTable(
+  'curriculum_modules',
+  {
+    id: serial('id').primaryKey(),
+    levelId: integer('level_id')
+      .notNull()
+      .references(() => curriculumLevels.id, { onDelete: 'cascade' }),
+    moduleNumber: integer('module_number').notNull(),
+    title: varchar('title', { length: 200 }).notNull(),
+    theme: varchar('theme', { length: 200 }),
+    grammarFocus: text('grammar_focus'),
+    skillFocus: text('skill_focus'),
+    estimatedWeeks: integer('estimated_weeks').notNull().default(4),
+    estimatedClasses: integer('estimated_classes').notNull().default(8),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('curriculum_modules_level_module_idx').on(table.levelId, table.moduleNumber),
+    index('curriculum_modules_level_id_idx').on(table.levelId),
+  ]
+);
+
+export const curriculumModuleLessons = pgTable(
+  'curriculum_module_lessons',
+  {
+    id: serial('id').primaryKey(),
+    moduleId: integer('module_id')
+      .notNull()
+      .references(() => curriculumModules.id, { onDelete: 'cascade' }),
+    lessonNumber: integer('lesson_number').notNull(),
+    lessonTypeId: integer('lesson_type_id')
+      .notNull()
+      .references(() => curriculumLessonTypes.id, { onDelete: 'restrict' }),
+    title: varchar('title', { length: 200 }).notNull(),
+    objective: text('objective'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('curriculum_module_lessons_module_lesson_idx').on(
+      table.moduleId,
+      table.lessonNumber
+    ),
+    index('curriculum_module_lessons_module_id_idx').on(table.moduleId),
+  ]
+);
+
+export const curriculumLessonAssets = pgTable(
+  'curriculum_lesson_assets',
+  {
+    id: serial('id').primaryKey(),
+    curriculumModuleLessonId: integer('curriculum_module_lesson_id')
+      .notNull()
+      .references(() => curriculumModuleLessons.id, { onDelete: 'cascade' }),
+    assetType: varchar('asset_type', { length: 80 }).notNull(),
+    title: varchar('title', { length: 200 }).notNull(),
+    description: text('description'),
+    contentRef: text('content_ref'),
+    isDefault: boolean('is_default').notNull().default(false),
+    tag: text('tag'),
+    isActive: boolean('is_active').notNull().default(true),
+    createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('curriculum_lesson_assets_lesson_id_idx').on(table.curriculumModuleLessonId),
+    index('curriculum_lesson_assets_asset_type_idx').on(table.assetType),
+    index('curriculum_lesson_assets_tag_idx').on(table.tag),
+  ]
+);
+
+export const classLessonPosts = pgTable(
+  'class_lesson_posts',
+  {
+    id: serial('id').primaryKey(),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    curriculumModuleId: integer('curriculum_module_id').references(
+      () => curriculumModules.id,
+      { onDelete: 'set null' }
+    ),
+    lessonNumber: integer('lesson_number'),
+    title: text('title').notNull(),
+    lessonDate: date('lesson_date'),
+    notes: text('notes'),
+    createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('class_lesson_posts_class_created_idx').on(table.classId, table.createdAt),
+    index('class_lesson_posts_class_id_idx').on(table.classId),
+  ]
+);
+
+export const classLessonPostAssets = pgTable(
+  'class_lesson_post_assets',
+  {
+    id: serial('id').primaryKey(),
+    lessonPostId: integer('lesson_post_id')
+      .notNull()
+      .references(() => classLessonPosts.id, { onDelete: 'cascade' }),
+    assetType: varchar('asset_type', { length: 80 }).notNull(),
+    entityType: varchar('entity_type', { length: 80 }),
+    entityId: text('entity_id'),
+    label: text('label'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('class_lesson_post_assets_lesson_post_id_idx').on(table.lessonPostId),
+  ]
+);
+
+export const classCurriculumState = pgTable(
+  'class_curriculum_state',
+  {
+    id: serial('id').primaryKey(),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    levelId: integer('level_id')
+      .notNull()
+      .references(() => curriculumLevels.id, { onDelete: 'restrict' }),
+    moduleId: integer('module_id')
+      .notNull()
+      .references(() => curriculumModules.id, { onDelete: 'restrict' }),
+    currentLessonNumber: integer('current_lesson_number').notNull().default(1),
+    curriculumStartedAt: timestamp('curriculum_started_at'),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('class_curriculum_state_class_id_unique').on(table.classId),
+    index('class_curriculum_state_class_id_idx').on(table.classId),
+    index('class_curriculum_state_level_id_idx').on(table.levelId),
+  ]
+);
+
+export const studentCurriculumProgress = pgTable(
+  'student_curriculum_progress',
+  {
+    id: serial('id').primaryKey(),
+    studentId: integer('student_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    classId: uuid('class_id')
+      .notNull()
+      .references(() => eduClasses.id, { onDelete: 'cascade' }),
+    levelId: integer('level_id')
+      .notNull()
+      .references(() => curriculumLevels.id, { onDelete: 'restrict' }),
+    currentModuleId: integer('current_module_id')
+      .notNull()
+      .references(() => curriculumModules.id, { onDelete: 'restrict' }),
+    currentLessonNumber: integer('current_lesson_number').notNull().default(1),
+    modulesCompletedCount: integer('modules_completed_count').notNull().default(0),
+    lessonsCompletedCount: integer('lessons_completed_count').notNull().default(0),
+    startedCurrentModuleAt: timestamp('started_current_module_at'),
+    lastProgressedAt: timestamp('last_progressed_at'),
+    estimatedNextLevelDate: timestamp('estimated_next_level_date'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('student_curriculum_progress_student_class_idx').on(
+      table.studentId,
+      table.classId
+    ),
+    index('student_curriculum_progress_student_id_idx').on(table.studentId),
+    index('student_curriculum_progress_class_id_idx').on(table.classId),
+  ]
+);
+
 // --- Curriculum (teacher-only) ---
 
 export const curriculumFiles = pgTable(
@@ -1443,6 +1745,10 @@ export type NewGeckoPlacementResult = typeof geckoPlacementResults.$inferInsert;
 export type FunnelEvent = typeof funnelEvents.$inferSelect;
 export type NewFunnelEvent = typeof funnelEvents.$inferInsert;
 
+export type TrialLead = typeof trialLeads.$inferSelect;
+export type NewTrialLead = typeof trialLeads.$inferInsert;
+export type TrialAccessToken = typeof trialAccessTokens.$inferSelect;
+export type NewTrialAccessToken = typeof trialAccessTokens.$inferInsert;
 export type TrialBooking = typeof trialBookings.$inferSelect;
 export type NewTrialBooking = typeof trialBookings.$inferInsert;
 

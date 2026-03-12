@@ -18,6 +18,7 @@ function TrialConfirmedContent() {
   const slot = searchParams.get('slot') || '';
   const phone = searchParams.get('phone') || '';
   const email = searchParams.get('email') || '';
+  const token = searchParams.get('token') || '';
 
   useEffect(() => {
     try {
@@ -70,11 +71,20 @@ function TrialConfirmedContent() {
 
         <p className="text-sm text-slate-600">{t('reminder')}</p>
 
+        {token && (
+          <Link
+            href={`/${locale}/trial/portal?token=${encodeURIComponent(token)}`}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#7daf41] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#6b9a39] transition-colors"
+          >
+            {t('viewTrialPortal')}
+          </Link>
+        )}
+
         <Link
           href={`/${locale}/academy`}
-          className="inline-block rounded-full border border-slate-300 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          className={`inline-block rounded-full border border-slate-300 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors ${token ? 'mt-4' : ''}`}
         >
-          Back to Gecko Academy
+          {t('backToAcademy')}
         </Link>
       </div>
     </div>

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { StepGuide } from '@/components/funnel/StepGuide';
@@ -11,6 +11,7 @@ import {
   getSlotLabelInTimezone,
   TRIAL_FUNNEL_STORAGE_KEY,
   getAvailableDatesForNextMonth,
+  geckoLevelToFunnelLevel,
   type TrialSlotId,
   type FunnelLevel,
 } from '@/lib/trial/config';
@@ -27,6 +28,7 @@ export default function TrialTimePage() {
   const tSchedule = useTranslations('schedule.weekdays.short');
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [mounted, setMounted] = useState(false);
   const [userTimezone, setUserTimezone] = useState('UTC');
@@ -41,14 +43,28 @@ export default function TrialTimePage() {
     } catch {
       setUserTimezone('America/Denver');
     }
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     try {
       const raw = localStorage.getItem(TRIAL_FUNNEL_STORAGE_KEY);
-      const data = raw ? JSON.parse(raw) : {};
-      setLevel((data.englishLevel as FunnelLevel) || undefined);
+      const data: Record<string, unknown> = raw ? JSON.parse(raw) : {};
+      const urlLevel = searchParams.get('level');
+      if (urlLevel) {
+        const funnelLevel = geckoLevelToFunnelLevel(urlLevel) ?? urlLevel;
+        data.englishLevel = funnelLevel;
+        data.geckoLevel = urlLevel.length === 1 ? urlLevel.toUpperCase() : undefined;
+        data.learnerType = data.learnerType ?? 'self';
+        localStorage.setItem(TRIAL_FUNNEL_STORAGE_KEY, JSON.stringify(data));
+        setLevel(funnelLevel as FunnelLevel);
+      } else {
+        setLevel((data.englishLevel as FunnelLevel) || undefined);
+      }
     } catch {
       // ignore
     }
-  }, []);
+  }, [mounted, searchParams]);
 
   const availDates = mounted ? getAvailableDatesForNextMonth(level) : [];
   const availDateSet = new Set(availDates.map((a) => a.date));

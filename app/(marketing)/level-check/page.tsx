@@ -7,14 +7,30 @@ import { ArrowRight, CheckCircle2, Target } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function LevelCheckLandingPage() {
+type Props = {
+  searchParams: Promise<{ returnToken?: string; email?: string; source?: string }>;
+};
+
+export default async function LevelCheckLandingPage({ searchParams }: Props) {
   const t = await getTranslations('levelCheck.landing');
   const user = await getCurrentUserOrNull();
   const locale = await getLocale();
+  const params = await searchParams;
+  const returnToken = params.returnToken ?? '';
+  const email = params.email ?? '';
+  const source = params.source ?? '';
 
-  const startHref = user
-    ? `/${locale}/level-check/test`
-    : `/${locale}/sign-in?redirect=${encodeURIComponent(`/${locale}/level-check/test`)}`;
+  const testPath = `/${locale}/level-check/test`;
+  const testQuery = new URLSearchParams();
+  if (returnToken) testQuery.set('returnToken', returnToken);
+  if (email) testQuery.set('email', email);
+  if (source) testQuery.set('source', source);
+  const testHref = testQuery.toString() ? `${testPath}?${testQuery.toString()}` : testPath;
+
+  // Trial flow (funnel or portal): no sign-in required. Authenticated users always go straight to test.
+  const isTrialFlow = !!returnToken || source === 'funnel';
+  const startHref =
+    user || isTrialFlow ? testHref : `/${locale}/sign-in?redirect=${encodeURIComponent(testHref)}`;
 
   return (
     <div className="bg-white">
@@ -41,7 +57,7 @@ export default async function LevelCheckLandingPage() {
                 <ArrowRight className="h-5 w-5" />
               </Link>
             </Button>
-            {!user && (
+            {!user && !isTrialFlow && (
               <p className="text-sm text-slate-500">
                 {t('signInPrompt')}
               </p>

@@ -15,12 +15,16 @@ export const GEKO_WEIGHTS: Record<GeckoLevel, number> = {
   O: 5,
 };
 
+/**
+ * Maps total placement score to Gecko Academy level (user-facing).
+ * Internal scoring stays numeric; user-facing result is always G | E | C | K | O.
+ */
 export const SCORE_TO_LEVEL: { max: number; level: GeckoLevel }[] = [
-  { max: 10, level: 'G' },
-  { max: 20, level: 'E' },
-  { max: 30, level: 'C' },
-  { max: 40, level: 'K' },
-  { max: 999, level: 'O' },
+  { max: 10, level: 'G' },   // 0–10  → G (Groundwork)
+  { max: 20, level: 'E' },   // 11–20 → E (Essentials)
+  { max: 30, level: 'C' },   // 21–30 → C (Conversational)
+  { max: 40, level: 'K' },   // 31–40 → K (Knowledge)
+  { max: 999, level: 'O' },  // 41+   → O (Opportunity)
 ];
 
 export function scoreToLevel(totalScore: number): GeckoLevel {
