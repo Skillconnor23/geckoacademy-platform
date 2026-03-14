@@ -359,6 +359,7 @@ export type ClassHealthRow = {
   scheduleDays: unknown;
   scheduleStartTime: string | null;
   scheduleTimezone: string | null;
+  defaultMeetingUrl: string | null;
   studentCount: number;
   nextSessionAt: Date | null;
   quizCount: number;
@@ -377,6 +378,7 @@ export async function getClassesWithHealthForTeacher(
       scheduleDays: eduClasses.scheduleDays,
       scheduleStartTime: eduClasses.scheduleStartTime,
       scheduleTimezone: eduClasses.scheduleTimezone,
+      defaultMeetingUrl: eduClasses.defaultMeetingUrl,
     })
     .from(eduClassTeachers)
     .innerJoin(eduClasses, eq(eduClassTeachers.classId, eduClasses.id))

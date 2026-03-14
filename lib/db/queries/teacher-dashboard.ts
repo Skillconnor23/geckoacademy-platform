@@ -1,4 +1,4 @@
-import { eq, and, gte, lt, asc, desc, sql, inArray, isNull } from 'drizzle-orm';
+import { eq, and, gte, lte, lt, asc, desc, sql, inArray, isNull } from 'drizzle-orm';
 import { db } from '../drizzle';
 import {
   eduClasses,
@@ -50,6 +50,7 @@ export type TeacherNextSession = {
   geckoLevel: string | null;
   studentCount: number;
   startsAt: Date;
+  endsAt: Date;
   meetingUrl: string | null;
   title: string | null;
 };
@@ -414,10 +415,21 @@ export async function getTeacherDashboardNeedsAttention(
   };
 }
 
+/** 15 minutes in ms - class shown when within this window before start or in progress. */
+const FIFTEEN_MIN_MS = 15 * 60 * 1000;
+
+/**
+ * Returns the teacher's next *relevant* session only:
+ * - now >= startsAt - 15 min (within 15 min before start, or already started) => startsAt <= now + 15min
+ * - now <= endsAt (class in progress or not yet ended) => endsAt >= now
+ * - Single soonest eligible session only.
+ */
 export async function getTeacherNextSession(
   teacherUserId: number
 ): Promise<TeacherNextSession | null> {
   const now = new Date();
+  const windowEnd = new Date(now.getTime() + FIFTEEN_MIN_MS);
+
   const classIds = (
     await db
       .select({ classId: eduClassTeachers.classId })
@@ -438,8 +450,10 @@ export async function getTeacherNextSession(
       classId: eduClasses.id,
       className: eduClasses.name,
       geckoLevel: eduClasses.geckoLevel,
+      defaultMeetingUrl: eduClasses.defaultMeetingUrl,
       startsAt: eduSessions.startsAt,
-      meetingUrl: eduSessions.meetingUrl,
+      endsAt: eduSessions.endsAt,
+      sessionMeetingUrl: eduSessions.meetingUrl,
       title: eduSessions.title,
     })
     .from(eduSessions)
@@ -447,13 +461,17 @@ export async function getTeacherNextSession(
     .where(
       and(
         inArray(eduSessions.classId, classIds),
-        gte(eduSessions.startsAt, now)
+        lte(eduSessions.startsAt, windowEnd),
+        gte(eduSessions.endsAt, now)
       )
     )
     .orderBy(asc(eduSessions.startsAt))
     .limit(1);
 
   if (!row) return null;
+
+  const meetingUrl =
+    (row.sessionMeetingUrl?.trim() || row.defaultMeetingUrl?.trim()) || null;
 
   const [studentCountRow] = await db
     .select({
@@ -474,7 +492,8 @@ export async function getTeacherNextSession(
     geckoLevel: row.geckoLevel,
     studentCount: studentCountRow?.count ?? 0,
     startsAt: row.startsAt,
-    meetingUrl: row.meetingUrl,
+    endsAt: row.endsAt,
+    meetingUrl,
     title: row.title,
   };
 }

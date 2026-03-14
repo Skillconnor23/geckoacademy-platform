@@ -13,7 +13,7 @@ import { TeacherCard } from './TeacherCard';
 import { ClassmatesCard } from './ClassmatesCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Users, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Users, ClipboardList, Video } from 'lucide-react';
 import { AddPostMenu } from '@/components/classroom/AddPostMenu';
 
 type Props = { params: Promise<{ classId: string }> };
@@ -62,6 +62,25 @@ export default async function ClassroomPage({ params }: Props) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {canPost &&
+              (eduClass.defaultMeetingUrl ? (
+                <Button variant="secondary" size="sm" asChild>
+                  <a
+                    href={eduClass.defaultMeetingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5"
+                  >
+                    <Video className="h-4 w-4" />
+                    {t('joinClass')}
+                  </a>
+                </Button>
+              ) : (
+                <Button variant="secondary" size="sm" disabled className="flex items-center gap-1.5">
+                  <Video className="h-4 w-4" />
+                  {t('noMeetingLinkYet')}
+                </Button>
+              ))}
             <Button variant="outline" size="sm" asChild>
               <Link href={`/classroom/${classId}/people`} className="flex items-center gap-1.5">
                 <Users className="h-4 w-4" />

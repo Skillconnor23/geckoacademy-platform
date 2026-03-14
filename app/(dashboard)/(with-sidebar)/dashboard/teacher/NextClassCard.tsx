@@ -8,6 +8,7 @@ import { FormattedDateTime } from '@/components/display/FormattedDateTime';
 import { CountdownTimer } from './CountdownTimer';
 import { Calendar, Video } from 'lucide-react';
 import type { TeacherNextSession } from '@/lib/db/queries/teacher-dashboard';
+import { RefreshNextClassButton } from './RefreshNextClassButton';
 
 type Props = {
   nextSession: TeacherNextSession | null;
@@ -30,8 +31,9 @@ export function NextClassCard({ nextSession, viewerTimezone }: Props) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground py-2">
-            {t('noUpcomingSessions')}
+            {t('noClassStartingSoon')}
           </p>
+          <RefreshNextClassButton />
         </CardContent>
       </Card>
     );
@@ -84,6 +86,16 @@ export function NextClassCard({ nextSession, viewerTimezone }: Props) {
               dateOptions={{ weekday: 'short', month: 'short', day: 'numeric' }}
               timeOptions={{ hour: 'numeric', minute: '2-digit' }}
             />
+            {nextSession.endsAt && (
+              <span aria-hidden>–</span>
+            )}
+            {nextSession.endsAt && (
+              <FormattedDateTime
+                date={nextSession.endsAt}
+                serverFallback={viewerTimezone}
+                timeOptions={{ hour: 'numeric', minute: '2-digit' }}
+              />
+            )}
             {nextSession.studentCount > 0 && (
               <span>{t('studentCount', { count: nextSession.studentCount })}</span>
             )}
@@ -97,17 +109,24 @@ export function NextClassCard({ nextSession, viewerTimezone }: Props) {
               {t('openClassroom')}
             </Link>
           </Button>
-          {nextSession.meetingUrl && (
+          {nextSession.meetingUrl ? (
             <Button variant="secondary" size="sm" asChild>
               <a
                 href={nextSession.meetingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t('join')}
+                <Video className="mr-1.5 h-4 w-4" />
+                {t('joinClass')}
               </a>
             </Button>
+          ) : (
+            <Button variant="secondary" size="sm" disabled>
+              <Video className="mr-1.5 h-4 w-4" />
+              {t('noMeetingLinkYet')}
+            </Button>
           )}
+          <RefreshNextClassButton />
           <Button variant="outline" size="sm" asChild>
             <Link href="/dashboard/teacher/schedule">{t('viewSchedule')}</Link>
           </Button>

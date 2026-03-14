@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { BookOpen, UsersRound, ClipboardCheck } from 'lucide-react';
+import { BookOpen, UsersRound, ClipboardCheck, Video } from 'lucide-react';
 import { ClientScheduleSummary } from '@/app/(dashboard)/(with-sidebar)/dashboard/teacher/ClientScheduleSummary';
 import type { ClassHealthRow } from '@/lib/db/queries/education';
 
@@ -175,6 +175,33 @@ export function TeacherClassCards({
                       <ClipboardCheck className="mr-1 h-3.5 w-3.5" />
                       {t('takeAttendance')}
                     </Link>
+                  </Button>
+                )}
+                {c.defaultMeetingUrl ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 rounded-md px-2.5 text-xs"
+                    asChild
+                  >
+                    <a
+                      href={c.defaultMeetingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Video className="mr-1 h-3.5 w-3.5" />
+                      {t('joinClass')}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 rounded-md px-2.5 text-xs"
+                    disabled
+                  >
+                    <Video className="mr-1 h-3.5 w-3.5" />
+                    {t('noMeetingLinkYet')}
                   </Button>
                 )}
                 <Button
