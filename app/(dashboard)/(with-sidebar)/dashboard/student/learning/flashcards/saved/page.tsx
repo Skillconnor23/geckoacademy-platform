@@ -27,6 +27,7 @@ export default async function SavedWordsFlashcardPage() {
             front: card.front,
             back: card.back,
             example: card.example,
+            audioUrl: card.audioUrl ?? null,
             isSaved: true,
           }))}
           backHref="/dashboard/student/learning?tab=flashcards"

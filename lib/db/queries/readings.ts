@@ -244,6 +244,7 @@ export async function updateReading(
     weekOf?: string | null;
     vocab?: string[];
     questions?: string[];
+    audioUrl?: string | null;
   }
 ): Promise<typeof eduReadings.$inferSelect | null> {
   const set: Record<string, unknown> = { updatedAt: new Date() };
@@ -253,6 +254,7 @@ export async function updateReading(
   if (data.weekOf !== undefined) set.weekOf = data.weekOf;
   if (data.vocab !== undefined) set.vocab = data.vocab;
   if (data.questions !== undefined) set.questions = data.questions;
+  if (data.audioUrl !== undefined) set.audioUrl = data.audioUrl;
   const [updated] = await db
     .update(eduReadings)
     .set(set as Partial<typeof eduReadings.$inferInsert>)

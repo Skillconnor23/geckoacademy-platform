@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, RotateCcw, X } from 'lucide-react';
+import { AudioPlayButton } from '@/components/learning/AudioPlayButton';
 import { Button } from '@/components/ui/button';
 import { saveFlashcardResultAction } from '@/lib/actions/learning/flashcards';
 
@@ -13,6 +14,7 @@ export type FlashcardStudyItem = {
   front: string;
   back: string;
   example: string | null;
+  audioUrl: string | null;
   isSaved: boolean;
 };
 
@@ -115,6 +117,7 @@ export function FlashcardStudyClient({
           word={current.front}
           definition={current.back}
           example={current.example}
+          audioUrl={current.audioUrl}
           revealed={revealed}
           onToggle={() => setRevealed((v) => !v)}
           onAnswer={(isCorrect) => handleGrade(isCorrect ? 'correct' : 'incorrect')}
@@ -131,6 +134,7 @@ type FlashcardProps = {
   word: string;
   definition: string;
   example?: string | null;
+  audioUrl?: string | null;
   revealed: boolean;
   onToggle: () => void;
   onAnswer: (correct: boolean) => void;
@@ -141,6 +145,7 @@ function Flashcard({
   word,
   definition,
   example,
+  audioUrl,
   revealed,
   onToggle,
   onAnswer,
@@ -169,7 +174,14 @@ function Flashcard({
         }}
       >
         {!revealed ? (
-          <h2 className="text-5xl font-semibold text-white tracking-tight break-words">{word}</h2>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <h2 className="text-5xl font-semibold text-white tracking-tight break-words">{word}</h2>
+            {audioUrl ? (
+              <span onClick={(e) => e.stopPropagation()}>
+                <AudioPlayButton url={audioUrl} compact ariaLabel="Play English word" />
+              </span>
+            ) : null}
+          </div>
         ) : (
           <div className="space-y-6 text-white max-w-2xl">
             <p className="text-3xl font-medium leading-snug break-words">{definition}</p>

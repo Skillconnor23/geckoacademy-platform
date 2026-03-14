@@ -35,6 +35,7 @@ export default async function StudyFlashcardDeckPage({ params }: Props) {
     front: card.front,
     back: card.back,
     example: card.example,
+    audioUrl: card.audioUrl ?? null,
     isSaved: savedCardIds.has(card.id),
   }));
 

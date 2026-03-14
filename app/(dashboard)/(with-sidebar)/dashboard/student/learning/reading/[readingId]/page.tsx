@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, CheckCircle2, Star } from 'lucide-react';
 import { VocabularyCard } from './VocabularyCard';
+import { AudioPlayButton } from '@/components/learning/AudioPlayButton';
 
 type Props = {
   params: Promise<{ readingId: string }>;
@@ -66,9 +67,14 @@ export default async function ReadingDetailPage({ params }: Props) {
         </Button>
 
         <div>
-          <h1 className="text-xl font-medium text-[#1f2937] tracking-tight sm:text-2xl">
-            {reading.title}
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-medium text-[#1f2937] tracking-tight sm:text-2xl">
+              {reading.title}
+            </h1>
+            {reading.audioUrl ? (
+              <AudioPlayButton url={reading.audioUrl} ariaLabel="Play reading audio" />
+            ) : null}
+          </div>
           <p className="mt-0.5 text-sm text-muted-foreground">{className}</p>
         </div>
 

@@ -50,6 +50,7 @@ export type FlashcardDeckCard = {
   front: string;
   back: string;
   example: string | null;
+  audioUrl: string | null;
   sortOrder: number;
   createdAt: Date;
 };
@@ -91,6 +92,7 @@ export type SavedFlashcardCard = {
   front: string;
   back: string;
   example: string | null;
+  audioUrl: string | null;
 };
 
 export type StudentLearningOverview = {
@@ -355,6 +357,7 @@ export async function createFlashcardCard(data: {
   front: string;
   back: string;
   example?: string | null;
+  audioUrl?: string | null;
 }) {
   const [maxOrderRow] = await db
     .select({
@@ -370,6 +373,7 @@ export async function createFlashcardCard(data: {
       front: data.front,
       back: data.back,
       example: data.example ?? null,
+      audioUrl: data.audioUrl ?? null,
       sortOrder: (maxOrderRow?.maxOrder ?? 0) + 1,
     })
     .returning();
@@ -389,16 +393,24 @@ export async function updateFlashcardCard(
     back?: string;
     example?: string | null;
     sortOrder?: number;
+    audioUrl?: string | null;
   }
 ) {
+  const set: {
+    front?: string;
+    back?: string;
+    example?: string | null;
+    sortOrder?: number;
+    audioUrl?: string | null;
+  } = {};
+  if (data.front !== undefined) set.front = data.front;
+  if (data.back !== undefined) set.back = data.back;
+  if (data.example !== undefined) set.example = data.example;
+  if (data.sortOrder !== undefined) set.sortOrder = data.sortOrder;
+  if (data.audioUrl !== undefined) set.audioUrl = data.audioUrl;
   const [updated] = await db
     .update(flashcardCards)
-    .set({
-      front: data.front,
-      back: data.back,
-      example: data.example,
-      sortOrder: data.sortOrder,
-    })
+    .set(set)
     .where(eq(flashcardCards.id, cardId))
     .returning();
 
@@ -451,6 +463,7 @@ export async function getFlashcardDeckWithCards(
         front: flashcardCards.front,
         back: flashcardCards.back,
         example: flashcardCards.example,
+        audioUrl: flashcardCards.audioUrl,
         sortOrder: flashcardCards.sortOrder,
         createdAt: flashcardCards.createdAt,
       })
@@ -663,6 +676,7 @@ export async function listSavedFlashcardsForStudent(
         front: flashcardCards.front,
         back: flashcardCards.back,
         example: flashcardCards.example,
+        audioUrl: flashcardCards.audioUrl,
       })
       .from(flashcardSaves)
       .innerJoin(flashcardCards, eq(flashcardSaves.cardId, flashcardCards.id))

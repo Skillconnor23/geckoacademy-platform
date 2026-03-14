@@ -7,7 +7,6 @@ import { ArrowLeft } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { requireRole } from '@/lib/auth/user';
 import {
-  addFlashcardCardAction,
   deleteFlashcardCardAction,
   setFlashcardDeckPublishedAction,
   updateFlashcardCardAction,
@@ -21,6 +20,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GenerateVocabButton } from '@/components/learning/GenerateVocabButton';
+import { AudioRecorderField } from '@/components/learning/AudioRecorderField';
+import { AddFlashcardCardForm } from '@/components/learning/AddFlashcardCardForm';
 
 type Props = {
   params: Promise<{ deckId: string }>;
@@ -193,57 +194,19 @@ export default async function TeacherFlashcardDeckDetailPage({
             </div>
           </CardHeader>
           <CardContent>
-            <form
-              action={async (formData) => {
-                'use server';
-                const result = await addFlashcardCardAction(deckId, formData);
-                if (result.error) {
-                  redirect(`${path}?error=${encodeURIComponent(result.error)}`);
-                }
-                redirect(path);
+            <AddFlashcardCardForm
+              deckId={deckId}
+              path={path}
+              t={{
+                frontLabel: t('frontLabel'),
+                backLabel: t('backLabel'),
+                frontPlaceholder: t('frontPlaceholder'),
+                backPlaceholder: t('backPlaceholder'),
+                exampleLabel: t('exampleLabel'),
+                examplePlaceholder: t('examplePlaceholder'),
+                addCardButton: t('addCardButton'),
               }}
-              className="space-y-3"
-            >
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium text-[#1f2937]">
-                    {t('frontLabel')} <span className="text-[#b64b29]">*</span>
-                  </label>
-                  <input
-                    name="front"
-                    required
-                    className="mt-1 w-full rounded-xl border border-[#e5e7eb] px-3 py-2 text-sm"
-                    placeholder={t('frontPlaceholder')}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-[#1f2937]">
-                    {t('backLabel')} <span className="text-[#b64b29]">*</span>
-                  </label>
-                  <input
-                    name="back"
-                    required
-                    className="mt-1 w-full rounded-xl border border-[#e5e7eb] px-3 py-2 text-sm"
-                    placeholder={t('backPlaceholder')}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-[#1f2937]">{t('exampleLabel')}</label>
-                <textarea
-                  name="example"
-                  rows={2}
-                  className="mt-1 w-full rounded-xl border border-[#e5e7eb] px-3 py-2 text-sm"
-                  placeholder={t('examplePlaceholder')}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="rounded-full bg-[#7daf41] text-white hover:bg-[#6b9a39]"
-              >
-                {t('addCardButton')}
-              </Button>
-            </form>
+            />
           </CardContent>
         </Card>
 
@@ -297,6 +260,15 @@ export default async function TeacherFlashcardDeckDetailPage({
                         defaultValue={card.example ?? ''}
                         rows={2}
                         className="mt-1 w-full rounded-xl border border-[#e5e7eb] px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <AudioRecorderField
+                        type="flashcard"
+                        deckId={deckId}
+                        cardId={card.id}
+                        currentUrl={card.audioUrl ?? null}
+                        label="English word audio (optional)"
                       />
                     </div>
                     <Button

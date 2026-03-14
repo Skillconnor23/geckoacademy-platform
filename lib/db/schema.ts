@@ -825,6 +825,10 @@ export const flashcardCards = pgTable(
     back: text('back').notNull(),
     example: text('example'),
     sortOrder: integer('sort_order').notNull().default(0),
+    audioUrl: text('audio_url'),
+    audioSource: text('audio_source'),
+    audioTranscript: text('audio_transcript'),
+    audioDuration: integer('audio_duration'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
@@ -894,6 +898,10 @@ export const eduReadings = pgTable(
     weekOf: date('week_of'), // optional: used for "this week" grouping
     vocab: jsonb('vocab').$type<string[]>().default([]),
     questions: jsonb('questions').$type<string[]>().default([]),
+    audioUrl: text('audio_url'),
+    audioSource: text('audio_source'),
+    audioTranscript: text('audio_transcript'),
+    audioDuration: integer('audio_duration'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

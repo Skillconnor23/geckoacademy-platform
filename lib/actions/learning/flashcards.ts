@@ -178,11 +178,15 @@ export async function addFlashcardCardAction(
     return { error: parsed.error.errors[0]?.message ?? 'Invalid card data.' };
   }
 
+  const audioUrlRaw = formData.get('audioUrl');
+  const audioUrl = typeof audioUrlRaw === 'string' && audioUrlRaw.trim() ? audioUrlRaw.trim() : null;
+
   await createFlashcardCard({
     deckId,
     front: parsed.data.front,
     back: parsed.data.back,
     example: parsed.data.example ?? null,
+    audioUrl,
   });
 
   revalidatePath(`/dashboard/teacher/learning/flashcards/${deckId}`);
@@ -373,5 +377,28 @@ export async function getEditableFlashcardDeckForTeacherAction(deckId: string) {
   const allowed = await canManageDeck(user, deckId);
   if (!allowed) return null;
   return deck;
+}
+
+export async function updateFlashcardCardAudioAction(
+  deckId: string,
+  cardId: string,
+  audioUrl: string | null
+): Promise<{ error?: string }> {
+  const user = await requireRole(['teacher', 'admin', 'school_admin']);
+  const allowed = await canManageDeck(user, deckId);
+  if (!allowed) return { error: 'You cannot edit this card.' };
+
+  const card = await getFlashcardCardById(cardId);
+  if (!card) return { error: 'Card not found.' };
+  if (card.deckId !== deckId) return { error: 'Card/deck mismatch.' };
+
+  const updated = await updateFlashcardCard(cardId, { audioUrl });
+  if (!updated) return { error: 'Card not found.' };
+
+  revalidatePath(`/dashboard/teacher/learning/flashcards/${deckId}`);
+  revalidatePath('/dashboard/teacher/learning/flashcards');
+  revalidatePath('/dashboard/student/learning');
+  revalidatePath(`/dashboard/student/learning/flashcards/${deckId}`);
+  return {};
 }
 

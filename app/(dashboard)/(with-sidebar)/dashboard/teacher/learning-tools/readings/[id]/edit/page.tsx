@@ -9,6 +9,7 @@ import { updateReadingAction } from '@/lib/actions/learning/readings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
+import { AudioRecorderField } from '@/components/learning/AudioRecorderField';
 
 export default async function EditReadingPage({
   params,
@@ -62,6 +63,15 @@ export default async function EditReadingPage({
           <CardContent>
             <form action={updateReadingAction} className="space-y-5">
               <input type="hidden" name="readingId" value={reading.id} />
+
+              <div className="border-b border-[#e5e7eb] pb-5">
+                <AudioRecorderField
+                  type="reading"
+                  readingId={reading.id}
+                  currentUrl={reading.audioUrl ?? null}
+                  label="Reading prompt audio (optional)"
+                />
+              </div>
 
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-[#1f2937]">

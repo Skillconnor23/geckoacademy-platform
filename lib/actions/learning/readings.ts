@@ -115,3 +115,17 @@ export async function updateReadingAction(formData: FormData): Promise<void> {
   revalidatePath(`/dashboard/teacher/learning-tools/readings/${readingId}/edit`);
   await redirectWithLocale(`/dashboard/teacher/learning-tools/readings/${readingId}/edit`);
 }
+
+export async function updateReadingAudioAction(
+  readingId: string,
+  audioUrl: string | null
+): Promise<{ error?: string }> {
+  const user = await requireRole(['teacher', 'admin', 'school_admin']);
+  const existing = await getReadingForTeacher(readingId, user.id);
+  if (!existing) return { error: 'Reading not found or access denied.' };
+
+  await dbUpdateReading(readingId, { audioUrl });
+  revalidatePath('/dashboard/teacher/learning-tools');
+  revalidatePath(`/dashboard/teacher/learning-tools/readings/${readingId}/edit`);
+  return {};
+}
