@@ -3,7 +3,8 @@ export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
-import { getQuizForStudentAction, submitQuizAction } from '@/lib/actions/quizzes';
+import { getQuizForStudentAction, submitQuizAction, type StudentAnswer } from '@/lib/actions/quizzes';
+import { quizQuestionTypeEnum } from '@/lib/db/schema';
 import { Button } from '@/components/ui/button';
 import { SentenceBuilderQuestion } from '@/components/learning/SentenceBuilderQuestion';
 import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, ListChecks } from 'lucide-react';
@@ -261,7 +262,7 @@ export default async function QuizTakePage({ params }: Props) {
         <form
           action={async (formData) => {
             'use server';
-            const answers = quiz.questions.map((q) => {
+            const answers: StudentAnswer[] = quiz.questions.map((q) => {
               const raw = formData.get(`q_${q.id}`);
               let value: unknown = raw;
               if (q.type === 'TRUE_FALSE') {
@@ -273,9 +274,12 @@ export default async function QuizTakePage({ params }: Props) {
                   value = [];
                 }
               }
+              const type = (quizQuestionTypeEnum as readonly string[]).includes(q.type)
+                ? (q.type as StudentAnswer['type'])
+                : 'MCQ';
               return {
                 questionId: q.id,
-                type: q.type,
+                type,
                 value,
               };
             });

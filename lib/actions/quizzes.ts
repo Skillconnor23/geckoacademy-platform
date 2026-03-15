@@ -500,7 +500,7 @@ export async function reorderQuestionsAction(
   revalidatePath(`/teacher/quizzes/${quizId}/edit`);
 }
 
-type StudentAnswer = {
+export type StudentAnswer = {
   questionId: string;
   type: QuizQuestionType;
   value: unknown;
