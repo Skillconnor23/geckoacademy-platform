@@ -32,13 +32,24 @@ export type UpdateQuizData = Partial<
   Pick<CreateQuizData, 'title' | 'description' | 'classIds'>
 >;
 
+export type QuizQuestionMetadata = {
+  acceptedAnswers?: string[];
+  tokens?: string[];
+  distractorTokens?: string[];
+  alternativeCorrectSentence?: string;
+};
+
 export type CreateQuestionData = {
   quizId: string;
-  type: 'MCQ' | 'TRUE_FALSE' | 'FILL_BLANK';
+  type: 'MCQ' | 'TRUE_FALSE' | 'FILL_BLANK' | 'SPELLING' | 'SENTENCE_BUILDER';
   prompt: string;
   choices?: unknown | null;
   correctAnswer: unknown;
   explanation?: string | null;
+  imageUrl?: string | null;
+  audioUrl?: string | null;
+  hint?: string | null;
+  metadata?: QuizQuestionMetadata | null;
 };
 
 export type UpdateQuestionData = Partial<Omit<CreateQuestionData, 'quizId'>>;
@@ -158,6 +169,10 @@ export async function addQuestionsBulk(
         correctAnswer: data.correctAnswer,
         explanation: data.explanation ?? null,
         order: nextOrder++,
+        imageUrl: data.imageUrl ?? null,
+        audioUrl: data.audioUrl ?? null,
+        hint: data.hint ?? null,
+        metadata: data.metadata ?? null,
       })
       .returning();
     if (row) created.push(row);
@@ -187,6 +202,10 @@ export async function addQuestion(
       correctAnswer: data.correctAnswer,
       explanation: data.explanation ?? null,
       order: nextOrder,
+      imageUrl: data.imageUrl ?? null,
+      audioUrl: data.audioUrl ?? null,
+      hint: data.hint ?? null,
+      metadata: data.metadata ?? null,
     })
     .returning();
   return created;
@@ -198,9 +217,7 @@ export async function updateQuestion(
 ): Promise<EduQuizQuestion | null> {
   const [updated] = await db
     .update(eduQuizQuestions)
-    .set({
-      ...data,
-    })
+    .set(data)
     .where(eq(eduQuizQuestions.id, questionId))
     .returning();
   return updated ?? null;

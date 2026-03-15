@@ -1,6 +1,7 @@
 /**
  * Schemas for AI-generated quiz.
  * Maps AI output to existing edu_quiz_questions format.
+ * Manual teacher creation supports SPELLING and SENTENCE_BUILDER; AI can be extended later.
  */
 
 import type { QuizQuestionType } from '@/lib/db/schema';

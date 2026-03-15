@@ -5,7 +5,27 @@ import { notFound } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 import { getQuizForStudentAction, submitQuizAction } from '@/lib/actions/quizzes';
 import { Button } from '@/components/ui/button';
+import { SentenceBuilderQuestion } from '@/components/learning/SentenceBuilderQuestion';
 import { ArrowLeft, CheckCircle2, XCircle, RotateCcw, ListChecks } from 'lucide-react';
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
+function getSentenceBuilderTokens(q: { correctAnswer: unknown; metadata?: { tokens?: string[]; distractorTokens?: string[] } | null }): string[] {
+  const meta = q.metadata as { tokens?: string[]; distractorTokens?: string[] } | null | undefined;
+  const fromCorrect = typeof q.correctAnswer === 'string'
+    ? q.correctAnswer.trim().split(/\s+/)
+    : [];
+  const tokens = meta?.tokens?.length ? meta.tokens : fromCorrect;
+  const distractors = meta?.distractorTokens ?? [];
+  return shuffleArray([...tokens, ...distractors]);
+}
 
 type Props = {
   params: Promise<{ quizId: string }>;
@@ -18,7 +38,8 @@ function formatAnswerDisplay(
 ): string {
   if (value == null) return '—';
   if (q.type === 'TRUE_FALSE') return value === true ? 'True' : 'False';
-  if (q.type === 'FILL_BLANK') return typeof value === 'string' ? value : String(value);
+  if (q.type === 'FILL_BLANK' || q.type === 'SPELLING') return typeof value === 'string' ? value : String(value);
+  if (q.type === 'SENTENCE_BUILDER' && Array.isArray(value)) return (value as string[]).join(' ');
   if (q.type === 'MCQ' && Array.isArray(q.choices)) {
     const val = typeof value === 'string' ? value : String(value);
     const choice = (q.choices as { value?: string; label?: string }[]).find(
@@ -34,7 +55,8 @@ function getCorrectAnswerDisplay(q: { type: string; correctAnswer: unknown; choi
   const v = q.correctAnswer;
   if (v == null) return '—';
   if (q.type === 'TRUE_FALSE') return v === true ? 'True' : 'False';
-  if (q.type === 'FILL_BLANK') return typeof v === 'string' ? v : String(v);
+  if (q.type === 'FILL_BLANK' || q.type === 'SPELLING') return typeof v === 'string' ? v : String(v);
+  if (q.type === 'SENTENCE_BUILDER') return typeof v === 'string' ? v : String(v);
   if (q.type === 'MCQ' && Array.isArray(q.choices)) {
     const val = typeof v === 'string' ? v : String(v);
     const choice = (q.choices as { value?: string; label?: string }[]).find(
@@ -53,17 +75,31 @@ export default async function QuizTakePage({ params }: Props) {
   const { quiz, submission } = data;
   const backHref = `/${locale}/dashboard/student/learning?tab=quizzes`;
 
+  function normalize(s: string) {
+    return s.trim().toLowerCase().replace(/\s+/g, ' ');
+  }
   const correctCount = submission
     ? quiz.questions.filter((q) => {
         const answer = (submission.answers as { questionId: string; value: unknown }[] | null)?.find(
           (a) => a.questionId === q.id
         );
         const correctVal = q.correctAnswer;
+        const meta = q.metadata as { acceptedAnswers?: string[]; alternativeCorrectSentence?: string } | null;
         if (answer && q.type === 'MCQ' && typeof answer.value === 'string' && typeof correctVal === 'string')
           return answer.value === correctVal;
         if (answer && q.type === 'TRUE_FALSE' && typeof correctVal === 'boolean') return answer.value === correctVal;
-        if (answer && q.type === 'FILL_BLANK' && typeof answer.value === 'string' && typeof correctVal === 'string')
-          return answer.value.trim().toLowerCase() === correctVal.trim().toLowerCase();
+        if (answer && (q.type === 'FILL_BLANK' || q.type === 'SPELLING') && typeof answer.value === 'string') {
+          const n = normalize(answer.value as string);
+          const main = typeof correctVal === 'string' ? normalize(correctVal) : '';
+          const accepted = meta?.acceptedAnswers?.map(normalize) ?? [];
+          return n === main || accepted.includes(n);
+        }
+        if (answer && q.type === 'SENTENCE_BUILDER' && Array.isArray(answer.value) && typeof correctVal === 'string') {
+          const userSentence = (answer.value as string[]).map((t) => String(t).trim()).join(' ').trim().toLowerCase().replace(/\s+/g, ' ');
+          const correctSentence = String(correctVal).trim().toLowerCase();
+          const alt = meta?.alternativeCorrectSentence?.trim().toLowerCase();
+          return userSentence === correctSentence || (!!alt && userSentence === alt);
+        }
         return false;
       }).length
     : 0;
@@ -155,13 +191,22 @@ export default async function QuizTakePage({ params }: Props) {
                   (a) => a.questionId === q.id
                 );
                 const correctVal = q.correctAnswer;
+                const meta = q.metadata as { acceptedAnswers?: string[]; alternativeCorrectSentence?: string } | null;
                 let isCorrect = false;
                 if (answer && q.type === 'MCQ' && typeof answer.value === 'string' && typeof correctVal === 'string') {
                   isCorrect = answer.value === correctVal;
                 } else if (answer && q.type === 'TRUE_FALSE' && typeof correctVal === 'boolean') {
                   isCorrect = answer.value === correctVal;
-                } else if (answer && q.type === 'FILL_BLANK' && typeof answer.value === 'string' && typeof correctVal === 'string') {
-                  isCorrect = answer.value.trim().toLowerCase() === correctVal.trim().toLowerCase();
+                } else if (answer && (q.type === 'FILL_BLANK' || q.type === 'SPELLING') && typeof answer.value === 'string') {
+                  const n = (answer.value as string).trim().toLowerCase().replace(/\s+/g, ' ');
+                  const main = typeof correctVal === 'string' ? String(correctVal).trim().toLowerCase() : '';
+                  const accepted = meta?.acceptedAnswers?.map((a) => a.trim().toLowerCase()) ?? [];
+                  isCorrect = n === main || accepted.includes(n);
+                } else if (answer && q.type === 'SENTENCE_BUILDER' && Array.isArray(answer.value) && typeof correctVal === 'string') {
+                  const userSentence = (answer.value as string[]).map((t) => String(t).trim()).join(' ').trim().toLowerCase().replace(/\s+/g, ' ');
+                  const correctSentence = String(correctVal).trim().toLowerCase();
+                  const alt = meta?.alternativeCorrectSentence?.trim().toLowerCase();
+                  isCorrect = userSentence === correctSentence || (!!alt && userSentence === alt);
                 }
                 const studentDisplay = formatAnswerDisplay(q, answer?.value);
                 const correctDisplay = getCorrectAnswerDisplay(q);
@@ -221,10 +266,16 @@ export default async function QuizTakePage({ params }: Props) {
               let value: unknown = raw;
               if (q.type === 'TRUE_FALSE') {
                 value = raw === 'true';
+              } else if (q.type === 'SENTENCE_BUILDER' && typeof raw === 'string') {
+                try {
+                  value = JSON.parse(raw) as string[];
+                } catch {
+                  value = [];
+                }
               }
               return {
                 questionId: q.id,
-                type: q.type as 'MCQ' | 'TRUE_FALSE' | 'FILL_BLANK',
+                type: q.type,
                 value,
               };
             });
@@ -301,6 +352,36 @@ export default async function QuizTakePage({ params }: Props) {
                   className="w-full rounded-full border border-gray-200 px-3 py-2 text-sm"
                   placeholder="Type your answer"
                   required
+                />
+              )}
+
+              {q.type === 'SPELLING' && (
+                <div className="space-y-2">
+                  {q.imageUrl && (
+                    <img src={q.imageUrl} alt="" className="max-h-32 rounded-lg object-contain" />
+                  )}
+                  {q.audioUrl && (
+                    <audio src={q.audioUrl} controls className="w-full max-w-xs" />
+                  )}
+                  {q.hint && (
+                    <p className="text-sm text-muted-foreground italic">{q.hint}</p>
+                  )}
+                  <input
+                    type="text"
+                    name={`q_${q.id}`}
+                    className="w-full rounded-full border border-gray-200 px-3 py-2 text-sm"
+                    placeholder="Type your answer"
+                    required
+                  />
+                </div>
+              )}
+
+              {q.type === 'SENTENCE_BUILDER' && (
+                <SentenceBuilderQuestion
+                  questionId={q.id}
+                  tokens={getSentenceBuilderTokens(q)}
+                  name={`q_${q.id}`}
+                  hint={q.hint}
                 />
               )}
             </div>

@@ -13,6 +13,7 @@ import {
   publishQuizAction,
   updateQuizAction,
   deleteQuestionAction,
+  duplicateQuestionAction,
 } from '@/lib/actions/quizzes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -165,26 +166,39 @@ export default async function EditQuizPage({ params }: Props) {
                 {t('noQuestionsYet')}
               </p>
             ) : (
-              q.questions.map((q, index) => {
-                const choices = Array.isArray(q.choices)
-                  ? (q.choices as { label: string; value: string }[])
+              q.questions.map((question, index) => {
+                const choices = Array.isArray(question.choices)
+                  ? (question.choices as { label: string; value: string }[])
                   : [];
                 const correctValue =
-                  typeof q.correctAnswer === 'string' ? q.correctAnswer : null;
+                  typeof question.correctAnswer === 'string' ? question.correctAnswer : null;
+                const typeLabels: Record<string, string> = {
+                  MCQ: t('typeMultipleChoice'),
+                  SPELLING: t('typeSpelling'),
+                  SENTENCE_BUILDER: t('typeSentenceBuilder'),
+                  TRUE_FALSE: t('typeTrueFalse'),
+                  FILL_BLANK: t('typeFillBlank'),
+                };
+                const typeLabel = typeLabels[question.type] ?? question.type;
                 return (
                   <div
-                    key={q.id}
+                    key={question.id}
                     className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-white p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs text-muted-foreground">
-                          {t('questionNumber', { number: index + 1 })}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {t('questionNumber', { number: index + 1 })}
+                          </span>
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                            {typeLabel}
+                          </span>
+                        </div>
                         <p className="font-medium text-[#1f2937] mt-0.5">
-                          {q.prompt}
+                          {question.prompt}
                         </p>
-                        {choices.length > 0 && (
+                        {choices.length > 0 && question.type === 'MCQ' && (
                           <ul className="mt-2 space-y-1">
                             {choices.map((opt, i) => (
                               <li
@@ -203,22 +217,54 @@ export default async function EditQuizPage({ params }: Props) {
                             ))}
                           </ul>
                         )}
+                        {question.type === 'SPELLING' && (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {t('correctAnswerLabel')}: {String(question.correctAnswer)}
+                          </p>
+                        )}
+                        {question.type === 'SENTENCE_BUILDER' && (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {t('correctSentenceLabel')}: {String(question.correctAnswer)}
+                          </p>
+                        )}
+                        {question.type === 'TRUE_FALSE' && (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {t('correctAnswerLabel')}: {question.correctAnswer === true ? t('true') : t('false')}
+                          </p>
+                        )}
                       </div>
-                      <form
-                        action={async () => {
-                          'use server';
-                          await deleteQuestionAction(quizId, q.id);
-                        }}
-                      >
-                        <Button
-                          type="submit"
-                          variant="ghost"
-                          size="sm"
-                          className="rounded-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                      <div className="flex items-center gap-1">
+                        <form
+                          action={async () => {
+                            'use server';
+                            await duplicateQuestionAction(quizId, question.id);
+                          }}
                         >
-                          {t('remove')}
-                        </Button>
-                      </form>
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-full text-muted-foreground hover:text-foreground"
+                          >
+                            {t('duplicate')}
+                          </Button>
+                        </form>
+                        <form
+                          action={async () => {
+                            'use server';
+                            await deleteQuestionAction(quizId, question.id);
+                          }}
+                        >
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                          >
+                            {t('remove')}
+                          </Button>
+                        </form>
+                      </div>
                     </div>
                   </div>
                 );

@@ -84,13 +84,22 @@ export default async function StudentQuizAttemptPage({ params }: Props) {
               (a) => a.questionId === q.id
             );
             const correctVal = q.correctAnswer;
+            const meta = q.metadata as { acceptedAnswers?: string[]; alternativeCorrectSentence?: string } | null;
             let isCorrect = false;
             if (answer && q.type === 'MCQ' && typeof answer.value === 'string' && typeof correctVal === 'string') {
               isCorrect = answer.value === correctVal;
             } else if (answer && q.type === 'TRUE_FALSE' && typeof correctVal === 'boolean') {
               isCorrect = answer.value === correctVal;
-            } else if (answer && q.type === 'FILL_BLANK' && typeof answer.value === 'string' && typeof correctVal === 'string') {
-              isCorrect = (answer.value as string).trim().toLowerCase() === (correctVal as string).trim().toLowerCase();
+            } else if (answer && (q.type === 'FILL_BLANK' || q.type === 'SPELLING') && typeof answer.value === 'string') {
+              const n = (answer.value as string).trim().toLowerCase().replace(/\s+/g, ' ');
+              const main = typeof correctVal === 'string' ? String(correctVal).trim().toLowerCase() : '';
+              const accepted = meta?.acceptedAnswers?.map((a) => a.trim().toLowerCase()) ?? [];
+              isCorrect = n === main || accepted.includes(n);
+            } else if (answer && q.type === 'SENTENCE_BUILDER' && Array.isArray(answer.value) && typeof correctVal === 'string') {
+              const userSentence = (answer.value as string[]).map((t) => String(t).trim()).join(' ').trim().toLowerCase().replace(/\s+/g, ' ');
+              const correctSentence = String(correctVal).trim().toLowerCase();
+              const alt = meta?.alternativeCorrectSentence?.trim().toLowerCase();
+              isCorrect = userSentence === correctSentence || (!!alt && userSentence === alt);
             }
             return (
               <div

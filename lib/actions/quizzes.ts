@@ -15,11 +15,13 @@ import {
   updateQuestion as dbUpdateQuestion,
   deleteQuestion as dbDeleteQuestion,
   reorderQuestions as dbReorderQuestions,
+  getQuizWithQuestions,
   getQuizForStudent as dbGetQuizForStudent,
   createQuizSubmission as dbCreateQuizSubmission,
   getTeacherQuizResults as dbGetTeacherQuizResults,
   getAdminOverview as dbGetAdminOverview,
   getQuizClassIds,
+  type CreateQuestionData,
 } from '@/lib/db/queries/quizzes';
 import {
   getClassById,
@@ -165,7 +167,7 @@ export async function publishQuizAction(
 }
 
 const questionBaseSchema = z.object({
-  type: z.enum(['MCQ', 'TRUE_FALSE', 'FILL_BLANK']),
+  type: z.enum(['MCQ', 'TRUE_FALSE', 'FILL_BLANK', 'SPELLING', 'SENTENCE_BUILDER']),
   prompt: z.string().min(1, 'Question prompt is required'),
   explanation: z.string().optional(),
 });
@@ -197,11 +199,43 @@ const fillBlankSchema = questionBaseSchema.extend({
   correctAnswer: z.string().min(1),
 });
 
+const spellingSchema = questionBaseSchema.extend({
+  type: z.literal('SPELLING'),
+  choices: z.undefined().optional(),
+  correctAnswer: z.string().min(1, 'Correct answer is required'),
+  acceptedAnswers: z.array(z.string()).optional(),
+  hint: z.string().optional(),
+  imageUrl: z.string().url().optional().nullable(),
+  audioUrl: z.string().url().optional().nullable(),
+});
+
+const sentenceBuilderSchema = questionBaseSchema.extend({
+  type: z.literal('SENTENCE_BUILDER'),
+  choices: z.undefined().optional(),
+  correctAnswer: z.string().min(1, 'Correct sentence is required'),
+  tokens: z.array(z.string()).optional(),
+  distractorTokens: z.array(z.string()).optional(),
+  alternativeCorrectSentence: z.string().optional().nullable(),
+});
+
 const createQuestionSchema = z.discriminatedUnion('type', [
   mcqSchema,
   trueFalseSchema,
   fillBlankSchema,
+  spellingSchema,
+  sentenceBuilderSchema,
 ]);
+
+function parseAcceptedAnswers(raw: string | null): string[] | undefined {
+  if (!raw?.trim()) return undefined;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) return parsed.map((s) => String(s).trim()).filter(Boolean);
+  } catch {
+    // comma-separated
+  }
+  return raw.split(',').map((s) => s.trim()).filter(Boolean) || undefined;
+}
 
 export async function addQuestionAction(
   quizId: string,
@@ -218,34 +252,97 @@ export async function addQuestionAction(
   }
 
   const rawType = formData.get('type') as QuizQuestionType | null;
-  const parsed = createQuestionSchema.safeParse({
-    type: rawType,
-    prompt: formData.get('prompt') || '',
-    explanation: formData.get('explanation') || undefined,
-    // choices and correctAnswer are parsed per type below
-    choices:
-      rawType === 'MCQ'
-        ? JSON.parse((formData.get('choicesJson') as string) || '[]')
-        : undefined,
-    correctAnswer:
-      rawType === 'TRUE_FALSE'
-        ? formData.get('correctAnswer') === 'true'
-        : formData.get('correctAnswer') || '',
-  });
+  let parsed: z.infer<typeof createQuestionSchema> | null = null;
 
-  if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? 'Validation failed' };
+  if (rawType === 'MCQ') {
+    parsed = createQuestionSchema.safeParse({
+      type: 'MCQ',
+      prompt: formData.get('prompt') || '',
+      explanation: formData.get('explanation') || undefined,
+      choices: JSON.parse((formData.get('choicesJson') as string) || '[]'),
+      correctAnswer: formData.get('correctAnswer') || '',
+    }) as z.SafeParseReturnType<unknown, z.infer<typeof createQuestionSchema>>;
+  } else if (rawType === 'TRUE_FALSE') {
+    parsed = createQuestionSchema.safeParse({
+      type: 'TRUE_FALSE',
+      prompt: formData.get('prompt') || '',
+      explanation: formData.get('explanation') || undefined,
+      correctAnswer: formData.get('correctAnswer') === 'true',
+    }) as z.SafeParseReturnType<unknown, z.infer<typeof createQuestionSchema>>;
+  } else if (rawType === 'FILL_BLANK') {
+    parsed = createQuestionSchema.safeParse({
+      type: 'FILL_BLANK',
+      prompt: formData.get('prompt') || '',
+      explanation: formData.get('explanation') || undefined,
+      correctAnswer: formData.get('correctAnswer') || '',
+    }) as z.SafeParseReturnType<unknown, z.infer<typeof createQuestionSchema>>;
+  } else if (rawType === 'SPELLING') {
+    const acceptedRaw = formData.get('acceptedAnswers') as string | null;
+    parsed = createQuestionSchema.safeParse({
+      type: 'SPELLING',
+      prompt: formData.get('prompt') || '',
+      explanation: formData.get('explanation') || undefined,
+      correctAnswer: (formData.get('correctAnswer') as string)?.trim() || '',
+      acceptedAnswers: parseAcceptedAnswers(acceptedRaw),
+      hint: (formData.get('hint') as string)?.trim() || undefined,
+      imageUrl: (formData.get('imageUrl') as string)?.trim() || null,
+      audioUrl: (formData.get('audioUrl') as string)?.trim() || null,
+    }) as z.SafeParseReturnType<unknown, z.infer<typeof createQuestionSchema>>;
+  } else if (rawType === 'SENTENCE_BUILDER') {
+    const tokensRaw = formData.get('tokensJson') as string | null;
+    const distractorRaw = formData.get('distractorTokensJson') as string | null;
+    let tokens: string[] | undefined;
+    let distractorTokens: string[] | undefined;
+    try {
+      tokens = tokensRaw ? (JSON.parse(tokensRaw) as string[]) : undefined;
+    } catch {
+      tokens = undefined;
+    }
+    try {
+      distractorTokens = distractorRaw ? (JSON.parse(distractorRaw) as string[]) : undefined;
+    } catch {
+      distractorTokens = undefined;
+    }
+    parsed = createQuestionSchema.safeParse({
+      type: 'SENTENCE_BUILDER',
+      prompt: formData.get('prompt') || '',
+      explanation: formData.get('explanation') || undefined,
+      correctAnswer: (formData.get('correctAnswer') as string)?.trim() || '',
+      tokens,
+      distractorTokens,
+      alternativeCorrectSentence: (formData.get('alternativeCorrectSentence') as string)?.trim() || null,
+    }) as z.SafeParseReturnType<unknown, z.infer<typeof createQuestionSchema>>;
   }
 
-  await dbAddQuestion({
-    quizId,
-    type: parsed.data.type,
-    prompt: parsed.data.prompt,
-    choices: 'choices' in parsed.data ? parsed.data.choices : undefined,
-    correctAnswer: parsed.data.correctAnswer,
-    explanation: parsed.data.explanation,
-  });
+  if (!parsed?.success) {
+    return { error: parsed?.error?.errors?.[0]?.message ?? 'Validation failed' };
+  }
 
+  const data = parsed.data;
+  const payload: Parameters<typeof dbAddQuestion>[0] = {
+    quizId,
+    type: data.type,
+    prompt: data.prompt,
+    correctAnswer: data.correctAnswer,
+    explanation: data.explanation,
+  };
+  if (data.type === 'MCQ' && 'choices' in data) payload.choices = data.choices;
+  if (data.type === 'SPELLING') {
+    payload.imageUrl = 'imageUrl' in data ? data.imageUrl ?? null : null;
+    payload.audioUrl = 'audioUrl' in data ? data.audioUrl ?? null : null;
+    payload.hint = 'hint' in data ? data.hint ?? null : null;
+    payload.metadata = (data.acceptedAnswers?.length ? { acceptedAnswers: data.acceptedAnswers } : null) ?? null;
+  }
+  if (data.type === 'SENTENCE_BUILDER') {
+    payload.metadata = {
+      tokens: 'tokens' in data ? data.tokens : undefined,
+      distractorTokens: 'distractorTokens' in data ? data.distractorTokens : undefined,
+      alternativeCorrectSentence: 'alternativeCorrectSentence' in data ? data.alternativeCorrectSentence ?? undefined : undefined,
+    };
+    if (payload.metadata && !Object.keys(payload.metadata).length) payload.metadata = null;
+  }
+
+  await dbAddQuestion(payload);
   revalidatePath(`/teacher/quizzes/${quizId}/edit`);
   return {};
 }
@@ -258,6 +355,10 @@ export async function addQuestionsBulkAction(
     choices?: { id: string; label: string; value: string }[] | null;
     correctAnswer: unknown;
     explanation?: string | null;
+    imageUrl?: string | null;
+    audioUrl?: string | null;
+    hint?: string | null;
+    metadata?: { acceptedAnswers?: string[]; tokens?: string[]; distractorTokens?: string[]; alternativeCorrectSentence?: string } | null;
   }>
 ): Promise<{ error?: string; added?: number }> {
   const user = await requireRole(['teacher', 'admin', 'school_admin']);
@@ -279,9 +380,13 @@ export async function addQuestionsBulkAction(
     quizId,
     type: q.type,
     prompt: q.prompt,
-    choices: q.choices,
+    choices: q.choices ?? null,
     correctAnswer: q.correctAnswer,
-    explanation: q.explanation,
+    explanation: q.explanation ?? null,
+    imageUrl: q.imageUrl ?? null,
+    audioUrl: q.audioUrl ?? null,
+    hint: q.hint ?? null,
+    metadata: q.metadata ?? null,
   }));
 
   await dbAddQuestionsBulk(quizId, payloads);
@@ -298,6 +403,10 @@ export async function updateQuestionAction(
     choices?: unknown;
     correctAnswer: unknown;
     explanation?: string | null;
+    imageUrl?: string | null;
+    audioUrl?: string | null;
+    hint?: string | null;
+    metadata?: { acceptedAnswers?: string[]; tokens?: string[]; distractorTokens?: string[]; alternativeCorrectSentence?: string } | null;
   }
 ): Promise<{ error?: string }> {
   await requireRole(['teacher', 'admin', 'school_admin']);
@@ -351,6 +460,35 @@ export async function deleteQuestionAction(
   await requireRole(['teacher', 'admin', 'school_admin']);
   await dbDeleteQuestion(questionId);
   revalidatePath(`/teacher/quizzes/${quizId}/edit`);
+}
+
+export async function duplicateQuestionAction(
+  quizId: string,
+  questionId: string
+): Promise<{ error?: string }> {
+  const user = await requireRole(['teacher', 'admin', 'school_admin']);
+  const quiz = await getQuizWithQuestions(quizId);
+  if (!quiz) return { error: 'Quiz not found' };
+  if (user.platformRole === 'teacher') {
+    const canManage = await teacherCanManageQuiz(quizId, user.id);
+    if (!canManage) return { error: 'You cannot edit this quiz' };
+  }
+  const question = quiz.questions.find((q) => q.id === questionId);
+  if (!question) return { error: 'Question not found' };
+  await dbAddQuestion({
+    quizId,
+    type: question.type as CreateQuestionData['type'],
+    prompt: question.prompt,
+    choices: question.choices,
+    correctAnswer: question.correctAnswer,
+    explanation: question.explanation ?? null,
+    imageUrl: question.imageUrl ?? null,
+    audioUrl: question.audioUrl ?? null,
+    hint: question.hint ?? null,
+    metadata: question.metadata ?? null,
+  });
+  revalidatePath(`/teacher/quizzes/${quizId}/edit`);
+  return {};
 }
 
 export async function reorderQuestionsAction(
@@ -435,6 +573,10 @@ export async function submitQuizAction(params: {
     quiz.questions.map((q) => [q.id, q])
   );
 
+  function normalizeSpellingInput(s: string): string {
+    return s.trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
   let correctCount = 0;
 
   for (const answer of params.answers) {
@@ -443,6 +585,7 @@ export async function submitQuizAction(params: {
 
     const userValue = answer.value;
     const correct = question.correctAnswer;
+    const metadata = question.metadata as { acceptedAnswers?: string[]; alternativeCorrectSentence?: string } | null;
 
     if (question.type === 'MCQ') {
       if (typeof userValue === 'string' && typeof correct === 'string') {
@@ -452,11 +595,20 @@ export async function submitQuizAction(params: {
       if (typeof userValue === 'boolean' && typeof correct === 'boolean') {
         if (userValue === correct) correctCount++;
       }
-    } else if (question.type === 'FILL_BLANK') {
-      if (typeof userValue === 'string' && typeof correct === 'string') {
-        if (userValue.trim().toLowerCase() === correct.trim().toLowerCase()) {
-          correctCount++;
-        }
+    } else if (question.type === 'FILL_BLANK' || question.type === 'SPELLING') {
+      if (typeof userValue === 'string') {
+        const normalized = normalizeSpellingInput(userValue);
+        const mainCorrect = typeof correct === 'string' ? normalizeSpellingInput(correct) : '';
+        const accepted = metadata?.acceptedAnswers?.map(normalizeSpellingInput) ?? [];
+        if (normalized === mainCorrect || accepted.includes(normalized)) correctCount++;
+      }
+    } else if (question.type === 'SENTENCE_BUILDER') {
+      if (Array.isArray(userValue) && typeof correct === 'string') {
+        const userSentence = (userValue as string[]).map((t) => String(t).trim()).join(' ').trim();
+        const correctSentence = String(correct).trim().toLowerCase();
+        const alt = metadata?.alternativeCorrectSentence?.trim().toLowerCase();
+        const normalizedUser = userSentence.toLowerCase().replace(/\s+/g, ' ');
+        if (normalizedUser === correctSentence || (alt && normalizedUser === alt)) correctCount++;
       }
     }
   }

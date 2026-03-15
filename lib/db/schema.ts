@@ -698,7 +698,7 @@ export const classroomPosts = pgTable(
 
 // --- Learning / quizzes ---
 
-export const quizQuestionTypeEnum = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK'] as const;
+export const quizQuestionTypeEnum = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK', 'SPELLING', 'SENTENCE_BUILDER'] as const;
 export type QuizQuestionType = (typeof quizQuestionTypeEnum)[number];
 
 export const eduQuizzes = pgTable(
@@ -748,6 +748,16 @@ export const eduQuizQuestions = pgTable(
     correctAnswer: jsonb('correct_answer').notNull(),
     explanation: text('explanation'),
     order: integer('order').notNull().default(0),
+    imageUrl: text('image_url'),
+    audioUrl: text('audio_url'),
+    hint: text('hint'),
+    /** Type-specific: acceptedAnswers (spelling), tokens/distractorTokens/alternativeCorrectSentence (sentence_builder). */
+    metadata: jsonb('metadata').$type<{
+      acceptedAnswers?: string[];
+      tokens?: string[];
+      distractorTokens?: string[];
+      alternativeCorrectSentence?: string;
+    }>(),
   },
   (table) => [index('edu_quiz_questions_quiz_order_idx').on(table.quizId, table.order)]
 );
